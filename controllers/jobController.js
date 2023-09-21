@@ -96,18 +96,128 @@ exports.saveJob = (req, res) => {
   }
 };
 
-
-
-exports.getSavedJobs = async (req, res) => {
+exports.assignJob = async (req, res) => {
   try {
-    const userId = req.user._id; // Assuming you have user data available in req.user
+    const { jobId, userIds, employerId } = req.body;
 
-    // Fetch the user's saved jobs
-    const user = await User.findById(userId).populate('savedJobs');
-    const savedJobs = user.savedJobs;
+    // Find the job by its ID
+    const job = await Job.findById(jobId);
 
-    res.status(200).json({ savedJobs });
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    // Find the users by their IDs
+    const users = await User.find({ _id: { $in: userIds } });
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: 'Users not found' });
+    }
+
+    // Assign the job to the users by adding their IDs to the assignedUsers array
+    job.assignedUsers.push(...userIds);
+
+    // Save the updated job
+    await job.save();
+
+    res.status(200).json({ message: 'Job assigned successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching saved jobs', error: error.message });
+    res.status(500).json({ message: 'Error assigning job', error: error.message });
+  }
+};
+
+
+
+
+exports.getSavedJobs = (req, res) => {
+  const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
+
+  // Verify the token and get the user ID from it
+  jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'Unauthorized' });
+    }
+
+    // Use the user ID from the token to fetch the user's saved jobs
+    User.findById(decoded.id)
+      .populate('savedJobs') // Assuming you have a "savedJobs" field that references Job documents
+      .exec((findErr, user) => {
+        if (findErr) {
+          return res.status(500).json({ message: 'Error finding user', error: findErr.message });
+        }
+
+        if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Return the user's saved jobs
+        res.status(200).json({ savedJobs: user.savedJobs });
+      });
+  });
+
+  if (!token) {
+    return res.status(401).send({ message: 'No authorization headers found' });
+  }
+};
+
+
+// exports.searchJobs = async (req, res) => {
+//   try {
+//     const { keywords } = req.query;
+
+//     // Use the keywords to perform a case-insensitive search in job titles and descriptions
+//     const jobs = await Job.find({
+//       $or: [
+//         { job_title: { $regex: keywords, $options: 'i' } },
+//         { job_description: { $regex: keywords, $options: 'i' } },
+//       ],
+//     });
+
+//     res.status(200).json({ jobs });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error searching jobs', error: error.message });
+//   }
+// };
+
+exports.searchJobs = async (req, res) => {
+  try {
+    const { keywords, budgetMin, budgetMax, jobType, location } = req.query;
+    
+    // Build the filter criteria based on user's input
+    const filter = {};
+    
+    // Search keywords in job title and description
+    if (keywords) {
+      filter.$or = [
+        { job_title: { $regex: keywords, $options: 'i' } },
+        { job_description: { $regex: keywords, $options: 'i' } },
+      ];
+    }
+    
+    // Filter by budget range
+    if (budgetMin && budgetMax) {
+      filter.budget = { $gte: parseInt(budgetMin), $lte: parseInt(budgetMax) };
+    } else if (budgetMin) {
+      filter.budget = { $gte: parseInt(budgetMin) };
+    } else if (budgetMax) {
+      filter.budget = { $lte: parseInt(budgetMax) };
+    }
+    
+    // Filter by job type
+    if (jobType) {
+      filter.job_type = jobType;
+    }
+    
+    // Filter by location
+    if (location) {
+      filter.location = { $regex: location, $options: 'i' };
+    }
+
+    // Use the filter criteria to search for jobs
+    const jobs = await Job.find(filter);
+
+    res.status(200).json({ jobs });
+  } catch (error) {
+    res.status(500).json({ message: 'Error searching jobs', error: error.message });
   }
 };

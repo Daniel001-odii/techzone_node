@@ -16,7 +16,7 @@ const jobSchema = new mongoose.Schema({
     period: {
         type: String,
         enum: ["small", "medium", "large"],
-        required: [true, "Please specify user role"]
+        required: [true, "Please specify job period"]
       },
     budget_type: {
         type: String,
@@ -30,6 +30,7 @@ const jobSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Employer'
     },
+    assignedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
 
     // Add more fields as needed
