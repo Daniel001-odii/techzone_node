@@ -1,0 +1,75 @@
+var mongoose = require('mongoose'),
+  Schema = mongoose.Schema;
+
+/**
+ * User Schema
+ */
+var employerSchema = new Schema({
+  email: {
+    type: String,
+    unique: [true, "email already exists in database!"],
+    lowercase: true,
+    trim: true,
+    required: [true, "email not provided"],
+    validate: {
+      validator: function (v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: '{VALUE} is not a valid email!'
+    }
+
+  },
+  role: {
+    type: String,
+    enum: ["user", "employer", "admin"],
+    required: [true, "Please specify user role"]
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  firstname: {
+    type: String,
+    required: [true, "Please specify firstname"]
+  },
+  lastname: {
+    type: String,
+    required: [true, "Please specify lastname"]
+  },
+  created: {
+    type: Date,
+    default: Date.now
+  },
+
+  // //////
+  jobs: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Job',
+  }],
+
+  profile: {
+    // skillTitle: String,
+    company_name: String,
+    bio: String,
+    location: String,
+    contactDetails: {
+      phone: String,
+      email: String,
+      socialAccount: String,
+    },
+    profilePicture: {
+      data: Buffer, // Store image data as a Buffer
+      contentType: String, // Store content type (e.g., 'image/jpeg')
+    },
+  },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  resetToken: String,
+  resetTokenExpiration: Date,
+});
+
+
+
+module.exports = mongoose.model('Employer', employerSchema);
