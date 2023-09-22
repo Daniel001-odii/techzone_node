@@ -4,6 +4,8 @@ const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 
 const jobController = require("../controllers/jobController");
+const employerController = require("../controllers/employerController");
+
 
 // const router = express.Router();
 // const crypto = require('crypto');
@@ -74,6 +76,15 @@ router.post("/jobs/save/:jobId", verifyToken, jobController.saveJob);
 
 // Route for retrieving saved jobs
 router.get('/jobs/saved', verifyToken, jobController.getSavedJobs);
+
+
+// Define the route for employers to view hired applicants and apply the verifyToken middleware
+router.get('/employers/hired-applicants', verifyToken, employerController.viewHiredApplicants);
+
+
+
+
+
 
 
 

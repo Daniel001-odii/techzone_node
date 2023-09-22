@@ -31,7 +31,15 @@ const jobSchema = new mongoose.Schema({
       ref: 'Employer'
     },
     assignedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-
+    applications: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        coverLetter: String,
+        attachment: String, // Store the file name or link
+        counterOffer: Number,
+        reasonForCounterOffer: String,
+      },
+    ],
 
     // Add more fields as needed
   });

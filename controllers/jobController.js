@@ -221,3 +221,152 @@ exports.searchJobs = async (req, res) => {
     res.status(500).json({ message: 'Error searching jobs', error: error.message });
   }
 };
+
+
+exports.applyForJob = async (req, res) => {
+  try {
+    const { jobId, coverLetter, attachment, counterOffer, reasonForCounterOffer } = req.body;
+    const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
+
+    // Verify the token and get the user ID from it
+    jwt.verify(token, process.env.API_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const userId = decoded.id; // Get the user's ID from the token
+
+      // Create a job application object
+      const application = {
+        user: userId,
+        coverLetter,
+        attachment,
+        counterOffer,
+        reasonForCounterOffer,
+      };
+
+      // Find the job by ID and add the application to the applications array
+      const job = await Job.findByIdAndUpdate(
+        jobId,
+        { $push: { applications: application } },
+        { new: true }
+      );
+
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
+
+      res.status(201).json({ message: 'Application submitted successfully' });
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error submitting application', error: error.message });
+  }
+};
+
+
+exports.getAppliedJobs = async (req, res) => {
+  try {
+    const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
+
+    // Verify the token and get the user ID from it
+    jwt.verify(token, process.env.API_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const userId = decoded.id; // Get the user's ID from the token
+
+      // Find all jobs where the user's ID exists in the applications array
+      const appliedJobs = await Job.find({ 'applications.user': userId });
+
+      res.status(200).json({ appliedJobs });
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error retrieving applied jobs', error: error.message });
+  }
+};
+
+
+exports.deleteJob = async (req, res) => {
+  try {
+    const jobId = req.params.jobId; // Get the job ID from the route parameter
+    const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
+
+    // Verify the token and get the user ID and role from it
+    jwt.verify(token, process.env.API_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const userId = decoded.id; // Get the user's ID from the token
+      const userRole = decoded.role; // Get the user's role from the token
+
+      if (userRole !== 'employer') {
+        return res.status(403).json({ message: 'Access denied. Only employers can delete jobs.' });
+      }
+
+      // Find the job by ID and check if the user ID matches the job's createdBy field
+      const job = await Job.findOne({ _id: jobId, createdBy: userId });
+
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found or you do not have permission to delete it.' });
+      }
+
+      // Delete the job
+      await Job.deleteOne({ _id: jobId });
+
+      res.status(200).json({ message: 'Job deleted successfully' });
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting job', error: error.message });
+  }
+};
+
+
+exports.hireApplicant = async (req, res) => {
+  try {
+    const { jobId, applicantId } = req.params; // Get the job ID and applicant ID from the route parameters
+    const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
+
+    // Verify the token and get the user ID and role from it
+    jwt.verify(token, process.env.API_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const userId = decoded.id; // Get the user's ID from the token
+      const userRole = decoded.role; // Get the user's role from the token
+
+      if (userRole !== 'employer') {
+        return res.status(403).json({ message: 'Access denied. Only employers can hire applicants.' });
+      }
+
+      // Find the job by ID and check if it was posted by the employer making the request
+      const job = await Job.findOne({ _id: jobId, createdBy: userId });
+
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found or you do not have permission to hire for it.' });
+      }
+
+      // Check if the applicant exists in the job's applications
+      const applicantIndex = job.applications.findIndex((app) => app.user.toString() === applicantId);
+
+      if (applicantIndex === -1) {
+        return res.status(404).json({ message: 'Applicant not found for this job.' });
+      }
+
+      // Mark the applicant as hired
+      job.applications[applicantIndex].status = 'hired';
+
+      // Save the updated job document
+      await job.save();
+
+      res.status(200).json({ message: 'Applicant hired successfully' });
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error hiring applicant', error: error.message });
+  }
+};
+
+
+
