@@ -46,6 +46,26 @@ exports.listJobs = async (req, res) => {
 };
 
 
+// Controller to get a job by its ID
+exports.getJobById = async (req, res) => {
+  try {
+    const jobId = req.params.jobId; // Get the job ID from the URL parameter
+    
+    // Query the database to find the job by its ID
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    // Send the job as a JSON response
+    res.status(200).json({ job });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 // Controller for saving a job
 //working................
 exports.saveJob = (req, res) => {
@@ -181,7 +201,7 @@ exports.getSavedJobs = (req, res) => {
 
 exports.searchJobs = async (req, res) => {
   try {
-    const { keywords, budgetMin, budgetMax, jobType, location } = req.query;
+    const { keywords, budgetMin, budgetMax, jobType, location, posted } = req.query;
     
     // Build the filter criteria based on user's input
     const filter = {};
@@ -205,9 +225,15 @@ exports.searchJobs = async (req, res) => {
     
     // Filter by job type
     if (jobType) {
-      filter.job_type = jobType;
+      filter.period = jobType;
     }
     
+    // Filter by job creation time
+    if (posted) {
+      filter.created_at = posted;
+    }
+
+
     // Filter by location
     if (location) {
       filter.location = { $regex: location, $options: 'i' };

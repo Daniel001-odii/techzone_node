@@ -30,6 +30,7 @@ exports.signup = (req, res) => {
 };
 
 
+
 exports.employerSignup = (req, res) => {
   const user = new Employer({
     firstname: req.body.firstname,
@@ -170,8 +171,12 @@ exports.getUser = (req, res) => {
         user: {
           id: user._id,
           email: user.email,
-          created: user.created,
+          firstname: user.firstname,
+          lastname: user.lastname,
           profile: user.profile,
+          saved_jobs: user.savedJobs,
+          created: user.created,
+          isverified: user.isVerified,
           // Add other user details as needed
         },
       });

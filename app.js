@@ -10,6 +10,14 @@ const mongoose = require('mongoose');
 const jobRoutes = require('./routes/jobRoutes');
 const cors = require("cors");
 
+
+// Use the cors middleware with options to specify the allowed origin
+app.use(cors({
+  origin: 'http://localhost:5173', // Replace with the actual origin of your client application
+  credentials: true, // If you need to send cookies or authentication headers
+}));
+
+
   // Connect to the MongoDB Atlas database using the URL from your .env file
   mongoose.connect("mongodb+srv://admin:admin@cluster0.3rg9h4v.mongodb.net/?retryWrites=true&w=majority").then(() => {
     console.log('Connected to Database Successfully')
@@ -24,19 +32,19 @@ app.use(express.urlencoded({
   extended: true
 }));
 
-app.use(cors);
+
 
 // using users routes...
 app.use('/api', userRoutes);
 // app.use('/api', jobRoutes);
-app.use(jobRoutes);
+app.use('/api', jobRoutes);
 
 
 
 
-//setup server to listen on port 5000
+//setup server to listen on port declared on env 
 app.listen(process.env.PORT || 5000, () => {
-  console.log("Server is live on port 5000");
+  console.log(`Server is live on port ${process.env.PORT}`);
 })
 
 

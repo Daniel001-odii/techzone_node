@@ -30,6 +30,10 @@ const jobSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Employer'
     },
+    created_at: {
+      type: Date,
+      default: Date.now, // Set the default value to the current date and time
+    },
     assignedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     applications: [
       {
@@ -45,5 +49,8 @@ const jobSchema = new mongoose.Schema({
   });
   
   const Job = mongoose.model('Job', jobSchema);
+
+
+
   module.exports = Job;
  

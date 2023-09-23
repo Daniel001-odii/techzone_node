@@ -21,6 +21,9 @@ router.post('/jobs', authMiddleware, jobController.postJob);
 // Route for listing jobs (for users)
 router.get('/jobs', jobController.listJobs);
 
+// Define a route to get a specific job by its ID
+router.get('/jobs/:jobId', jobController.getJobById);
+
 // Route for assigning jobs to users
 router.post('/assignJob', verifyToken, jobController.assignJob);
 

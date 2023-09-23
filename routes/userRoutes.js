@@ -36,7 +36,7 @@ router.post("/login", signin, function (req, res) {
 
 
 // Route for employer sign-in
-router.post('/employer/signin', employerSignin, function (req, res) {
+router.post('/employer/login', employerSignin, function (req, res) {
 });
 
 
@@ -63,11 +63,17 @@ router.get("/hiddencontent", verifyToken, function (req, res) {
 
 
 // Route to fetch user details using JWT token
-router.get('/user-info', verifyToken, getUser);
+//this first routes uses middleware to authorize requests.....
+// router.get('/user-info', verifyToken, getUser);
+
+router.get('/user-info', getUser);
 
  
 // Route to fetch employer details using JWT token
-router.get('/employer-info', verifyToken, getEmployer);
+//this first routes uses middleware to authorize requests.....
+// router.get('/employer-info', verifyToken, getEmployer);
+router.get('/employer-info', getEmployer);
+
 
 
 // Route for saving jobs ......
