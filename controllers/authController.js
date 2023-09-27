@@ -1,60 +1,91 @@
-var jwt = require("jsonwebtoken");
-var bcrypt = require("bcrypt");
-var User = require("../models/userModel");
-var Employer = require("../models/employerModel");
-
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const User = require("../models/userModel");
+const Employer = require("../models/employerModel");
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 exports.signup = (req, res) => {
-  const user = new User({
-    firstname: req.body.firstname,
-    lastname: req.body.lastname,
-    email: req.body.email,
-    role: 'user',
-    password: bcrypt.hashSync(req.body.password, 8)
-  });
+  const { firstname, lastname, email, password } = req.body;
 
-  user.save((err, user) => {
+  // Check if required fields are missing
+  if (!firstname || !lastname || !email || !password) {
+    return res.status(400).send({ message: "All fields are required" });
+  }
+
+  // Check if the email is already registered
+  User.findOne({ email: email }, (err, existingUser) => {
     if (err) {
-      res.status(500)
-        .send({
-          message: err
-        });
-      return;
-    } else {
-      res.status(200)
-        .send({
-          message: "User Registered successfully"
-        })
+      return res.status(500).send({ message: "Internal server error" });
     }
+
+    if (existingUser) {
+      return res.status(400).send({ message: "Email is already registered" });
+    }
+
+    // Create a new user with the provided data
+    const user = new User({
+      firstname: firstname,
+      lastname: lastname,
+      email: email,
+      role: 'user',
+      password: bcrypt.hashSync(password, 8)
+    });
+
+    // Save the new user
+    user.save((err, savedUser) => {
+      if (err) {
+        return res.status(500).send({ message: "User registration failed" });
+      }
+
+      // Send a success response
+      res.status(200).send({ message: "User registered successfully" });
+    });
   });
 };
+
 
 
 
 exports.employerSignup = (req, res) => {
-  const user = new Employer({
-    firstname: req.body.firstname,
-    lastname: req.body.lastname,
-    email: req.body.email,
-    role: 'employer',
-    password: bcrypt.hashSync(req.body.password, 8)
-  });
+  const { firstname, lastname, email, password } = req.body;
 
-  user.save((err, user) => {
+  // Check if required fields are missing
+  if (!firstname || !lastname || !email || !password) {
+    return res.status(400).send({ message: "All fields are required" });
+  }
+
+  // Check if the email is already registered
+  Employer.findOne({ email: email }, (err, existingEmployer) => {
     if (err) {
-      res.status(500)
-        .send({
-          message: err
-        });
-      return;
-    } else {
-      res.status(200)
-        .send({
-          message: "Client Registered successfully"
-        })
+      return res.status(500).send({ message: "Internal server error" });
     }
+
+    if (existingEmployer) {
+      return res.status(400).send({ message: "Email is already registered" });
+    }
+
+    // Create a new employer with the provided data
+    const employer = new Employer({
+      firstname: firstname,
+      lastname: lastname,
+      email: email,
+      role: 'employer',
+      password: bcrypt.hashSync(password, 8)
+    });
+
+    // Save the new employer
+    employer.save((err, savedEmployer) => {
+      if (err) {
+        return res.status(500).send({ message: "Employer registration failed" });
+      }
+
+      // Send a success response
+      res.status(200).send({ message: "Employer registered successfully" });
+    });
   });
 };
+
 
 
 
@@ -68,7 +99,7 @@ exports.signin = (req, res) => {
   ])
     .then(([user, employer]) => {
       if (!user && !employer) {
-        return res.status(404).send({ message: "User Not found." });
+        return res.status(404).send({ message: "User with email Not found." });
       }
 
       // Determine the role based on which document was found
@@ -114,11 +145,11 @@ exports.employerSignin = (req, res) => {
       }
 
       if (!employer) {
-        return res.status(404).send({ message: 'Employer not found' });
+        return res.status(404).send({ message: 'Employer with email not found' });
       }
 
       // Verify employer's credentials
-      var passwordIsValid = bcrypt.compareSync(req.body.password, employer.password);
+      const passwordIsValid = bcrypt.compareSync(req.body.password, employer.password);
 
       if (!passwordIsValid) {
         return res.status(401).send({ accessToken: null, message: 'Invalid Password' });
@@ -127,7 +158,7 @@ exports.employerSignin = (req, res) => {
 
       
       // Generate and send the access token for employer
-      var token = jwt.sign({ id: employer._id, role: "employer" }, process.env.API_SECRET, {
+      const token = jwt.sign({ id: employer._id, role: "employer" }, process.env.API_SECRET, {
         expiresIn: 86400,
       });
 
@@ -218,6 +249,7 @@ exports.getEmployer = (req, res) => {
           lastname: employer.lastname,
           created: employer.created,
           profile: employer.profile,
+          isVerified: employer.isVerified,
           // Add other employer details as needed
         },
       });
@@ -228,3 +260,118 @@ exports.getEmployer = (req, res) => {
     return res.status(401).send({ message: "No authorization headers found" });
   }
 };
+
+
+exports.getUserOrEmployerById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Check if the ID corresponds to a user
+    const user = await User.findById(id);
+
+    if (user) {
+      return res.status(200).json({ user });
+    }
+
+    // If not, check if the ID corresponds to an employer
+    const employer = await Employer.findById(id);
+
+    if (employer) {
+      return res.status(200).json({ employer });
+    }
+
+    // If neither user nor employer is found, return an error
+    return res.status(404).json({ message: 'User or employer not found' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error retrieving user or employer', error: error.message });
+  }
+};
+
+
+//controller for passsworddd reset email....
+exports.sendPasswordResetEmail = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Find the user by their email address
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate a unique reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Set an expiration time for the reset token (e.g., 1 hour)
+    const resetTokenExpiration = Date.now() + 3600000; // 1 hour
+
+    // Update the user's document with the reset token and expiration time
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpiration;
+
+    await user.save();
+
+    // Send an email to the user with a link containing the reset token
+    const transporter = nodemailer.createTransport({
+      // Configure your email service (e.g., Gmail, SMTP)
+    });
+
+    const mailOptions = {
+      from: 'your-email@example.com',
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You are receiving this email because you (or someone else) have requested the reset of your account password.\n\n
+        Please click on the following link or paste it into your browser to reset your password:\n\n
+        ${process.env.CLIENT_URL}/reset-password/${resetToken}\n\n
+        If you did not request this, please ignore this email and your password will remain unchanged.`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        return res.status(500).json({ message: 'Failed to send reset email' });
+      }
+
+      console.log('Reset email sent:', info.response);
+      res.status(200).json({ message: 'Password reset email sent' });
+    });
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+exports.resetPassword = async (req, res) => {
+  const { resetToken, newPassword } = req.body;
+
+  try {
+    // Find the user by the reset token and ensure it's not expired
+    const user = await User.findOne({
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: { $gt: Date.now() }, // Ensure the token is not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password and clear the reset token fields
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+

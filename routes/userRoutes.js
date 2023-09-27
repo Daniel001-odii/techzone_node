@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 
 const jobController = require("../controllers/jobController");
 const employerController = require("../controllers/employerController");
+const { sendVerificationEmail, verifyEmail } = require('../controllers/emailController');
+
+
 
 
 // const router = express.Router();
@@ -20,6 +23,7 @@ verifyToken = require('../middleware/authJWT'),
     employerSignup,
     getUser,
     getEmployer,
+    getUserOrEmployerById,
   } = require("../controllers/authController.js");
 
   
@@ -85,24 +89,30 @@ router.get('/jobs/saved', verifyToken, jobController.getSavedJobs);
 
 
 // Define the route for employers to view hired applicants and apply the verifyToken middleware
-router.get('/employers/hired-applicants', verifyToken, employerController.viewHiredApplicants);
+router.get('/employer/hired-applicants', verifyToken, employerController.viewHiredApplicants);
 
 
+// Route to get all jobs posted by a particular employer
+router.get('/employer/:employerId/jobs', jobController.getJobsByEmployer);
 
+// Route to get user or employer details by ID
+router.get('/get-info/:id', getUserOrEmployerById);
 
-
-
-
-
-
-
-
+// Route to logout......
 router.post("/sign-out", (req, res) => {
     // For a simple logout, you don't need to do much on the server side since JWT tokens are stateless.
     // The client will discard the token.
     // You can provide a success message if needed.
     res.status(200).json({ message: "User Logged Out Successfully" });
   });
+
+
+  // Route for verifying the email
+router.get('/verify-email/:token', verifyEmail);
+
+
+// Route for sending the verification email
+router.post('/send-verification-email', sendVerificationEmail);
 
 
 
@@ -187,48 +197,8 @@ router.post("/sign-out", (req, res) => {
     }
   });
 
-  router.get("/verify-email/:token", async (req, res) => {
-    try {
-      const { token } = req.params;
-  
-      // Verify the token against the user's document
-      const user = await User.findOne({ verificationToken: token });
-  
-      if (!user) {
-        return res.status(401).json({ message: "Invalid verification token" });
-      }
-  
-      // Mark the user as verified and clear the verification token
-      user.isVerified = true;
-      user.verificationToken = null;
-  
-      // Save the updated user document
-      await user.save();
-  
-      return res.status(200).json({ message: "Email verification successful" });
-    } catch (error) {
-      res.status(500).send(error.message);
-    }
-  });
 
 
-  function authenticateToken(req, res, next) {
-    const token = req.header('Authorization');
-  
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication token is missing' });
-    }
-  
-    try {
-        const decoded = jwt.verify(token, '12345'); // Replace with your secret key
-        req.userId = decoded.userId;
-        console.log(decoded.userId); // Store the user ID in the request object
-        next();
-      } catch (error) {
-        console.error('JWT Verification Error:', error);
-        return res.status(401).json({ message: 'Invalid token' });
-      }
-  }
 
 
   

@@ -6,32 +6,49 @@ const jwt = require('jsonwebtoken');
 
 // Controller for posting a job (for employers)
 exports.postJob = async (req, res) => {
-    if (req.employer) {
-        // The user is an employer, allow them to post a job
-  try {
-    const { job_title, job_description, skills, period, budget_type, budget } = req.body;
-    
-    const job = new Job({
-      job_title,
-      job_description,
-      skills,
-      period,
-      budget_type,
-      budget,
-      employer: req.employerId,
-      // Add other job fields here
-    });
-    
-    await job.save();
-    
-    res.status(201).json({ message: 'Job posted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error posting job', error: error.message });
-  }
-} else{
+  if (req.employer) {
+    // The user is an employer, allow them to post a job
+    try {
+      const { job_title, job_description, skills, period, budget_type, budget } = req.body;
+      
+      // Validate the request body
+      if (!job_title) {
+        return res.status(400).json({ message: 'Job title is required' });
+      }
+      if (!job_description) {
+        return res.status(400).json({ message: 'Job description is required' });
+      }
+      if (!period) {
+        return res.status(400).json({ message: 'Job period is required' });
+      }
+      if (!budget_type) {
+        return res.status(400).json({ message: 'Budget type is required' });
+      }
+      if (budget_type === 'fixed' && (!budget || isNaN(budget) || budget <= 0)) {
+        return res.status(400).json({ message: 'Invalid budget for fixed budget type' });
+      }
+      
+      const job = new Job({
+        job_title,
+        job_description,
+        skills,
+        period,
+        budget_type,
+        budget,
+        employer: req.employerId,
+        // Add other job fields here
+      });
+      
+      await job.save();
+      
+      res.status(201).json({ message: 'Job posted successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error posting job', error: error.message });
+    }
+  } else {
     // The user is not an employer, deny access
     return res.status(403).json({ message: 'Access denied' });
-}
+  }
 };
 
 // Controller for listing jobs (for users)
@@ -394,5 +411,18 @@ exports.hireApplicant = async (req, res) => {
   }
 };
 
+
+exports.getJobsByEmployer = (req, res) => {
+  const { employerId } = req.params;
+
+  // Query the database for jobs posted by the specific employer
+  Job.find({ employer: employerId }, (err, jobs) => {
+    if (err) {
+      return res.status(500).json({ message: 'Error retrieving jobs', error: err.message });
+    }
+    
+    res.status(200).json({ jobs });
+  });
+};
 
 
