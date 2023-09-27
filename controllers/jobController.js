@@ -164,6 +164,25 @@ exports.assignJob = async (req, res) => {
 };
 
 
+exports.completeJob = async (req, res) => {
+  try {
+    const jobId = req.params.jobId;
+    // Find the job by its ID
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+    // mark job as complete......
+    job.isCompleted = true; 
+    // Save the updated job
+    await job.save();
+
+    res.status(200).json({ message: 'Job completed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error marking job as complete', error: error.message });
+  }
+};
 
 
 exports.getSavedJobs = (req, res) => {
@@ -366,7 +385,7 @@ exports.deleteJob = async (req, res) => {
 };
 
 
-exports.hireApplicant = async (req, res) => {
+exports.hireApp = async (req, res) => {
   try {
     const { jobId, applicantId } = req.params; // Get the job ID and applicant ID from the route parameters
     const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
@@ -383,6 +402,9 @@ exports.hireApplicant = async (req, res) => {
       if (userRole !== 'employer') {
         return res.status(403).json({ message: 'Access denied. Only employers can hire applicants.' });
       }
+
+
+
 
       // Find the job by ID and check if it was posted by the employer making the request
       const job = await Job.findOne({ _id: jobId, createdBy: userId });
@@ -410,6 +432,41 @@ exports.hireApplicant = async (req, res) => {
     res.status(500).json({ message: 'Error hiring applicant', error: error.message });
   }
 };
+
+
+exports.hireApplicant = async (req, res) => {
+  try {
+    const jobId = req.params.jobId; // Get the job ID from the route parameter
+    const userId = req.params.userId; // Get the user ID from the route parameter
+    const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
+
+    // Verify the token and get the employer's ID from it
+    jwt.verify(token, process.env.API_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+      const employerId = decoded.id; // Get the employer's ID from the token
+
+      // Check if the employer has the permission to hire for this job (e.g., they posted the job)
+      const job = await Job.findOne({ _id: jobId, createdBy: employerId });
+
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found or you do not have permission to hire for it.' });
+      }
+
+      // Add the user's ID to the "hiredUsers" array of the job
+      job.hiredUsers.push(userId);
+
+      // Save the updated job document
+      await job.save();
+
+      res.status(200).json({ message: 'User hired successfully' });
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error hiring user', error: error.message });
+  }
+};
+
 
 
 exports.getJobsByEmployer = (req, res) => {

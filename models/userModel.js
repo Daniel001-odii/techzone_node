@@ -65,6 +65,7 @@ var userSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  notifications: [{ type: Schema.Types.ObjectId, ref: 'Notifications' }],
   resetToken: String,
   resetTokenExpiration: Date,
 });

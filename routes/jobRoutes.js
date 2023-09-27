@@ -27,6 +27,8 @@ router.get('/jobs/:jobId', jobController.getJobById);
 // Route for assigning jobs to users
 router.post('/assignJob', verifyToken, jobController.assignJob);
 
+router.post('/jobs/complete/:jobId', verifyToken, jobController.completeJob)
+
 // Define the route for getting saved jobs and apply the verifyToken middleware
 router.get('/savedJobs', verifyToken, jobController.getSavedJobs);
 
@@ -45,7 +47,7 @@ router.get('/applied-jobs', verifyToken, jobController.getAppliedJobs);
 router.delete('/jobs/:jobId', verifyToken, jobController.deleteJob);
 
 // Define the route for hiring an applicant and apply the verifyToken middleware
-router.post('/jobs/:jobId/hire/:applicantId', verifyToken, jobController.hireApplicant);
+router.post('/jobs/:jobId/hire/:userId', verifyToken, jobController.hireApplicant);
 
 
 module.exports = router;

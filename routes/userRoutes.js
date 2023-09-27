@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const jobController = require("../controllers/jobController");
 const employerController = require("../controllers/employerController");
 const { sendVerificationEmail, verifyEmail } = require('../controllers/emailController');
-
+const  userController = require("../controllers/userController");
 
 
 
@@ -115,87 +115,14 @@ router.get('/verify-email/:token', verifyEmail);
 router.post('/send-verification-email', sendVerificationEmail);
 
 
+router.put("/user",  verifyToken, userController.updateUserProfile);
+router.put("/employer",  verifyToken, userController.updateEmployerProfile);
 
 
 
 
 
 
-
-
-
-
-
-
-
-  router.post("/forgot-password", async (req, res) => {
-    try {
-      const { email } = req.body;
-  
-      // Check if the user with the provided email exists
-      const user = await User.findOne({ email });
-  
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-  
-      // Generate a unique reset token (you can use a library like `crypto` for this)
-      const resetToken = generateUniqueResetToken();
-  
-      // Save the reset token and its expiration time in the user's document in the database
-      user.resetToken = resetToken;
-      user.resetTokenExpiration = Date.now() + 3600000; // Token expires in 1 hour
-  
-      // Save the user document with the updated reset token
-      await user.save();
-  
-      // Send a password reset email to the user's email address
-      // Include a link to the reset password endpoint with the reset token
-    //   sendPasswordResetEmail(user.email, resetToken);
-      return res.status(200).json({ message: resetToken });
-  
-      return res.status(200).json({ message: "Password reset link sent to your email" });
-    } catch (error) {
-      res.status(500).send(error.message);
-    }
-  });
-
-
-  router.post("/reset-password", async (req, res) => {
-    try {
-      const { email, resetToken, newPassword } = req.body;
-  
-      // Check if the user with the provided email exists
-      const user = await User.findOne({ email });
-  
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-  
-      // Verify that the provided reset token matches the one stored in the user's document
-      if (user.resetToken !== resetToken || user.resetTokenExpiration < Date.now()) {
-        return res.status(401).json({ message: "Invalid or expired reset token" });
-      }
-  
-      // Hash the new password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-  
-      // Update the user's password with the new hashed password
-      user.password = hashedPassword;
-  
-      // Clear the reset token and expiration
-      user.resetToken = null;
-      user.resetTokenExpiration = null;
-  
-      // Save the updated user document
-      await user.save();
-  
-      return res.status(200).json({ message: "Password reset successful" });
-    } catch (error) {
-      res.status(500).send(error.message);
-    }
-  });
 
 
 

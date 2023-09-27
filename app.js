@@ -10,6 +10,10 @@ const mongoose = require('mongoose');
 const jobRoutes = require('./routes/jobRoutes');
 const cors = require("cors");
 
+const http = require('http');
+const socketIo = require('socket.io');
+const server = http.createServer(app);
+const io = socketIo(server);
 
 // Use the cors middleware with options to specify the allowed origin
 app.use(cors({
@@ -40,6 +44,18 @@ app.use('/api', userRoutes);
 app.use('/api', jobRoutes);
 
 
+// Real-time notification handler
+io.on('connection', (socket) => {
+  console.log('A user connected');
+
+  // Emit a welcome message when a user connects
+  socket.emit('notification', { message: 'Welcome to the notification system!' });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('A user disconnected');
+  });
+});
 
 
 //setup server to listen on port declared on env 

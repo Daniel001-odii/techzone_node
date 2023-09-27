@@ -35,6 +35,7 @@ const jobSchema = new mongoose.Schema({
       default: Date.now, // Set the default value to the current date and time
     },
     assignedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    hiredUsers: [{type: mongoose.Schema.Types.ObjectId,ref: 'User'},],
     applications: [
       {
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -44,6 +45,10 @@ const jobSchema = new mongoose.Schema({
         reasonForCounterOffer: String,
       },
     ],
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
 
     // Add more fields as needed
   });
