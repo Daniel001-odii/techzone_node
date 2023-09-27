@@ -30,6 +30,10 @@ const jobSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Employer'
     },
+    location: {
+      type: String,
+      required: [true, "please specify location for job"]
+  },
     created_at: {
       type: Date,
       default: Date.now, // Set the default value to the current date and time
