@@ -9,7 +9,7 @@ exports.postJob = async (req, res) => {
   if (req.employer) {
     // The user is an employer, allow them to post a job
     try {
-      const { job_title, job_description, skills, period, budget_type, budget } = req.body;
+      const { job_title, job_description, skills, period, budget_type, budget, location } = req.body;
       
       // Validate the request body
       if (!job_title) {
@@ -27,6 +27,9 @@ exports.postJob = async (req, res) => {
       if (budget_type === 'fixed' && (!budget || isNaN(budget) || budget <= 0)) {
         return res.status(400).json({ message: 'Invalid budget for fixed budget type' });
       }
+      if (!location) {
+        return res.status(400).json({ message: 'job location type is required' });
+      }
       
       const job = new Job({
         job_title,
@@ -36,6 +39,7 @@ exports.postJob = async (req, res) => {
         budget_type,
         budget,
         employer: req.employerId,
+        location,
         // Add other job fields here
       });
       
