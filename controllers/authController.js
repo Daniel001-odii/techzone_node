@@ -176,8 +176,6 @@ exports.employerSignin = (req, res) => {
 };
 
 
-
-
 // Controller to fetch user details using JWT token
 exports.getUser = (req, res) => {
   const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
@@ -302,28 +300,33 @@ exports.sendPasswordResetEmail = async (req, res) => {
 
     // Generate a unique reset token
     const resetToken = crypto.randomBytes(20).toString('hex');
+    const ResetLink = `http://localhost:5173`;
 
     // Set an expiration time for the reset token (e.g., 1 hour)
     const resetTokenExpiration = Date.now() + 3600000; // 1 hour
 
     // Update the user's document with the reset token and expiration time
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetTokenExpiration;
+    user.resetToken = resetToken;
+    user.resetTokenExpiration = resetTokenExpiration;
 
     await user.save();
 
     // Send an email to the user with a link containing the reset token
-    const transporter = nodemailer.createTransport({
-      // Configure your email service (e.g., Gmail, SMTP)
-    });
+   const transporter = nodemailer.createTransport({
+    service: 'gmail', // e.g., Gmail
+    auth: {
+      user: 'danielsinterest@gmail.com',
+      pass: 'qksdojcrljuxzaso',
+    },
+  });
 
     const mailOptions = {
-      from: 'your-email@example.com',
+      from: 'danielsinterest@gmail.com',
       to: email,
-      subject: 'Password Reset Request',
+      subject: 'Techzone Password Reset Request',
       text: `You are receiving this email because you (or someone else) have requested the reset of your account password.\n\n
         Please click on the following link or paste it into your browser to reset your password:\n\n
-        ${process.env.CLIENT_URL}/reset-password/${resetToken}\n\n
+        ${ResetLink}/reset-password/${resetToken}\n\n
         If you did not request this, please ignore this email and your password will remain unchanged.`,
     };
 
@@ -343,14 +346,16 @@ exports.sendPasswordResetEmail = async (req, res) => {
 };
 
 
+
 exports.resetPassword = async (req, res) => {
-  const { resetToken, newPassword } = req.body;
+  const { newPassword } = req.body;
+  const { resetToken } = req.body;
 
   try {
     // Find the user by the reset token and ensure it's not expired
     const user = await User.findOne({
-      resetPasswordToken: resetToken,
-      resetPasswordExpires: { $gt: Date.now() }, // Ensure the token is not expired
+      resetToken: resetToken,
+      resetTokenExpiration: { $gt: Date.now() }, // Ensure the token is not expired
     });
 
     if (!user) {
@@ -358,12 +363,12 @@ exports.resetPassword = async (req, res) => {
     }
 
     // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 8);
 
     // Update the user's password and clear the reset token fields
     user.password = hashedPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
+    user.resetToken = undefined;
+    user.resetTokenExpiration = undefined;
 
     await user.save();
 
@@ -373,5 +378,4 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 

@@ -12,6 +12,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const server = http.createServer(app);
 const io = socketIo(server);
+const multer = require('multer');
 
 // Use the cors middleware with options to specify the allowed origin
 // app.use(cors({
@@ -43,6 +44,7 @@ app.use('/api', userRoutes);
 // app.use('/api', jobRoutes);
 app.use('/api', jobRoutes);
 
+app.use('/userUploads', express.static('userUploads'));
 
 // Real-time notification handler
 io.on('connection', (socket) => {
@@ -56,6 +58,19 @@ io.on('connection', (socket) => {
     console.log('A user disconnected');
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //setup server to listen on port declared on env 

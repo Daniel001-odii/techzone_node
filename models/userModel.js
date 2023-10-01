@@ -45,22 +45,15 @@ var userSchema = new Schema({
     skillTitle: String,
     bio: String,
     location: String,
-    contactDetails: {
-      phone: String,
-      email: String,
-      socialAccount: String,
+    phone: String,
+    socialAccount: String,
+    skillsList: [String], // Store skills as an array of strings
+    profileImage: String,
     },
-    profilePicture: {
-      data: Buffer, // Store image data as a Buffer
-      contentType: String, // Store content type (e.g., 'image/jpeg')
-    },
-    portfolio: {
+  portfolio: {
       data: Buffer, // Store document data as a Buffer (e.g., PDF)
       contentType: String, // Store content type (e.g., 'application/pdf')
     },
-    about: String,
-    skillsList: [String], // Store skills as an array of strings
-  },
   isVerified: {
     type: Boolean,
     default: false,
