@@ -24,9 +24,16 @@ const multer = require('multer');
 app.use(cors());
 
   // Connect to the MongoDB Atlas database using the URL from your .env file
-  mongoose.connect("mongodb+srv://admin:admin@cluster0.3rg9h4v.mongodb.net/?retryWrites=true&w=majority").then(() => {
-    console.log('Connected to Database Successfully')
-  })
+  // mongoose.connect("mongodb+srv://admin:admin@cluster0.3rg9h4v.mongodb.net/?retryWrites=true&w=majority").then(() => {
+  //   console.log('Connected to Database Successfully')
+  // })
+
+
+// Connect to the db
+mongoose.connect(process.env.MONGODB_URI, function (err, db) {
+      console.log("local database connected successfully");
+     if(err) throw err;
+});
 
 
 

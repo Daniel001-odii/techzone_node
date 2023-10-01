@@ -180,6 +180,8 @@ router.post('/upload-profile-image', verifyToken, upload.single('profileImage'),
 });
 
 
+// Route to get jobs assigned to a user
+router.get('/user-assigned-jobs', verifyToken, jobController.getUserAssignedJobs);
 
 
 

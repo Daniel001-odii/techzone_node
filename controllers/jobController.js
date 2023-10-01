@@ -268,15 +268,36 @@ exports.searchJobs = async (req, res) => {
       filter.period = jobType;
     }
     
-    // Filter by job creation time
-    if (posted) {
-      filter.created_at = posted;
-    }
-
-
     // Filter by location
     if (location) {
       filter.location = { $regex: location, $options: 'i' };
+    }
+    
+    // Calculate date range based on "posted" value
+    if (posted) {
+      const currentDate = new Date();
+      let startDate;
+
+      switch (posted) {
+        case 'under 24 hrs':
+          startDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); // Subtract 24 hours
+          break;
+        case 'under a week':
+          startDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000); // Subtract 7 days
+          break;
+        case 'under a month':
+          startDate = new Date(currentDate.getFullYear() - 30 * 24 * 60 * 60 * 1000); // Subtract 1 month
+          break;
+        case 'over a month':
+          startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
+          break;
+        default:
+          break;
+      }
+
+      if (startDate) {
+        filter.created_at = { $gte: startDate, $lte: currentDate };
+      }
     }
 
     // Use the filter criteria to search for jobs
@@ -287,6 +308,7 @@ exports.searchJobs = async (req, res) => {
     res.status(500).json({ message: 'Error searching jobs', error: error.message });
   }
 };
+
 
 
 exports.applyForJob = async (req, res) => {
@@ -487,3 +509,16 @@ exports.getJobsByEmployer = (req, res) => {
 };
 
 
+exports.getUserAssignedJobs = async (req, res) => {
+  try {
+    // Get the user's ID from the JWT token (assuming you're using authentication)
+    const userId = req.userId;
+
+    // Fetch jobs assigned to the user
+    const assignedJobs = await Job.find({ assignedUsers: userId });
+
+    res.status(200).json({ assignedJobs });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching user-assigned jobs', error: error.message });
+  }
+};
