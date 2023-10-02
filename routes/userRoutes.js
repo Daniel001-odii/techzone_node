@@ -170,6 +170,7 @@ router.post('/upload-profile-image', verifyToken, upload.single('profileImage'),
     }else{console.log("user found: ", user.firstname + "-" + user.lastname)}
 
     user.profile.profileImage = `${process.env.LOCAL_URL}/${imageUrl}`;
+    // user.profile.profileImage = `/${imageUrl}`;
     await user.save();
 
     res.status(200).json({ message: 'Profile image uploaded successfully', imageUrl });
@@ -182,6 +183,10 @@ router.post('/upload-profile-image', verifyToken, upload.single('profileImage'),
 
 // Route to get jobs assigned to a user
 router.get('/user-assigned-jobs', verifyToken, jobController.getUserAssignedJobs);
+
+
+// Route to get jobs completed by a user
+router.get('/user-completed-jobs', verifyToken, jobController.getUserCompletedJobs);
 
 
 

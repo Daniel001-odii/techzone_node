@@ -69,6 +69,7 @@ var employerSchema = new Schema({
   notifications: [{ type: Schema.Types.ObjectId, ref: 'Notifications' }],
   resetToken: String,
   resetTokenExpiration: Date,
+  verificationToken: String,
 });
 
 

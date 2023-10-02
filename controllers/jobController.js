@@ -167,26 +167,57 @@ exports.assignJob = async (req, res) => {
   }
 };
 
-
 exports.completeJob = async (req, res) => {
   try {
-    const jobId = req.params.jobId;
+    const { jobId, userIds, employerId } = req.body;
+
     // Find the job by its ID
     const job = await Job.findById(jobId);
 
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
     }
-    // mark job as complete......
-    job.isCompleted = true; 
+
+    // Find the users by their IDs
+    const users = await User.find({ _id: { $in: userIds } });
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: 'Users not found' });
+    }
+
+    // Assign the job to the users by adding their IDs to the assignedUsers array
+    job.completedBy.push(...userIds);
+    job.isCompleted = true;
+
     // Save the updated job
     await job.save();
 
-    res.status(200).json({ message: 'Job completed successfully' });
+    res.status(200).json({ message: 'Job completed by user successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error marking job as complete', error: error.message });
   }
-};
+}
+
+
+// exports.completeJob = async (req, res) => {
+//   try {
+//     const jobId = req.params.jobId;
+//     // Find the job by its ID
+//     const job = await Job.findById(jobId);
+
+//     if (!job) {
+//       return res.status(404).json({ message: 'Job not found' });
+//     }
+//     // mark job as complete......
+//     job.isCompleted = true; 
+//     // Save the updated job
+//     await job.save();
+
+//     res.status(200).json({ message: 'Job completed successfully' });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error marking job as complete', error: error.message });
+//   }
+// };
 
 
 exports.getSavedJobs = (req, res) => {
@@ -520,5 +551,20 @@ exports.getUserAssignedJobs = async (req, res) => {
     res.status(200).json({ assignedJobs });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user-assigned jobs', error: error.message });
+  }
+};
+
+
+exports.getUserCompletedJobs = async (req, res) => {
+  try {
+    // Get the user's ID from the JWT token (assuming you're using authentication)
+    const userId = req.userId;
+
+    // Fetch jobs assigned to the user
+    const completedJobs = await Job.find({ completedBy: userId });
+
+    res.status(200).json({ completedJobs });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching user-completed jobs', error: error.message });
   }
 };

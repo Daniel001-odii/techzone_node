@@ -47,7 +47,7 @@ var userSchema = new Schema({
     location: String,
     phone: String,
     socialAccount: String,
-    skillsList: [String], // Store skills as an array of strings
+    skillsList: String, // Store skills as an array of strings
     profileImage: String,
     },
   portfolio: {
@@ -58,6 +58,7 @@ var userSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  verificationToken: String,
   notifications: [{ type: Schema.Types.ObjectId, ref: 'Notifications' }],
   resetToken: String,
   resetTokenExpiration: Date,

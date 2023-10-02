@@ -300,7 +300,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
 
     // Generate a unique reset token
     const resetToken = crypto.randomBytes(20).toString('hex');
-    const ResetLink = `http://localhost:5173`;
+    // const ResetLink = `http://localhost:5173`;
 
     // Set an expiration time for the reset token (e.g., 1 hour)
     const resetTokenExpiration = Date.now() + 3600000; // 1 hour
@@ -326,7 +326,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
       subject: 'Techzone Password Reset Request',
       text: `You are receiving this email because you (or someone else) have requested the reset of your account password.\n\n
         Please click on the following link or paste it into your browser to reset your password:\n\n
-        ${ResetLink}/reset-password/${resetToken}\n\n
+        ${process.env.APP_URL}/reset-password/${resetToken}\n\n
         If you did not request this, please ignore this email and your password will remain unchanged.`,
     };
 

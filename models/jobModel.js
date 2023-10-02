@@ -39,6 +39,7 @@ const jobSchema = new mongoose.Schema({
       default: Date.now, // Set the default value to the current date and time
     },
     assignedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    completedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     hiredUsers: [{type: mongoose.Schema.Types.ObjectId,ref: 'User'},],
     applications: [
       {
