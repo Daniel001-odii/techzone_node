@@ -15,13 +15,13 @@ const io = socketIo(server);
 const multer = require('multer');
 
 // Use the cors middleware with options to specify the allowed origin
-// app.use(cors({
-//   origin: 'http://localhost:5173', // Replace with the actual origin of your client application
-//   credentials: true, // If you need to send cookies or authentication headers
-// }));
+app.use(cors({
+  origin: '*', // Replace with the actual origin of your client application
+  credentials: true, // If you need to send cookies or authentication headers
+}));
 
 
-app.use(cors());
+// app.use(cors());
 
   // Connect to the MongoDB Atlas database using the URL from your .env file
   // mongoose.connect("mongodb+srv://admin:admin@cluster0.3rg9h4v.mongodb.net/?retryWrites=true&w=majority").then(() => {
