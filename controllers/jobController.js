@@ -167,6 +167,19 @@ exports.assignJob = async (req, res) => {
   }
 };
 
+exports.editJob = async (req, res) => {
+  try{
+    const jobId = req.params.jobId;
+    const edits = req.body;
+
+    const updateJob = await Job.findByIdAndUpdate(jobId, edits, {new: true});
+    res.status(200).json({ message: "job updated successfully!", job: updateJob})
+  }
+  catch(error){
+    res.status(500).json({ message: 'Error editing job', error: error.message });
+  }
+};
+
 exports.completeJob = async (req, res) => {
   try {
     const { jobId, userIds, employerId } = req.body;
@@ -196,7 +209,7 @@ exports.completeJob = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error marking job as complete', error: error.message });
   }
-}
+};
 
 
 // exports.completeJob = async (req, res) => {
@@ -566,5 +579,25 @@ exports.getUserCompletedJobs = async (req, res) => {
     res.status(200).json({ completedJobs });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user-completed jobs', error: error.message });
+  }
+};
+
+
+// this controller below fetches the jobs for all users.....
+exports.getUserAppliedJobs = async (req, res) => {
+  try {
+    // Get the user's ID from the decoded JWT token
+    const userId = req.user.id;
+
+    // Find all jobs where the user's ID is in the applications
+    const jobs = await Job.find({ 'applications.user': userId });
+    if(!userId){
+      res.status(401).json({message: "Sorry, You are not authorised to view this page."})
+    }
+
+    res.status(200).json({ jobs });
+  } catch (error) {
+    // res.status(500).json({ message: 'Error fetching user\'s applied jobs', error: error.message });
+    res.status(500).json({ message: 'unauthorised'});
   }
 };

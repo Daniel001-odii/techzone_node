@@ -71,9 +71,8 @@ exports.employerSignup = (req, res) => {
       lastname: lastname,
       email: email,
       role: 'employer',
-      password: bcrypt.hashSync(password, 8)
+      password: bcrypt.hashSync(password, 8),
     });
-
     // Save the new employer
     employer.save((err, savedEmployer) => {
       if (err) {
@@ -299,7 +298,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
     }
 
     // Generate a unique reset token
-    const resetToken = crypto.randomBytes(20).toString('hex');
+    const resetToken = crypto.randomBytes(3).toString('hex');
     // const ResetLink = `http://localhost:5173`;
 
     // Set an expiration time for the reset token (e.g., 1 hour)
@@ -320,15 +319,15 @@ exports.sendPasswordResetEmail = async (req, res) => {
     },
   });
 
-    const mailOptions = {
-      from: 'danielsinterest@gmail.com',
-      to: email,
-      subject: 'Techzone Password Reset Request',
-      text: `You are receiving this email because you (or someone else) have requested the reset of your account password.\n\n
-        Please click on the following link or paste it into your browser to reset your password:\n\n
-        ${process.env.APP_URL}/reset-password/${resetToken}\n\n
-        If you did not request this, please ignore this email and your password will remain unchanged.`,
-    };
+  const mailOptions = {
+    from: 'danielsinterest@gmail.com',
+    to: email,
+    subject: 'Techzone Password Reset Request',
+    html: `<p>You are receiving this email because you (or someone else) have requested the reset of your account password.</p>
+          <p>Please use the OTP to reset your password: <strong>${resetToken}</strong></p>
+          <p>If you did not request this, please ignore this email, and your password will remain unchanged.</p>`
+  };
+  
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {

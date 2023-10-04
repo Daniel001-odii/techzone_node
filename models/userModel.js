@@ -48,12 +48,9 @@ var userSchema = new Schema({
     phone: String,
     socialAccount: String,
     skillsList: String, // Store skills as an array of strings
-    profileImage: String,
+    profileImage: {type: String, default: 'https://images.freeimg.net/thumbs/blank-profile-picture-973460_1280.png'},
     },
-  portfolio: {
-      data: Buffer, // Store document data as a Buffer (e.g., PDF)
-      contentType: String, // Store content type (e.g., 'application/pdf')
-    },
+  portfolio: String, // Store content type (e.g., 'application/pdf')
   isVerified: {
     type: Boolean,
     default: false,

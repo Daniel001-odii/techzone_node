@@ -51,5 +51,9 @@ router.delete('/jobs/:jobId', verifyToken, jobController.deleteJob);
 // Define the route for hiring an applicant and apply the verifyToken middleware
 router.post('/jobs/:jobId/hire/:userId', verifyToken, jobController.hireApplicant);
 
+// this routes is written by i and i alone for editing jobs jut like the rest :)
+router.put('/edit/:jobId', verifyToken, jobController.editJob);
+
+
 
 module.exports = router;

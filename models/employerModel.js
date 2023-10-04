@@ -49,18 +49,17 @@ var employerSchema = new Schema({
 
   profile: {
     // skillTitle: String,
-    company_name: String,
-    bio: String,
+    tagline: String,
+    description: String,
+    company_name: {type: String, default: "Techzone Employer"},
+    website: String,
+    industry_type: String,
+    // --------------------------------------
+    phone: String,
     location: String,
-    contactDetails: {
-      phone: String,
-      email: String,
-      socialAccount: String,
-    },
-    profilePicture: {
-      data: Buffer, // Store image data as a Buffer
-      contentType: String, // Store content type (e.g., 'image/jpeg')
-    },
+    city:{city_name: String, zip: String},
+    socialAccount: String,
+    profileImage: {type: String, default: 'https://images.freeimg.net/thumbs/blank-profile-picture-973460_1280.png'},
   },
   isVerified: {
     type: Boolean,

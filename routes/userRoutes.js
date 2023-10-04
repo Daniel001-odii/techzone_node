@@ -1,5 +1,8 @@
 const express = require("express");
+
 const User = require("../models/userModel");
+const Employer = require("../models/employerModel");
+
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 
@@ -180,6 +183,36 @@ router.post('/upload-profile-image', verifyToken, upload.single('profileImage'),
   }
 });
 
+// Route to handle user profile image uploads
+router.post('/upload-client-image', verifyToken, upload.single('profileImage'), async (req, res) => {
+  try {
+    const imageUrl = req.file.path; // Get the path to the uploaded image
+
+    const userId = req.employerId;
+    console.log("this is the ID of the user uploading: ", userId);
+    console.log("and the uploaded image path is: ", req.file.path);
+
+    // Find the user by ID and update the profilePicture property with the image URL
+    const user = await Employer.findOne({
+      _id: userId,
+    });
+
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }else{console.log("user found: ", user.firstname + "-" + user.lastname)}
+
+    user.profile.profileImage = `${process.env.LOCAL_URL}/${imageUrl}`;
+    // user.profile.profileImage = `/${imageUrl}`;
+    await user.save();
+
+    res.status(200).json({ message: 'Profile image uploaded successfully', imageUrl });
+  } catch (error) {
+    console.error('Error uploading profile image', error);
+    res.status(500).json({ message: 'Error uploading profile image', error: error.message });
+  }
+});
+
 
 // Route to get jobs assigned to a user
 router.get('/user-assigned-jobs', verifyToken, jobController.getUserAssignedJobs);
@@ -188,6 +221,9 @@ router.get('/user-assigned-jobs', verifyToken, jobController.getUserAssignedJobs
 // Route to get jobs completed by a user
 router.get('/user-completed-jobs', verifyToken, jobController.getUserCompletedJobs);
 
+
+// Route to fetch all jobs a user has applied to
+router.get('/user-applied-jobs', verifyToken, jobController.getUserAppliedJobs);
 
 
 
