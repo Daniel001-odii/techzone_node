@@ -20,10 +20,7 @@ const multer = require('multer');
 
 
 // Use the cors middleware with options to specify the allowed origin
-app.use(cors({
-  origin: '*', // Replace with the actual origin of your client application
-  credentials: true, // If you need to send cookies or authentication headers
-}));
+app.use(cors());
 
 
 // Connect to the db
