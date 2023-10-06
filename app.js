@@ -14,6 +14,8 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const multer = require('multer');
 
+
+
 // Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
 app.use(cors());
 
@@ -26,7 +28,7 @@ app.use(cors());
 
 // Connect to the db
 mongoose.connect(process.env.MONGODB_URI, function (err, db) {
-      console.log("local database connected successfully");
+      console.log("database connected successfully");
      if(err) throw err;
 });
 
