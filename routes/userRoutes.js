@@ -24,7 +24,24 @@ const storage = multer.diskStorage({
 });
 
 
-const upload = multer({ storage });
+// const upload = multer({ storage });
+
+const fs = require('fs');
+
+// Set up AWS credentials
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { Upload } = require('@aws-sdk/lib-storage');
+const { Readable } = require('stream');
+const upload = multer({ dest: 'uploads/' });
+
+// Set up AWS credentials
+const s3Client = new S3Client({
+  region: 'eu-north-1',
+  credentials: {
+    accessKeyId: 'AKIASAQOSQHZO2X2NYWV',
+    secretAccessKey: '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',
+  },
+});
 
 
 // const router = express.Router();
@@ -149,39 +166,47 @@ router.post("/reset-password", resetPassword, function (req, res) {
 });
 
 
-
-
-
-
-// Route to handle user profile image uploads
-router.post('/upload-profile-image', verifyToken, upload.single('profileImage'), async (req, res) => {
+// Define a route to handle file uploads
+router.post('/upload-user-image', verifyToken, upload.single('profileImage'), async (req, res) => {
   try {
-    const imageUrl = req.file.path; // Get the path to the uploaded image
+    if (!req.file) {
+      throw new Error('No file uploaded');
+    }
 
-    const userId = req.userId;
-    console.log("this is the ID of the user uploading: ", userId);
-    console.log("and the uploaded image path is: ", req.file.path);
-
-    // Find the user by ID and update the profilePicture property with the image URL
-    const user = await User.findOne({
-      _id: userId,
+    const fileStream = fs.createReadStream(req.file.path);
+    const uploadParams = {
+      Bucket: 'fortechzone', // Replace with your bucket name
+      Body: fileStream,
+      Key: req.file.filename,
+    };
+    const upload = new Upload({
+      client: s3Client,
+      params: uploadParams,
     });
+    const result = await upload.done();
 
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }else{console.log("user found: ", user.firstname + "-" + user.lastname)}
-
-    user.profile.profileImage = `${process.env.LOCAL_URL}/${imageUrl}`;
-    // user.profile.profileImage = `/${imageUrl}`;
+    // find the uploading user ID....
+    const userId = req.userId;
+    const user = await User.findOne({_id: userId});
+    
+    user.profile.profileImage = result.Location;
     await user.save();
 
-    res.status(200).json({ message: 'Profile image uploaded successfully', imageUrl });
-  } catch (error) {
-    console.error('Error uploading profile image', error);
-    res.status(500).json({ message: 'Error uploading profile image', error: error.message });
+    console.log('File uploaded successfully:', result.Location);
+
+    // Close the file stream
+    fileStream.destroy();
+
+    // Clean up the temporary file created by multer
+    fs.unlinkSync(req.file.path);
+
+    res.status(200).send('Profile image uploaded successfully');
+  } catch (err) {
+    console.error('Error uploading image:', err.message);
+    res.status(500).send('Failed to upload image');
   }
 });
+
 
 // Route to handle user profile image uploads
 router.post('/upload-client-image', verifyToken, upload.single('profileImage'), async (req, res) => {

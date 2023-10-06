@@ -14,19 +14,16 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const multer = require('multer');
 
+
+
+
+
+
 // Use the cors middleware with options to specify the allowed origin
 app.use(cors({
   origin: '*', // Replace with the actual origin of your client application
   credentials: true, // If you need to send cookies or authentication headers
 }));
-
-
-// app.use(cors());
-
-  // Connect to the MongoDB Atlas database using the URL from your .env file
-  // mongoose.connect("mongodb+srv://admin:admin@cluster0.3rg9h4v.mongodb.net/?retryWrites=true&w=majority").then(() => {
-  //   console.log('Connected to Database Successfully')
-  // })
 
 
 // Connect to the db
@@ -70,8 +67,62 @@ io.on('connection', (socket) => {
 
 
 
+// const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+// const { Readable } = require('stream');
+// const upload = multer({ dest: 'uploads/' });
+const fs = require('fs');
 
+// Set up AWS credentials
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { Upload } = require('@aws-sdk/lib-storage');
+const { Readable } = require('stream');
+const upload = multer({ dest: 'uploads/' });
 
+// Set up AWS credentials
+const s3Client = new S3Client({
+  region: 'eu-north-1',
+  credentials: {
+    accessKeyId: 'AKIASAQOSQHZO2X2NYWV',
+    secretAccessKey: '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',
+  },
+});
+
+// Define a route to handle file uploads
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      throw new Error('No file uploaded');
+    }
+
+    const fileStream = fs.createReadStream(req.file.path);
+
+    const uploadParams = {
+      Bucket: 'fortechzone', // Replace with your bucket name
+      Body: fileStream,
+      Key: req.file.filename,
+    };
+
+    const upload = new Upload({
+      client: s3Client,
+      params: uploadParams,
+    });
+
+    const result = await upload.done();
+
+    console.log('File uploaded successfully:', result.Location);
+
+    // Close the file stream
+    fileStream.destroy();
+
+    // Clean up the temporary file created by multer
+    fs.unlinkSync(req.file.path);
+
+    res.status(200).send('File uploaded');
+  } catch (err) {
+    console.error('Error uploading file:', err.message);
+    res.status(500).send('Failed to upload file');
+  }
+});
 
 
 
