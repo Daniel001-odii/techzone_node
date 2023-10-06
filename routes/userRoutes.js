@@ -228,7 +228,7 @@ router.post('/upload-client-image', verifyToken, upload.single('profileImage'), 
     const result = await upload.done();
 
     // find the uploading user ID....
-    const userId = req.userId;
+    const userId = req.employerId;
     const user = await Employer.findOne({_id: userId});
     
     user.profile.profileImage = result.Location;
