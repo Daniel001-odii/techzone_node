@@ -19,8 +19,7 @@ const multer = require('multer');
 
 
 
-// Use the cors middleware with options to specify the allowed origin
-app.use(cors());
+
 
 
 // Connect to the db
@@ -127,7 +126,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 
 
 
-
+// Use the cors middleware with options to specify the allowed origin
+app.use(cors());
 //setup server to listen on port declared on env 
 app.listen(process.env.PORT || 5000, () => {
   console.log(`Server is live on port ${process.env.PORT}`);
