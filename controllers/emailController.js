@@ -35,7 +35,7 @@ exports.sendVerificationEmail = async (req, res) => {
       }
   
       // Construct the verification link
-      const verificationLink = `${process.env.LOCAL_URL}/api/verify-email/${verificationToken}`;
+      const verificationLink = `${process.env.PORT}/api/verify-email/${verificationToken}`;
   
       // Send the verification email to the user's email address
       const transporter = nodemailer.createTransport({
