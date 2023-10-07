@@ -3,6 +3,26 @@
 const Job = require('../models/jobModel');
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const fs = require('fs');
+
+// Set up AWS credentials
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { Upload } = require('@aws-sdk/lib-storage');
+const { Readable } = require('stream');
+const upload = multer({ dest: 'uploads/' });
+const Notification = require('../models/notificationModel');
+
+
+// Set up AWS credentials
+const s3Client = new S3Client({
+  region: 'eu-north-1',
+  credentials: {
+    accessKeyId: 'AKIASAQOSQHZO2X2NYWV',
+    secretAccessKey: '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',
+  },
+});
+
 
 // Controller for posting a job (for employers)
 exports.postJob = async (req, res) => {
@@ -211,28 +231,6 @@ exports.completeJob = async (req, res) => {
   }
 };
 
-
-// exports.completeJob = async (req, res) => {
-//   try {
-//     const jobId = req.params.jobId;
-//     // Find the job by its ID
-//     const job = await Job.findById(jobId);
-
-//     if (!job) {
-//       return res.status(404).json({ message: 'Job not found' });
-//     }
-//     // mark job as complete......
-//     job.isCompleted = true; 
-//     // Save the updated job
-//     await job.save();
-
-//     res.status(200).json({ message: 'Job completed successfully' });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error marking job as complete', error: error.message });
-//   }
-// };
-
-
 exports.getSavedJobs = (req, res) => {
   const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
 
@@ -263,25 +261,6 @@ exports.getSavedJobs = (req, res) => {
     return res.status(401).send({ message: 'No authorization headers found' });
   }
 };
-
-
-// exports.searchJobs = async (req, res) => {
-//   try {
-//     const { keywords } = req.query;
-
-//     // Use the keywords to perform a case-insensitive search in job titles and descriptions
-//     const jobs = await Job.find({
-//       $or: [
-//         { job_title: { $regex: keywords, $options: 'i' } },
-//         { job_description: { $regex: keywords, $options: 'i' } },
-//       ],
-//     });
-
-//     res.status(200).json({ jobs });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error searching jobs', error: error.message });
-//   }
-// };
 
 exports.searchJobs = async (req, res) => {
   try {
@@ -354,8 +333,7 @@ exports.searchJobs = async (req, res) => {
 };
 
 
-
-exports.applyForJob = async (req, res) => {
+exports.applyForJo = async (req, res) => {
   try {
     const { jobId, coverLetter, attachment, counterOffer, reasonForCounterOffer } = req.body;
     const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
@@ -395,6 +373,93 @@ exports.applyForJob = async (req, res) => {
   }
 };
 
+exports.applyForJob = async (req, res) => {
+  try {
+    const { coverLetter, counterOffer, reasonForCounterOffer } = req.body;
+    const jobId = req.params.job_id;
+    const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
+
+    // Verify the token and get the user ID from it
+    jwt.verify(token, process.env.API_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const userId = decoded.id; // Get the user's ID from the token
+      console.log('Decoded user ID:', userId, "applying for: ", req.body);
+
+
+      // this code block below sends notification to a user after a successful job application....
+      const message = `Your application for the job ${jobId} has been sent!`;
+      const notification = new Notification({
+        recipientId: userId,
+        recipientModel: 'User',
+        message,
+      });
+        // Save the notification to the user's/employer's notifications array
+      notification.save();
+      const user = await User.findOne({_id: userId});
+      user.notifications.push(notification);
+      user.save();
+
+
+
+      // Check if there are attachment files in the request
+      const attachmentUrls = [];
+
+      if (req.files && req.files.length > 0) {
+        console.log('Number of files uploaded:', req.files.length);
+        for (const file of req.files) {
+          const fileStream = fs.createReadStream(file.path);
+          const uploadParams = {
+            Bucket: 'fortechzone', // Replace with your bucket name
+            Body: fileStream,
+            Key: file.filename,
+          };
+
+          const upload = new Upload({
+            client: s3Client, // Assuming you have s3Client set up
+            params: uploadParams,
+          });
+
+          const result = await upload.done();
+          attachmentUrls.push(result.Location);
+
+          // Clean up the temporary file created by multer
+          fs.unlinkSync(file.path);
+        }
+      }
+
+      // Create a job application object
+      const application = {
+        user: userId,
+        coverLetter,
+        counterOffer,
+        reasonForCounterOffer,
+      };
+
+      if (attachmentUrls.length > 0) {
+        application.attachments = attachmentUrls; // Assign an array of attachment URLs if there are attachments
+      }
+
+      // Find the job by ID and add the application to the applications array
+      const job = await Job.findByIdAndUpdate(
+        jobId,
+        { $push: { applications: application } },
+        { new: true }
+      );
+
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
+
+      res.status(201).json({ message: 'Application submitted successfully' });
+    });
+  } catch (error) {
+    console.error('Error submitting application:', error);
+    res.status(500).json({ message: 'Error submitting application' });
+  }
+};
 
 exports.getAppliedJobs = async (req, res) => {
   try {

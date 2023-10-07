@@ -1,54 +1,48 @@
 const Notification = require('../models/notificationModel');
 
 
-const notification = new Notification({
-    recipientId: userId, // User or employer ID
-    message: 'Your notification message here',
-    timestamp: new Date(),
-    type: 'message', // Optional
-  });
-  
+// / Example API endpoint to get unread notifications for a user
+exports.getUnreadNotifications = async (req, res) => {
+  const userId = req.userId; // Assuming you have authentication middleware
 
+  try {
+    const unreadNotifications = await Notification.find({
+      recipientId: userId,
+      isRead: false,
+    }).sort({ createdAt: -1 });
 
- 
-  // Send a notification
-  exports.sendNotification = async (req, res) => {
-    try {
-      const { senderId, senderModel, recipientId, recipientModel, message } = req.body;
-  
-      const notification = new Notification({
-        senderId,
-        senderModel,
-        recipientId,
-        recipientModel,
-        message,
-      });
-  
+    // Mark the fetched notifications as read
+    unreadNotifications.forEach(async (notification) => {
+      notification.isRead = true;
       await notification.save();
+    });
+
+    res.json(unreadNotifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ message: 'Error fetching notifications' });
+  }
+};
   
-      res.status(201).json({ message: 'Notification sent successfully' });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error sending notification' });
-    }
-  };
+
+
+
+// / Example API endpoint to get unread notifications for a user
+exports.getAllNotifications = async (req, res) => {
+  const userId = req.userId; // Assuming you have authentication middleware
+
+  try {
+    const allNotifications = await Notification.find({
+      recipientId: userId,
+    }).sort({ createdAt: -1 });
+
+    res.json(allNotifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ message: 'Error fetching notifications' });
+  }
+};
   
-  // Get notifications for a specific user or employer
-  exports.getNotifications = async (req, res) => {
-    try {
-      const { userId, userType } = req.params;
-  
-      const notifications = await Notification.find({
-        recipientId: userId,
-        recipientModel: userType,
-      }).sort({ createdAt: -1 });
-  
-      res.status(200).json({ notifications });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error retrieving notifications' });
-    }
-  };
   
 
 
@@ -96,10 +90,3 @@ const notification = new Notification({
     }
   };
   
-
-  // Save the notification to the user's/employer's notifications array
-  user.notifications.push(notification);
-  await user.save();
-  
-  // Save the notification to the notifications collection
-  await notification.save();

@@ -10,6 +10,8 @@ const jobController = require("../controllers/jobController");
 const employerController = require("../controllers/employerController");
 const { sendVerificationEmail, verifyEmail } = require('../controllers/emailController');
 const  userController = require("../controllers/userController");
+const notificationController = require("../controllers/notificationController");
+
 
 const multer = require('multer');
 // Configure multer to specify where to store uploaded profile images
@@ -261,7 +263,11 @@ router.get('/user-completed-jobs', verifyToken, jobController.getUserCompletedJo
 // Route to fetch all jobs a user has applied to
 router.get('/user-applied-jobs', verifyToken, jobController.getUserAppliedJobs);
 
+// get all user unread notifications.............
+router.get('/getunread', verifyToken, notificationController.getUnreadNotifications);
 
+// get all user notifications.............
+router.get('/get-all-notifications', verifyToken, notificationController.getAllNotifications);
 
 
 

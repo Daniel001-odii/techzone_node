@@ -5,6 +5,12 @@ const Employer = require("../models/employerModel");
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
+const Notification = require('../models/notificationModel'); // Replace with the correct path
+
+
+
+
+
 exports.signup = (req, res) => {
   const { firstname, lastname, email, password } = req.body;
 
@@ -104,6 +110,8 @@ exports.signin = (req, res) => {
       // Determine the role based on which document was found
       const role = user ? user.role : employer.role;
 
+      
+
       // Compare passwords and check role
       const passwordIsValid = bcrypt.compareSync(password, user ? user.password : employer.password);
 
@@ -114,6 +122,25 @@ exports.signin = (req, res) => {
       // Sign a token with the appropriate user ID and role
       const userId = user ? user.id : employer.id;
       const token = jwt.sign({ id: userId, role }, process.env.API_SECRET, { expiresIn: 86400 });
+
+
+
+
+      
+      const message = 'You logged into your account now';
+      const notification = new Notification({
+        recipientId: userId,
+        recipientModel: 'User',
+        message,
+      });
+        // Save the notification to the user's/employer's notifications array
+      notification.save();
+      user.notifications.push(notification);
+      user.save();
+
+
+
+
 
       // Construct the response based on the role
       const response = {

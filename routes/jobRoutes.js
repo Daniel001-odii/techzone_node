@@ -38,7 +38,7 @@ router.get('/savedJobs', verifyToken, jobController.getSavedJobs);
 router.get('/search', jobController.searchJobs);
 
 // Define the route for applying for a job and apply the verifyToken middleware
-router.post('/apply', verifyToken, jobController.applyForJob);
+router.post('/apply/:job_id', verifyToken, jobController.applyForJob);
 
 
 // Define the route for getting applied jobs and apply the verifyToken middleware
