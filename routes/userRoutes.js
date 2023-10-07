@@ -269,6 +269,9 @@ router.get('/getunread', verifyToken, notificationController.getUnreadNotificati
 // get all user notifications.............
 router.get('/get-all-notifications', verifyToken, notificationController.getAllNotifications);
 
+// Route to mark a notification as read
+router.put('/mark-notification/:notificationId', notificationController.markNotificationAsRead);
+
 
 
 

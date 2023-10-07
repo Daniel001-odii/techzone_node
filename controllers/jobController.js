@@ -2,6 +2,7 @@
 
 const Job = require('../models/jobModel');
 const User = require('../models/userModel');
+const Employer = require('../models/employerModel');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const fs = require('fs');
@@ -581,6 +582,23 @@ exports.hireApplicant = async (req, res) => {
         return res.status(401).json({ message: 'Unauthorized' });
       }
       const employerId = decoded.id; // Get the employer's ID from the token
+
+      const message = `You Successfully hired ${userId}`;
+      const notification = new Notification({
+        recipientId: employerId,
+        recipientModel: 'Employer',
+        message,
+      });
+        // Save the notification to the user's/employer's notifications array
+      notification.save();
+      const employer = await Employer.findOne({_id: employerId});
+      if(employer){
+        console.log("employer found!")
+        employer.notifications.push(notification);
+        employer.save();
+      }
+      
+
 
       // Check if the employer has the permission to hire for this job (e.g., they posted the job)
       const job = await Job.findOne({ _id: jobId, createdBy: employerId });
