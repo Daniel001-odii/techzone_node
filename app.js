@@ -50,18 +50,7 @@ app.use('/api', jobRoutes);
 
 app.use('/userUploads', express.static('userUploads'));
 
-// Real-time notification handler
-io.on('connection', (socket) => {
-  console.log('A user connected');
 
-  // Emit a welcome message when a user connects
-  socket.emit('notification', { message: 'Welcome to the notification system!' });
-
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    console.log('A user disconnected');
-  });
-});
 
 
 
@@ -125,7 +114,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 
 
 
-//setup server to listen on port declared on env 
+//setup server to listen on port declared on env
 app.listen(process.env.PORT || 5000, () => {
   console.log(`Server is live on port ${process.env.PORT}`);
 })
