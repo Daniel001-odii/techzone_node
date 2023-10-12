@@ -209,8 +209,7 @@ exports.getUser = (req, res) => {
   // Verify the token and get the user ID from it
   jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
     if (err) {
-      console.log("this is the token error: ", err);
-      return res.status(403).json({ message: 'TokenInvalid' });
+      return res.status(401).send({ message: 'Unauthorized' });
     }
 
     // Use the user ID from the token to fetch the user details from the database
