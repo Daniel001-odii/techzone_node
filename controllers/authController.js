@@ -110,7 +110,7 @@ exports.signin = (req, res) => {
       // Determine the role based on which document was found
       const role = user ? user.role : employer.role;
 
-      
+
 
       // Compare passwords and check role
       const passwordIsValid = bcrypt.compareSync(password, user ? user.password : employer.password);
@@ -126,7 +126,7 @@ exports.signin = (req, res) => {
 
 
 
-      
+
       const message = 'You logged into your account now';
       const notification = new Notification({
         recipientId: userId,
@@ -182,7 +182,7 @@ exports.employerSignin = (req, res) => {
       }
 
 
-      
+
       // Generate and send the access token for employer
       const token = jwt.sign({ id: employer._id, role: "employer" }, process.env.API_SECRET, {
         expiresIn: 86400,
@@ -209,7 +209,8 @@ exports.getUser = (req, res) => {
   // Verify the token and get the user ID from it
   jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ message: 'Unauthorized' });
+      console.log("this is the token error: ", err);
+      return res.status(403).json({ message: 'TokenInvalid' });
     }
 
     // Use the user ID from the token to fetch the user details from the database
@@ -354,7 +355,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
           <p>Please use the OTP to reset your password: <strong>${resetToken}</strong></p>
           <p>If you did not request this, please ignore this email, and your password will remain unchanged.</p>`
   };
-  
+
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
