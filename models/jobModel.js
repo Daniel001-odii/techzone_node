@@ -30,6 +30,7 @@ const jobSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Employer'
     },
+    employer_company: {type: String},
     location: {
       type: String,
       required: [true, "please specify location for job"]
@@ -57,7 +58,6 @@ const jobSchema = new mongoose.Schema({
 
     // Add more fields as needed
   });
-  
+
   const Job = mongoose.model('Job', jobSchema);
   module.exports = Job;
- 

@@ -29,6 +29,7 @@ const verifyToken = async (req, res, next) => {
         }
         req.user = undefined;
         req.employer = employer;
+        req.employer_company_name = employer.profile.company_name;
         req.employerId = decoded.id;
       } else {
         req.user = undefined;

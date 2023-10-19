@@ -59,6 +59,7 @@ exports.postJob = async (req, res) => {
         period,
         budget_type,
         budget,
+        employer_company: req.employer_company_name,
         employer: req.employerId,
         location,
         // Add other job fields here
@@ -68,7 +69,7 @@ exports.postJob = async (req, res) => {
           // Update the employer's document with the posted job's reference
           Employer.findByIdAndUpdate(
             req.employerId, // Replace with the actual employer's ID
-            { $push: { jobs: job._id } },
+            { $push: { jobs: job } },
             (updateErr) => {
               if (updateErr) {
                 // Handle the update error
