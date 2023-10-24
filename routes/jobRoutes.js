@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const jobController = require('../controllers/jobController');
-const authMiddleware = require('../middleware/authJWT'); 
+const authMiddleware = require('../middleware/authJWT');
 const verifyToken = require('../middleware/authJWT');
 
 // Authentication middleware for checking user roles
@@ -36,6 +36,8 @@ router.get('/savedJobs', verifyToken, jobController.getSavedJobs);
 
 // Define the route for searching jobs
 router.get('/search', jobController.searchJobs);
+
+router.get('/search/users', jobController.searchUsers);
 
 // Define the route for applying for a job and apply the verifyToken middleware
 router.post('/apply/:job_id', verifyToken, jobController.applyForJob);

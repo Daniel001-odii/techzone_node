@@ -347,6 +347,34 @@ exports.searchJobs = async (req, res) => {
   }
 };
 
+exports.searchUsers = async (req, res) => {
+  try {
+    const { userName, userId } = req.query;
+
+    // Define a filter object to build the query conditions
+    const filter = {};
+
+    // Search by userName (case-insensitive partial match) or by userId
+    if (userName) {
+      filter.$or = [
+        { firstName: { $regex: userName, $options: 'i' } },
+        { lastName: { $regex: userName, $options: 'i' } },
+      ];
+    }
+
+    if (userId) {
+      filter._id = userId;
+    }
+
+    // Use the filter to search for users
+    const users = await User.find(filter);
+
+    res.status(200).json({ users });
+  } catch (error) {
+    res.status(500).json({ message: 'Error searching users', error: error.message });
+  }
+};
+
 
 exports.applyForJob = async (req, res) => {
   try {
