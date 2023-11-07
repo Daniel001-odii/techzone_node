@@ -540,7 +540,9 @@ exports.hireApplicant = async (req, res) => {
 
       // alert both user and employer on successful hire.....
       const notifiedUser = await User.findOne({_id: userId});
-      const message = `You Successfully hired ${notifiedUser.firstname} ${notifiedUser.lastname}`;
+      const hiredJob = await Job.findOne({_id: jobId});
+
+      const message = `You Successfully hired ${notifiedUser.firstname} ${notifiedUser.lastname} for the job ${ hiredJob.job_title.substring(0, 120)}`;
       const notification = new Notification({
         recipientId: employerId,
         recipientModel: 'Employer',
@@ -553,7 +555,7 @@ exports.hireApplicant = async (req, res) => {
         employer.save();
       }
 
-      const hiredJob = await Job.findOne({_id: jobId});
+      // const hiredJob = await Job.findOne({_id: jobId});
       const RecipientMessage = `Congratulations, youve been hired for the job: ${hiredJob.job_title}`;
       const notification2 = new Notification({
         recipientId: userId,

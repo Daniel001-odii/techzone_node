@@ -11,6 +11,7 @@ const employerController = require("../controllers/employerController");
 const { sendVerificationEmail, verifyEmail } = require('../controllers/emailController');
 const  userController = require("../controllers/userController");
 const notificationController = require("../controllers/notificationController");
+const adminController = require("../controllers/adminController");
 
 
 const multer = require('multer');
@@ -64,7 +65,7 @@ verifyToken = require('../middleware/authJWT'),
     resetPassword,
   } = require("../controllers/authController.js");
 
-  
+
 
 router.post("/register", signup, function (req, res) {
 });
@@ -73,7 +74,6 @@ router.post("/register-employer", employerSignup, function (req, res){
 });
 
 router.post("/login", signin, function (req, res) {
-
 });
 
 
@@ -110,7 +110,7 @@ router.get("/hiddencontent", verifyToken, function (req, res) {
 
 router.get('/user-info', getUser);
 
- 
+
 // Route to fetch employer details using JWT token
 //this first routes uses middleware to authorize requests.....
 // router.get('/employer-info', verifyToken, getEmployer);
@@ -190,7 +190,7 @@ router.post('/upload-user-image', verifyToken, upload.single('profileImage'), as
     // find the uploading user ID....
     const userId = req.userId;
     const user = await User.findOne({_id: userId});
-    
+
     user.profile.profileImage = result.Location;
     await user.save();
 
@@ -232,7 +232,7 @@ router.post('/upload-client-image', verifyToken, upload.single('profileImage'), 
     // find the uploading user ID....
     const userId = req.employerId;
     const user = await Employer.findOne({_id: userId});
-    
+
     user.profile.profileImage = result.Location;
     await user.save();
 
@@ -250,6 +250,88 @@ router.post('/upload-client-image', verifyToken, upload.single('profileImage'), 
     res.status(500).send('Failed to upload image');
   }
 });
+
+
+
+// Define a route to handle file uploads
+router.post('/upload-user-portfoli', verifyToken, upload.single('userPortfolio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      throw new Error('No file uploaded');
+    }
+
+    const fileStream = fs.createReadStream(req.file.path);
+    const uploadParams = {
+      Bucket: 'fortechzone', // Replace with your bucket name
+      Body: fileStream,
+      Key: req.file.filename,
+    };
+    const upload = new Upload({
+      client: s3Client,
+      params: uploadParams,
+    });
+    const result = await upload.done();
+
+    // find the uploading user ID....
+    // const userId = req.userId;
+    // const user = await User.findOne({_id: userId});
+
+
+    req.user.portfolio = result.Location;
+    await req.user.save();
+    console.log("user uploading:..", req.user);
+
+    console.log('File uploaded successfully:', result.Location);
+
+    // Close the file stream
+    fileStream.destroy();
+
+    // Clean up the temporary file created by multer
+    fs.unlinkSync(req.file.path);
+
+    res.status(200).send('user portfolio uploaded successfully');
+  } catch (err) {
+    console.error('Error uploading portfolio:', err.message);
+    res.status(500).send('Failed to upload portfolio');
+  }
+});
+
+
+router.post('/upload-user-portfolio', verifyToken, upload.single('userPortfolio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send('No file uploaded');
+    }
+
+    // Get the user ID from the authenticated request
+    const userId = req.userId;
+    const user = await User.findOne({ _id: userId });
+
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+
+    // Upload the file to AWS S3
+    const params = {
+      Bucket: 'fortechzone',
+      Key: `${userId}/${req.file.originalname}`, // Use a unique key to avoid overwriting
+      Body: req.file.buffer,
+    };
+
+    const uploadResult = await s3.upload(params).promise();
+
+    // Update the user's portfolio URL
+    user.portfolio = uploadResult.Location;
+    await user.save();
+
+    // Respond with a success message
+    res.status(200).send('User portfolio uploaded successfully');
+  } catch (err) {
+    console.error('Error uploading portfolio:', err);
+    res.status(500).send('Failed to upload portfolio');
+  }
+});
+
 
 
 // Route to get jobs assigned to a user
@@ -273,10 +355,12 @@ router.get('/get-all-notifications', verifyToken, notificationController.getAllN
 router.put('/mark-notification/:notificationId', notificationController.markNotificationAsRead);
 
 
+router.get('/admin/open-sesame', adminController.getAllRecords);
 
 
-  
- 
+
+
+
 
 
   module.exports = router;
