@@ -357,8 +357,14 @@ router.put('/mark-notification/:notificationId', notificationController.markNoti
 
 router.get('/admin/open-sesame', adminController.getAllRecords);
 
+router.post('/admin/login', adminController.adminSignin);
+
+router.post('/admin/signUp', adminController.adminSignup);
 
 
+router.get('/admin/get-details', adminController.getAdminDetails);
+
+router.post('/admin/register/user', adminController.addNewAdmin);
 
 
 
