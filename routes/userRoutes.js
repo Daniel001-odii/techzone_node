@@ -12,7 +12,7 @@ const { sendVerificationEmail, verifyEmail } = require('../controllers/emailCont
 const  userController = require("../controllers/userController");
 const notificationController = require("../controllers/notificationController");
 const adminController = require("../controllers/adminController");
-
+const paymentsController = require("../controllers/paymentController");
 
 const multer = require('multer');
 // Configure multer to specify where to store uploaded profile images
@@ -53,6 +53,7 @@ const s3Client = new S3Client({
 const router = express.Router(),
 
 verifyToken = require('../middleware/authJWT'),
+verifyAdminToken = require('../middleware/authAdminJWT'),
   {
     signup,
     signin,
@@ -125,7 +126,6 @@ router.post("/jobs/save/:jobId", verifyToken, jobController.saveJob);
 // Route for retrieving saved jobs
 // router.get('/jobs/saved', verifyToken, jobController.getSavedJobs);
 
-
 // Define the route for employers to view hired applicants and apply the verifyToken middleware
 router.get('/employer/hired-applicants', verifyToken, employerController.viewHiredApplicants);
 
@@ -194,7 +194,7 @@ router.post('/upload-user-image', verifyToken, upload.single('profileImage'), as
     user.profile.profileImage = result.Location;
     await user.save();
 
-    console.log('File uploaded successfully:', result.Location);
+    console.log('File uploaded successfully:', result);
 
     // Close the file stream
     fileStream.destroy();
@@ -254,11 +254,12 @@ router.post('/upload-client-image', verifyToken, upload.single('profileImage'), 
 
 
 // Define a route to handle file uploads
-router.post('/upload-user-portfoli', verifyToken, upload.single('userPortfolio'), async (req, res) => {
+router.post('/upload-user-portfolio', verifyToken, upload.single('userPortfolio'), async (req, res) => {
   try {
     if (!req.file) {
       throw new Error('No file uploaded');
     }
+    console.log("the users request...", req.file)
 
     const fileStream = fs.createReadStream(req.file.path);
     const uploadParams = {
@@ -273,15 +274,15 @@ router.post('/upload-user-portfoli', verifyToken, upload.single('userPortfolio')
     const result = await upload.done();
 
     // find the uploading user ID....
-    // const userId = req.userId;
-    // const user = await User.findOne({_id: userId});
+    const userId = req.userId;
+    const user = await User.findOne({_id: userId});
+    // console.log("user uploading:..", req.user);
+
+    user.portfolio = result.Location;
+    await user.save();
 
 
-    req.user.portfolio = result.Location;
-    await req.user.save();
-    console.log("user uploading:..", req.user);
-
-    console.log('File uploaded successfully:', result.Location);
+    console.log('portfolio uploaded successfully:', result);
 
     // Close the file stream
     fileStream.destroy();
@@ -297,7 +298,23 @@ router.post('/upload-user-portfoli', verifyToken, upload.single('userPortfolio')
 });
 
 
-router.post('/upload-user-portfolio', verifyToken, upload.single('userPortfolio'), async (req, res) => {
+router.get('/user/portfolio', async (req, res) => {
+  try {
+    const fileUrl = "https://fortechzone.s3.eu-north-1.amazonaws.com/9fa018a53f6509de12a54f91a539bad0"; // Replace this with your logic to retrieve the file URL
+
+    // Set the Content-Disposition header to 'inline' for previewing the file in the browser
+    res.attachment("userResume.txt");
+
+    const fileStream = fs.createReadStream(fileUrl);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+router.post('/upload-user-portfol', verifyToken, upload.single('userPortfolio'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).send('No file uploaded');
@@ -356,17 +373,13 @@ router.put('/mark-notification/:notificationId', notificationController.markNoti
 
 
 router.get('/admin/open-sesame', adminController.getAllRecords);
-
 router.post('/admin/login', adminController.adminSignin);
-
 router.post('/admin/signUp', adminController.adminSignup);
-
-
 router.get('/admin/get-details', adminController.getAdminDetails);
-
 router.post('/admin/register/user', adminController.addNewAdmin);
+router.put('/admin/update/', verifyAdminToken, adminController.updateProfile);
 
-
-
-
+// payments routes................
+router.post('/payments/create-contract', paymentsController.createContract);
+router.post('/payments/release-funds', paymentsController.releaseFunds);
   module.exports = router;

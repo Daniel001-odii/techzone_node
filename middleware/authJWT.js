@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const Employer = require("../models/employerModel"); // Import the Employer model
 
+
 const verifyToken = async (req, res, next) => {
   const tokenStrings = req.headers.authorization.split(' ')[1];
 
@@ -56,4 +57,9 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
+
+
+
+
 module.exports = verifyToken;
+
