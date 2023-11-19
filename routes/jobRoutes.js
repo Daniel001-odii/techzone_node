@@ -56,6 +56,9 @@ router.post('/jobs/:jobId/hire/:userId', jobController.hireApplicant);
 // this routes is written by i and i alone for editing jobs jut like the rest :)
 router.put('/edit/:jobId', verifyToken, jobController.editJob);
 
+// this route is for sending feedbacks for employers...
+router.post('/employer/:employer_id/rating', jobController.rateClient);
+
 
 
 module.exports = router;

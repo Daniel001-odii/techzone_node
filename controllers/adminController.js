@@ -196,16 +196,19 @@ exports.addNewAdmin = (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const employerId = req.employer._id; // Get the user's ID from the authenticated user
+    console.log(req);
+    const adminId = req.admin._id; // Get the user's ID from the authenticated user
     const updates = req.body; // Update fields from the request body
 
-    // Update the user's profile fields
-    const updatedUser = await Administrator.findByIdAndUpdate(employerId, updates, { new: true });
 
-    res.status(200).json({ message: 'Profile updated successfully', user: updatedUser });
+    // Update the user's profile fields
+    const updatedAdmin = await Administrator.findByIdAndUpdate(adminId, updates, { new: true });
+
+    res.status(200).json({ message: 'Admin Details updated successfully', user: updatedAdmin });
   } catch (error) {
     res.status(500).json({ message: 'Error updating profile', error: error.message });
   }
 };
+
 
 

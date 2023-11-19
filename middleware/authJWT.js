@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const Employer = require("../models/employerModel"); // Import the Employer model
+const Administrator = require("../models/adminModel");
 
 
 const verifyToken = async (req, res, next) => {
@@ -32,15 +33,27 @@ const verifyToken = async (req, res, next) => {
         req.employer = employer;
         req.employer_company_name = employer.profile.company_name;
         req.employerId = decoded.id;
-      } else {
+      }
+      else if (decoded.role === "Admin") {
+        const Admin = await Administrator.findById(decoded.id);
+        if (!Admin) {
+          return res.status(401).json({ message: "Admin not found" });
+        }
         req.user = undefined;
         req.employer = undefined;
-        req.employerId = undefined;
+        req.admin = Admin;
+        req.adminId = decoded.id;
+      }else {
+        req.user = undefined;
+        req.employer = undefined;
+        req.admin = undefined;
       }
     } else {
       req.user = undefined;
       req.employer = undefined;
       req.employerId = undefined;
+      req.admin = undefined;
+      req.decROle
     }
     next();
   } catch (error) {

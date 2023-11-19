@@ -377,7 +377,7 @@ router.post('/admin/login', adminController.adminSignin);
 router.post('/admin/signUp', adminController.adminSignup);
 router.get('/admin/get-details', adminController.getAdminDetails);
 router.post('/admin/register/user', adminController.addNewAdmin);
-router.put('/admin/update/', verifyAdminToken, adminController.updateProfile);
+router.put('/admin/update/', verifyToken, adminController.updateProfile);
 
 // payments routes................
 router.post('/payments/create-contract', paymentsController.createContract);

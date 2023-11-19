@@ -172,6 +172,40 @@ exports.saveJob = (req, res) => {
   }
 };
 
+exports.rateClient = async (req, res) => {
+  try{
+
+    const employerId = req.params.employer_id;
+    const { jobId, userId, ratedValue } = req.body;
+
+    const employer = await Employer.findById(employerId);
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+    const job_title = job.job_title;
+
+    employer.realRating.push({job, userId, job_title, ratedValue});
+
+    // calculate the employers average ratings and save to the ratedValue record..
+    const total = employer.realRating.reduce((acc, rating) => acc + rating.ratedValue, 0);
+
+    const average = total / employer.realRating.length;
+
+    employer.ratedValue = average;
+
+
+    await employer.save();
+    res.status(200).json({ message: 'Client feedback sent successfully!' });
+
+  }
+  catch(error){
+    res.status(500).json({ message: 'Error sending feedback rating', error: error.message });
+  }
+}
+
+
 exports.assignJob = async (req, res) => {
   try {
     const { jobId, userIds, employerId } = req.body;
@@ -217,26 +251,28 @@ exports.editJob = async (req, res) => {
 
 exports.completeJob = async (req, res) => {
   try {
-    const { jobId, userIds, employerId } = req.body;
+    const { jobId, userId, employerId } = req.body;
 
     // Find the job by its ID
     const job = await Job.findById(jobId);
+    const employer = await Employer.findById(employerId);
+    const user = await User.findById(userId)
 
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
     }
 
-    // Find the users by their IDs
-    const users = await User.find({ _id: { $in: userIds } });
-
-    if (!users || users.length === 0) {
-      return res.status(404).json({ message: 'Users not found' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
     // Assign the job to the users by adding their IDs to the assignedUsers array
-    job.completedBy.push(...userIds);
+    job.completedBy.push(userId);
     job.isCompleted = true;
 
+    user.completedJobs.push(jobId);
+
+    await user.save();
     // Save the updated job
     await job.save();
 
