@@ -27,7 +27,7 @@ router.get('/jobs/:jobId', jobController.getJobById);
 // Route for assigning jobs to users
 router.post('/assignJob', verifyToken, jobController.assignJob);
 
-router.post('/completeJob', verifyToken, jobController.completeJob);
+// router.post('/completeJob', verifyToken, jobController.completeJob);
 
 // router.post('/jobs/complete/:jobId', verifyToken, jobController.completeJob)
 

@@ -172,9 +172,41 @@ exports.saveJob = (req, res) => {
   }
 };
 
+exports.completeJob = async (req, res) => {
+  try {
+    const { jobId, userId, employerId } = req.body;
+
+    // Find the job by its ID
+    const job = await Job.findById(jobId);
+    const employer = await Employer.findById(employerId);
+    const user = await User.findById(userId)
+
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Assign the job to the users by adding their IDs to the assignedUsers array
+    job.completedBy.push(userId);
+    job.isCompleted = true;
+
+    user.completedJobs.push(jobId);
+
+    await user.save();
+    // Save the updated job
+    await job.save();
+
+    res.status(200).json({ message: 'Job completed by user successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error marking job as complete', error: error.message });
+  }
+};
+
 exports.rateClient = async (req, res) => {
   try{
-
     const employerId = req.params.employer_id;
     const { jobId, userId, ratedValue } = req.body;
 
@@ -195,6 +227,7 @@ exports.rateClient = async (req, res) => {
 
     employer.ratedValue = average;
 
+    completeJob();
 
     await employer.save();
     res.status(200).json({ message: 'Client feedback sent successfully!' });
@@ -246,39 +279,6 @@ exports.editJob = async (req, res) => {
   }
   catch(error){
     res.status(500).json({ message: 'Error editing job', error: error.message });
-  }
-};
-
-exports.completeJob = async (req, res) => {
-  try {
-    const { jobId, userId, employerId } = req.body;
-
-    // Find the job by its ID
-    const job = await Job.findById(jobId);
-    const employer = await Employer.findById(employerId);
-    const user = await User.findById(userId)
-
-    if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
-    }
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Assign the job to the users by adding their IDs to the assignedUsers array
-    job.completedBy.push(userId);
-    job.isCompleted = true;
-
-    user.completedJobs.push(jobId);
-
-    await user.save();
-    // Save the updated job
-    await job.save();
-
-    res.status(200).json({ message: 'Job completed by user successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error marking job as complete', error: error.message });
   }
 };
 
@@ -424,12 +424,34 @@ exports.applyForJob = async (req, res) => {
         return res.status(401).json({ message: 'Unauthorized' });
       }
 
+
+
       const userId = decoded.id; // Get the user's ID from the token
+      const user = await User.findOne({_id: userId});
+
       console.log('Decoded user ID:', userId, "applying for: ", req.body);
+
+        // Create a job application object
+        const application = {
+          user: userId,
+          firstname: user.firstname,
+          lastname: user.lastname,
+          coverLetter,
+          counterOffer,
+          reasonForCounterOffer,
+        };
+
+
+          // Find the job by ID and add the application to the applications array
+          const job = await Job.findByIdAndUpdate(
+            jobId,
+            { $push: { applications: application } },
+            { new: true }
+          );
 
 
       // this code block below sends notification to a user after a successful job application....
-      const message = `Your application for the job ${jobId} has been sent!`;
+      const message = `Your application for the job ${job.job_title} has been sent!`;
       const notification = new Notification({
         recipientId: userId,
         recipientModel: 'User',
@@ -437,7 +459,7 @@ exports.applyForJob = async (req, res) => {
       });
         // Save the notification to the user's/employer's notifications array
       notification.save();
-      const user = await User.findOne({_id: userId});
+
       user.notifications.push(notification);
       user.save();
 
@@ -469,24 +491,11 @@ exports.applyForJob = async (req, res) => {
         }
       }
 
-      // Create a job application object
-      const application = {
-        user: userId,
-        coverLetter,
-        counterOffer,
-        reasonForCounterOffer,
-      };
 
       if (attachmentUrls.length > 0) {
         application.attachments = attachmentUrls; // Assign an array of attachment URLs if there are attachments
       }
 
-      // Find the job by ID and add the application to the applications array
-      const job = await Job.findByIdAndUpdate(
-        jobId,
-        { $push: { applications: application } },
-        { new: true }
-      );
 
       if (!job) {
         return res.status(404).json({ message: 'Job not found' });
@@ -559,8 +568,6 @@ exports.deleteJob = async (req, res) => {
 };
 
 
-
-
 exports.hireApplicant = async (req, res) => {
   try {
     const jobId = req.params.jobId; // Get the job ID from the route parameter
@@ -630,7 +637,6 @@ exports.hireApplicant = async (req, res) => {
 };
 
 
-
 exports.getJobsByEmployer = (req, res) => {
   const { employerId } = req.params;
 
@@ -673,7 +679,6 @@ exports.getUserCompletedJobs = async (req, res) => {
     res.status(500).json({ message: 'Error fetching user-completed jobs', error: error.message });
   }
 };
-
 
 // this controller below fetches the jobs for all users.....
 exports.getUserAppliedJobs = async (req, res) => {

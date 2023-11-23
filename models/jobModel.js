@@ -45,6 +45,8 @@ const jobSchema = new mongoose.Schema({
     applications: [
       {
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        firstname: String,
+        lastname: String,
         coverLetter: String,
         attachment: String, // Store the file name or link
         counterOffer: Number,
