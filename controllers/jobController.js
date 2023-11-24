@@ -172,7 +172,7 @@ exports.saveJob = (req, res) => {
   }
 };
 
-exports.completeJob = async (req, res) => {
+exports.sendJobForReview = async (req, res) => {
   try {
     const { jobId, userId, employerId } = req.body;
 
@@ -189,6 +189,72 @@ exports.completeJob = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // this code block below sends notification to a user
+    const message = `Your contract for the job: ${job.job_title} has been sent  to the client for approval`;
+    const notification = new Notification({
+      recipientId: userId,
+      recipientModel: 'User',
+      message: message,
+
+    });
+      // Save the notification to the user's/employer's notifications array
+    notification.save();
+    user.notifications.push(notification);
+    await user.save();
+
+    // this second code block sends notification to employer also...
+    const employerMessage = `${user.firstname} ${user.lastname} has requested completion approval for the job: ${job.job_title}`;
+    const notification2 = new Notification({
+      recipientId: employerId,
+      recipientModel: 'Employer',
+      message: employerMessage,
+      linkUrl: `client/contract/${job._id}/${userId}`
+    });
+    notification2.save();
+    employer.notifications.push(notification2);
+    await employer.save();
+
+
+    // Assign the job to the users by adding their IDs to the assignedUsers array
+    job.requestedReview.push(userId);
+    await job.save();
+
+    res.status(200).json({ message: 'Job sent for client review successfully!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error sending job for review...', error: error.message });
+  }
+};
+
+exports.approveReviewRequest = async (req, res) => {
+  try {
+    const { jobId, userId, employerId } = req.body;
+
+    // Find the job by its ID
+    const job = await Job.findById(jobId);
+    const employer = await Employer.findById(employerId);
+    const user = await User.findById(userId)
+
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+      // this code block below sends notification to a user
+      const message = `Your request for the contract: ${job.job_title} has been approved by the client, project has been closed.`;
+      const notification = new Notification({
+        recipientId: userId,
+        recipientModel: 'User',
+        message: message,
+
+      });
+        // Save the notification to the user's/employer's notifications array
+      notification.save();
+      user.notifications.push(notification);
+      await user.save();
+
     // Assign the job to the users by adding their IDs to the assignedUsers array
     job.completedBy.push(userId);
     job.isCompleted = true;
@@ -203,6 +269,7 @@ exports.completeJob = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error marking job as complete', error: error.message });
   }
+
 };
 
 exports.rateClient = async (req, res) => {
@@ -212,13 +279,18 @@ exports.rateClient = async (req, res) => {
 
     const employer = await Employer.findById(employerId);
     const job = await Job.findById(jobId);
+    const ratingUser = await User.findById(userId);
+    const user_id = userId;
+    const job_id = jobId;
+
+    const user = `${ratingUser.firstname} ${ratingUser.lastname}`;
 
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
     }
     const job_title = job.job_title;
 
-    employer.realRating.push({job, userId, job_title, ratedValue});
+    employer.realRating.push({job_id, user_id, job_title, user, ratedValue});
 
     // calculate the employers average ratings and save to the ratedValue record..
     const total = employer.realRating.reduce((acc, rating) => acc + rating.ratedValue, 0);
@@ -227,7 +299,7 @@ exports.rateClient = async (req, res) => {
 
     employer.ratedValue = average;
 
-    completeJob();
+    // completeJob();
 
     await employer.save();
     res.status(200).json({ message: 'Client feedback sent successfully!' });

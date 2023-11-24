@@ -53,10 +53,11 @@ var employerSchema = new Schema({
   }],
 
   realRating: [{
-    job_id: {type: String},
-    user_id: {type: String},
-    job_title: {type: String},
-    ratedValue: {type: Number}
+    job_id: {type: mongoose.Schema.Types.ObjectId},
+    user_id:  {type: mongoose.Schema.Types.ObjectId},
+    job_title: String,
+    ratedValue: Number,
+    user: String,
   }],
 
   ratedValue: {type: Number},

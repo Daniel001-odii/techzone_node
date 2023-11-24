@@ -27,7 +27,7 @@ router.get('/jobs/:jobId', jobController.getJobById);
 // Route for assigning jobs to users
 router.post('/assignJob', verifyToken, jobController.assignJob);
 
-// router.post('/completeJob', verifyToken, jobController.completeJob);
+router.post('/approve-review-request', verifyToken, jobController.approveReviewRequest);
 
 // router.post('/jobs/complete/:jobId', verifyToken, jobController.completeJob)
 
@@ -58,6 +58,9 @@ router.put('/edit/:jobId', verifyToken, jobController.editJob);
 
 // this route is for sending feedbacks for employers...
 router.post('/employer/:employer_id/rating', jobController.rateClient);
+
+router.post('/jobs/requestApproval', jobController.sendJobForReview);
+
 
 
 
