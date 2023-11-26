@@ -266,13 +266,15 @@ router.post('/upload-user-portfolio', verifyToken, upload.single('userPortfolio'
       Bucket: 'fortechzone', // Replace with your bucket name
       Body: fileStream,
       Key: req.file.filename,
+      ContentType: 'application/pdf',
+      // ACL: 'public-read',
     };
     const upload = new Upload({
       client: s3Client,
       params: uploadParams,
     });
     const result = await upload.done();
-
+    console.log('portfolio uploaded successfully:', result);
     // find the uploading user ID....
     const userId = req.userId;
     const user = await User.findOne({_id: userId});
@@ -282,7 +284,7 @@ router.post('/upload-user-portfolio', verifyToken, upload.single('userPortfolio'
     await user.save();
 
 
-    console.log('portfolio uploaded successfully:', result);
+
 
     // Close the file stream
     fileStream.destroy();
