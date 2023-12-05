@@ -116,7 +116,7 @@ exports.signin = (req, res) => {
       const passwordIsValid = bcrypt.compareSync(password, user ? user.password : employer.password);
 
       if (!passwordIsValid) {
-        return res.status(401).send({ accessToken: null, message: "Invalid Password!" });
+        return res.status(401).send({ accessToken: null, message: "Invalid username or Password!" });
       }
 
       // Sign a token with the appropriate user ID and role
@@ -178,7 +178,7 @@ exports.employerSignin = (req, res) => {
       const passwordIsValid = bcrypt.compareSync(req.body.password, employer.password);
 
       if (!passwordIsValid) {
-        return res.status(401).send({ accessToken: null, message: 'Invalid Password' });
+        return res.status(401).send({ accessToken: null, message: 'Invalid username or Password!' });
       }
 
 
