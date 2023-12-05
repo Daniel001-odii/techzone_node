@@ -274,7 +274,7 @@ exports.getEmployer = (req, res) => {
           created: employer.created,
           profile: employer.profile,
           isVerified: employer.isVerified,
-          // Add other employer details as needed
+          hires: employer.hires,
         },
       });
     });

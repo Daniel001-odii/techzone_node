@@ -47,9 +47,11 @@ var employerSchema = new Schema({
     ref: 'Job',
   }],
 
-  completedJobs: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Job',
+  hires: [{
+    job: {job_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Job'}, job_title: String},
+    user: {user_id: {type: mongoose.Schema.Types.ObjectId, ref: 'user'}, username: String},
+    budget: Number,
+    date_of_hire: {type: Date, default: Date.now},
   }],
 
   realRating: [{

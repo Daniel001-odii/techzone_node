@@ -259,7 +259,9 @@ exports.approveReviewRequest = async (req, res) => {
     job.completedBy.push(userId);
     job.isCompleted = true;
 
-    user.completedJobs.push(jobId);
+    const date = new Date();
+
+    user.completedJobs.push({job_id: jobId, job_title: job.job_title, budget: job.budget});
 
     await user.save();
     // Save the updated job
@@ -697,9 +699,15 @@ exports.hireApplicant = async (req, res) => {
 
       // Add the user's ID to the "hiredUsers" array of the job
       job.hiredUsers.push(userId);
+      employer.hires.push({
+        job: {job_id:  hiredJob._id, job_title: hiredJob.job_title},
+        user: {user_id: notifiedUser._id, username: `${notifiedUser.firstname} ${notifiedUser.lastname}`},
+        budget: hiredJob.budget,
+      });
 
       // Save the updated job document
       await job.save();
+      await employer.save();
 
       res.status(200).json({ message: 'User hired successfully' });
     });

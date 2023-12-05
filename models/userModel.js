@@ -41,7 +41,12 @@ var userSchema = new Schema({
     default: Date.now
   },
   savedJobs: [{ type: Schema.Types.ObjectId, ref: 'Job' }],
-  completedJobs: [{ type: Schema.Types.ObjectId, ref: 'Job' }],
+  completedJobs: [{
+    job_id: {type: Schema.Types.ObjectId, ref: 'Job' },
+    job_title: String,
+    completion_date: {type: Date, default: Date.now},
+    budget: Number,
+    rated: Number}],
   profile: {
     skillTitle: String,
     bio: String,
