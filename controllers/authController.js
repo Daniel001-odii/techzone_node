@@ -210,16 +210,6 @@ exports.getUser = (req, res) => {
     }
     else{
   try{
-    // if(token){
-    //   console.log("token found!")
-    // }
-    // else{
-    //   console.log("no token found!!!");
-    //   return res.status(401).send({message: "no authorization headers found.."});
-    // }
-
-
-  // else{
   // Verify the token and get the user ID from it
   jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
     if (err) {
