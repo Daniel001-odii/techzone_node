@@ -180,9 +180,6 @@ exports.employerSignin = (req, res) => {
       if (!passwordIsValid) {
         return res.status(401).send({ accessToken: null, message: 'Invalid username or Password!' });
       }
-
-
-
       // Generate and send the access token for employer
       const token = jwt.sign({ id: employer._id, role: "employer" }, process.env.API_SECRET, {
         expiresIn: 86400,
@@ -204,12 +201,29 @@ exports.employerSignin = (req, res) => {
 
 // Controller to fetch user details using JWT token
 exports.getUser = (req, res) => {
-  const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
+    // Get the JWT token from the request headers
+    const token = req.headers.authorization.split(' ')[1];
 
+    if(!token){
+      console.log("no token found, user unauthorized");
+      return res.status(401).send({message: "no authorization headers found.."});
+    }
+    else{
+  try{
+    // if(token){
+    //   console.log("token found!")
+    // }
+    // else{
+    //   console.log("no token found!!!");
+    //   return res.status(401).send({message: "no authorization headers found.."});
+    // }
+
+
+  // else{
   // Verify the token and get the user ID from it
   jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ message: 'Unauthorized' });
+      return res.status(401).send({ message: 'unauthorised, please login.' });
     }
 
     // Use the user ID from the token to fetch the user details from the database
@@ -237,10 +251,11 @@ exports.getUser = (req, res) => {
       });
     });
   });
-
-  if(req.headers.authorization.split(' ')[1] == undefined || req.headers.authorization.split(' ')[1] == null){
+  }
+  catch(error){
     return res.status(401).send({message: "no authorization headers found.."})
   }
+};
 };
 
 
@@ -252,7 +267,7 @@ exports.getEmployer = (req, res) => {
   // Verify the token and get the employer ID from it
   jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ message: 'Unauthorized' });
+      return res.status(401).send({ message: 'unauthorised, please login.' });
     }
 
     // Use the employer ID from the token to fetch the employer details from the database

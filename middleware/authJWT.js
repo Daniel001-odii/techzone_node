@@ -65,8 +65,9 @@ const verifyToken = async (req, res, next) => {
         }
       }
     });
-    console.error("Token verification error:", error);
-    // res.status(401).json({ message: "Unauthorized" });
+    // console.error("Token verification error:", error);
+    console.error("user token not found, please login...");
+    res.status(401).json({ message: "Unauthorized" });
   }
 };
 

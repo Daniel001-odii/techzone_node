@@ -84,27 +84,6 @@ router.post('/employer/login', employerSignin, function (req, res) {
 
 
 
-router.get("/hiddencontent", verifyToken, function (req, res) {
-  if (!User) {
-    res.status(403)
-      .send({
-        message: "Invalid JWT token"
-      });
-  }
-  if (req.User == "admin") {
-    res.status(200)
-      .send({
-        message: "Congratulations! but there is no hidden content"
-      });
-  } else {
-    res.status(403)
-      .send({
-        message: "Unauthorised access"
-      });
-  }
-});
-
-
 // Route to fetch user details using JWT token
 //this first routes uses middleware to authorize requests.....
 // router.get('/user-info', verifyToken, getUser);
@@ -120,7 +99,9 @@ router.get('/employer-info', getEmployer);
 
 
 // Route for saving jobs ......
-router.post("/jobs/save/:jobId", verifyToken, jobController.saveJob);
+// router.post("/jobs/save/:jobId", verifyToken, jobController.saveJob);
+router.post("/jobs/save/:jobId", jobController.saveJob);
+
 
 
 // Route for retrieving saved jobs

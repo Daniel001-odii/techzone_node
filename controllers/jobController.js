@@ -125,9 +125,13 @@ exports.getJobById = async (req, res) => {
 // Controller for saving a job
 //working................
 exports.saveJob = (req, res) => {
-  const token = req.headers.authorization.split(' ')[1]; // Get the JWT token from the request headers
-
+   // Get the JWT token from the request headers
   // Verify the token and get the user ID from it
+  try{
+  const token = req.headers.authorization.split(' ')[1];
+  // if(token){console.log("token found!")}
+  //   else{console.log("no token found!!!")}
+
   jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
     if (err) {
       return res.status(401).send({ message: 'Unauthorized' });
@@ -166,9 +170,10 @@ exports.saveJob = (req, res) => {
       });
     });
   });
-
-  if (!token) {
-    return res.status(401).send({ message: 'No authorization headers found' });
+}
+  catch(error){
+    console.log("the error: ", error)
+        return res.status(401).send({ message: 'No authorization headers found' });
   }
 };
 

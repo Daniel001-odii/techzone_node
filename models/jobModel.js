@@ -32,8 +32,11 @@ const jobSchema = new mongoose.Schema({
     },
     employer_company: {type: String},
     location: {
-      type: String,
-      required: [true, "please specify location for job"]
+      state: String,
+      address: String,
+      latitude: Number,
+      longitude: Number,
+      // required: [true, "please specify location for job"]
   },
     created_at: {
       type: Date,
