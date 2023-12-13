@@ -14,6 +14,7 @@ const { Readable } = require('stream');
 const upload = multer({ dest: 'uploads/' });
 const Notification = require('../models/notificationModel');
 
+const mongoose = require('mongoose');
 
 // Set up AWS credentials
 const s3Client = new S3Client({
@@ -464,31 +465,61 @@ exports.searchJobs = async (req, res) => {
 
 exports.searchUsers = async (req, res) => {
   try {
-    const { userName, userId } = req.query;
+    const { keywords } = req.query;
+    let filter = {};
 
-    // Define a filter object to build the query conditions
-    const filter = {};
+    // Check if the search query is an ObjectId (for searching by ID)
+    if (keywords && mongoose.Types.ObjectId.isValid(keywords)) {
+      filter._id = keywords; // Search by ID if valid ObjectId is provided
+    } else {
+      // Search by keywords in various fields (including nested fields)
+      if (keywords) {
+        const spaceIndex = keywords.indexOf(' ');
 
-    // Search by userName (case-insensitive partial match) or by userId
-    if (userName) {
-      filter.$or = [
-        { firstName: { $regex: userName, $options: 'i' } },
-        { lastName: { $regex: userName, $options: 'i' } },
-      ];
+        if (spaceIndex !== -1) {
+          // If space is found, split keywords into firstname and lastname
+          const firstname = keywords.substring(0, spaceIndex);
+          const lastname = keywords.substring(spaceIndex + 1);
+
+          filter.$and = [
+            {
+              $or: [
+                { firstname: { $regex: firstname, $options: 'i' } },
+                { lastname: { $regex: lastname, $options: 'i' } },
+              ],
+            },
+            {
+              $or: [
+                { 'profile.bio': { $regex: keywords, $options: 'i' } },
+                { 'profile.skillTitle': { $regex: keywords, $options: 'i' } },
+              ],
+            },
+          ];
+        } else {
+          filter.$or = [
+            { firstname: { $regex: keywords, $options: 'i' } },
+            { lastname: { $regex: keywords, $options: 'i' } },
+            { 'profile.bio': { $regex: keywords, $options: 'i' } },
+            { 'profile.skillTitle': { $regex: keywords, $options: 'i' } },
+            { 'profile.location': { $regex: keywords, $options: 'i' } },
+          ];
+        }
+      }
     }
 
-    if (userId) {
-      filter._id = userId;
-    }
+    // Define which specific fields to return
+    const fieldsToReturn = 'firstname lastname email isVerified profile.profileImage profile.skillTitle profile.location'; // Add other fields as needed
 
-    // Use the filter to search for users
-    const users = await User.find(filter);
+    // Use the filter and fieldsToReturn to search for users
+    const users = await User.find(filter).select(fieldsToReturn);
 
     res.status(200).json({ users });
   } catch (error) {
     res.status(500).json({ message: 'Error searching users', error: error.message });
   }
 };
+
+
 
 
 exports.applyForJob = async (req, res) => {
