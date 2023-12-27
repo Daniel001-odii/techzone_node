@@ -47,6 +47,30 @@ var userSchema = new Schema({
     completion_date: {type: Date, default: Date.now},
     budget: Number,
     rated: Number}],
+  // assignedJobs: {
+    pendingJobs:[{
+      job_id: {type: Schema.Types.ObjectId, ref: 'Job' },
+      job_title: String,
+      date: {type: Date, default: Date.now},
+      budget: Number,
+      employer: {company: String, id: String},
+    }],
+    acceptedJobs:[{
+        job_id: {type: Schema.Types.ObjectId, ref: 'Job' },
+        job_title: String,
+        date: {type: Date, default: Date.now},
+        budget: Number,
+        employer: {company: String, id: String},
+    }],
+    declinedJobs:[{
+      job_id: {type: Schema.Types.ObjectId, ref: 'Job' },
+      job_title: String,
+      date: {type: Date, default: Date.now},
+      budget: Number,
+      employer: {company: String, id: String},
+    }],
+  // },
+
   profile: {
     skillTitle: String,
     bio: String,

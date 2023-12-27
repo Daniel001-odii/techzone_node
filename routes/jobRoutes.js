@@ -26,6 +26,8 @@ router.get('/jobs/:jobId', jobController.getJobById);
 
 // Route for assigning jobs to users
 router.post('/assignJob', verifyToken, jobController.assignJob);
+router.post('/offer/accept', verifyToken, jobController.acceptAssignedJob);
+router.post('/offer/decline', verifyToken, jobController.declineAssignedJob);
 
 router.post('/approve-review-request', verifyToken, jobController.approveReviewRequest);
 
@@ -60,6 +62,9 @@ router.put('/edit/:jobId', verifyToken, jobController.editJob);
 router.post('/employer/:employer_id/rating', jobController.rateClient);
 
 router.post('/jobs/requestApproval', jobController.sendJobForReview);
+
+router.post('/user/:userId/save', verifyToken, jobController.saveUser);
+
 
 
 

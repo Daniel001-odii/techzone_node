@@ -36,6 +36,7 @@ const jobSchema = new mongoose.Schema({
       address: String,
       latitude: Number,
       longitude: Number,
+      isRemote: {type: Boolean,default: false,}
       // required: [true, "please specify location for job"]
   },
     created_at: {

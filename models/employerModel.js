@@ -78,6 +78,15 @@ var employerSchema = new Schema({
     socialAccount: String,
     profileImage: {type: String, default: 'https://images.freeimg.net/thumbs/blank-profile-picture-973460_1280.png'},
   },
+  savedUsers: [{
+    firstname: String,
+    lastname: String,
+    skillTitle: String,
+    location: String,
+    profileImageUrl: String,
+    id: String,
+    // id: {type: Schema.Types.ObjectId, ref: 'User' },
+  }],
   isVerified: {
     type: Boolean,
     default: false,

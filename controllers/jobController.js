@@ -26,6 +26,38 @@ const s3Client = new S3Client({
 });
 
 
+async function sendUserNotifitcation(userId, message, linkUrl){
+      const notification = new Notification({
+        recipientId: userId,
+        recipientModel: 'User',
+        message: message,
+        linkUrl: linkUrl,
+      });
+        // Save the notification to the user's/employer's notifications array
+      notification.save();
+
+      const user = await User.findById(userId)
+      user.notifications.push(notification);
+      await user.save();
+};
+
+async function sendEmployerNotifitcation(userId, message){
+  const notification = new Notification({
+    recipientId: userId,
+    recipientModel: 'Employer',
+    message: message,
+
+  });
+    // Save the notification to the user's/employer's notifications array
+  notification.save();
+
+  const user = await Employer.findById(userId)
+  user.notifications.push(notification);
+  await user.save();
+};
+
+
+
 // Controller for posting a job (for employers)
 exports.postJob = async (req, res) => {
   if (req.employer) {
@@ -321,32 +353,200 @@ exports.rateClient = async (req, res) => {
 
 exports.assignJob = async (req, res) => {
   try {
-    const { jobId, userIds, employerId } = req.body;
+    const { jobId, userId } = req.body;
 
     // Find the job by its ID
     const job = await Job.findById(jobId);
+    const employer = await Employer.findById(job.employer);
 
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
     }
 
     // Find the users by their IDs
-    const users = await User.find({ _id: { $in: userIds } });
-
-    if (!users || users.length === 0) {
-      return res.status(404).json({ message: 'Users not found' });
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
     // Assign the job to the users by adding their IDs to the assignedUsers array
-    job.assignedUsers.push(...userIds);
+    job.assignedUsers.push(userId);
 
+    function checkIfAlreadyAssigned(jobIdToCheck) {
+      const index = user.pendingJobs.findIndex(job => job.job_id == jobIdToCheck);
+      if (index !== -1) {
+        res.status(401).json({ message: 'job already assigned to user!'});
+        console.log(`job already assigned to user..`);
+      }
+    }
+    checkIfAlreadyAssigned(jobId);
     // Save the updated job
-    await job.save();
+    // await job.save();
+    user.pendingJobs.push({
+      job_id: jobId,
+      job_title: job.job_title,
+      budget: job.budget,
+      employer: {company: employer.profile.company_name, id: req.employerId},
+    });
+    await user.save();
 
-    res.status(200).json({ message: 'Job assigned successfully' });
+    // send a notification to the user....
+    sendUserNotifitcation(userId, `You received an offer for the job: ${job.job_title} by ${job.employer_company}`, `/contract/${jobId}/${userId}`);
+    // also send notification to employer.....
+    sendEmployerNotifitcation(req.employerId, `you successfuly sent the job offer: ${job.job_title} to ${user.firstname} ${user.lastname}`);
+
+    res.status(200).json({ message: 'Job offer sent successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error assigning job', error: error.message });
   }
+};
+
+exports.acceptAssignedJob = async (req, res) => {
+  try{
+    const { jobId, userId } = req.body;
+
+    const user = await User.findById(userId);
+    const job = await Job.findById(jobId);
+    const employer = await Employer.findById(job.employer);
+
+    if (!user) {
+      return res.status(401).json({ message: 'User unauthorised' });
+    }
+
+    // remove the current job from pending and push to accepted jobs array..
+    function removeJobById(idToRemove) {
+      const index = user.pendingJobs.findIndex(job => job.job_id == idToRemove);
+      if (index !== -1) {
+        user.pendingJobs.splice(index, 1);
+        console.log(`Job with id '${idToRemove}' removed successfully.`);
+      } else {
+        console.log(`No job found with id '${idToRemove}'.`);
+      }
+    }
+    removeJobById(jobId);
+
+    user.acceptedJobs.push({
+      job_id: jobId,
+      job_title: job.job_title,
+      budget: job.budget,
+      employer: {company: employer.profile.company_name, id: employer._id},
+    });
+    await user.save();
+
+    // console.log("current employer: ", employer.firstname);
+
+    employer.hires.push({
+      job: {job_id:  jobId, job_title: job.job_title},
+      user: {user_id: user._id, username: `${user.firstname} ${user.lastname}`},
+      budget: job.budget,
+    });
+    await employer.save();
+
+    // send user notification.....
+    sendUserNotifitcation(userId, `You accepted the offer for the job: ${job.job_title} by ${job.employer_company}`);
+     // also send notification to employer.....
+     sendEmployerNotifitcation(employer, ` ${user.firstname} ${user.lastname} accepted the job offer: ${job.job_title}`);
+     res.status(200).json({ message: 'Job offer accepted successfully' });
+
+  }
+  catch(error){
+
+  }
+};
+
+exports.declineAssignedJob = async (req, res) => {
+  try{
+    const { jobId, userId } = req.body;
+
+    const user = await User.findById(userId);
+    const job = await Job.findById(jobId);
+    const employer = await Employer.findById(job.employer);
+
+    if (!user) {
+      return res.status(401).json({ message: 'User unauthorised' });
+    }
+
+    // remove the current job from pending and push to accepted jobs array..
+    function removeJobById(idToRemove) {
+      const index = user.pendingJobs.findIndex(job => job.job_id == idToRemove);
+      if (index !== -1) {
+        user.pendingJobs.splice(index, 1);
+        console.log(`Job with id '${idToRemove}' removed successfully.`);
+      } else {
+        console.log(`No job found with id '${idToRemove}'.`);
+      }
+    }
+    removeJobById(jobId);
+
+    user.declinedJobs.push({
+      job_id: jobId,
+      job_title: job.job_title,
+      budget: job.budget,
+      employer: {company: employer.profile.company_name, id: employer._id},
+    });
+    await user.save();
+
+    // console.log("current employer: ", employer.firstname);
+
+    employer.hires.push({
+      job: {job_id:  jobId, job_title: job.job_title},
+      user: {user_id: user._id, username: `${user.firstname} ${user.lastname}`},
+      budget: job.budget,
+    });
+    await employer.save();
+
+    // send user notification.....
+    sendUserNotifitcation(userId, `You declined the offer for the job: ${job.job_title} by ${job.employer_company}`);
+     // also send notification to employer.....
+     sendEmployerNotifitcation(employer, ` ${user.firstname} ${user.lastname} declined the job offer: ${job.job_title}`);
+     res.status(200).json({ message: 'Job offer declined successfully' });
+
+  }
+  catch(error){
+    console.log(error);
+    res.status(500).json({message: error});
+  }
+};;
+
+
+exports.saveUser = async (req, res) => {
+  if (req.employer) {
+  try {
+    const userId = req.params.userId;
+
+    // Find the user by its ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: `user ${userId} does not exist, try again...` });
+    }
+
+
+
+    //using the token from the middleware which verifies that the employer is legit...
+    const firstname = user.firstname;
+    const lastname = user.lastname;
+    const skillTitle = user.profile.skillTitle;
+    const location = user.profile.location;
+    const profileImageUrl = user.profile.profileImage;
+    const id = userId;
+
+    const employer = await Employer.findById(req.employerId);
+    console.log("saving current user for employer: ", userId);
+
+    if(employer.savedUsers.forEach(user =>{
+      user.id == id
+    })){
+      res.status(401).json({message: 'user already saved...'})
+    } else{
+      employer.savedUsers.push({firstname, lastname, skillTitle, location, profileImageUrl, id});
+      await employer.save();
+    }
+    res.status(200).json({ message: 'user saved successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving user', error: error.message });
+  }
+}
 };
 
 exports.editJob = async (req, res) => {
@@ -518,9 +718,6 @@ exports.searchUsers = async (req, res) => {
     res.status(500).json({ message: 'Error searching users', error: error.message });
   }
 };
-
-
-
 
 exports.applyForJob = async (req, res) => {
   try {

@@ -234,6 +234,9 @@ exports.getUser = (req, res) => {
           lastname: user.lastname,
           profile: user.profile,
           saved_jobs: user.savedJobs,
+          pending_jobs: user.pendingJobs,
+          accepted_jobs: user.acceptedJobs,
+          declined_jobs: user.declinedJobs,
           created: user.created,
           isverified: user.isVerified,
           // Add other user details as needed
@@ -271,16 +274,7 @@ exports.getEmployer = (req, res) => {
 
       // Send the employer details in the response
       res.status(200).send({
-        employer: {
-          id: employer._id,
-          email: employer.email,
-          firstname: employer.firstname,
-          lastname: employer.lastname,
-          created: employer.created,
-          profile: employer.profile,
-          isVerified: employer.isVerified,
-          hires: employer.hires,
-        },
+        employer
       });
     });
   });

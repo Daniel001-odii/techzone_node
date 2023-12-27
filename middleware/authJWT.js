@@ -5,14 +5,13 @@ const Administrator = require("../models/adminModel");
 
 
 const verifyToken = async (req, res, next) => {
-  const tokenStrings = req.headers.authorization.split(' ')[1];
-
+  const token = req.headers.authorization.split(' ')[1];
   try {
     if (
       req.headers.authorization &&
       req.headers.authorization.split(" ")[0] === "JWT"
     ) {
-      const token = req.headers.authorization.split(" ")[1];
+      // const token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.API_SECRET);
 
       if (decoded.role === "user") {
@@ -57,18 +56,19 @@ const verifyToken = async (req, res, next) => {
     }
     next();
   } catch (error) {
-    jwt.verify(tokenStrings, process.env.API_SECRET, (err, decoded) => {
-      if (err) {
-        if (err.name === 'TokenExpiredError') {
+    jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
+      // if (err) {
+        // if (err.name === 'TokenExpiredError') {
           // Token has expired, return a 401 (Unauthorized) response with a message
-          return res.status(401).json({ message: 'Token expired, please login again' });
-        }
-      }
-    });
-    // console.error("Token verification error:", error);
+          // return res.status(401).json({ message: 'Token expired, please login again' });
+        // }
+      // }
+    // });
     console.error("user token not found, please login...");
     res.status(401).json({ message: "Unauthorized" });
   }
+    )
+}
 };
 
 
