@@ -45,8 +45,9 @@ const jobSchema = new mongoose.Schema({
     },
     assignedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     completedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    requestedReview: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    hiredUsers: [{type: mongoose.Schema.Types.ObjectId,ref: 'User'},],
+    requestedReview: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
+    hiredUsers: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
+    userFeedbacks: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     applications: [
       {
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

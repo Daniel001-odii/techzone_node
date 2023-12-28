@@ -204,6 +204,7 @@ exports.saveJob = (req, res) => {
     });
   });
 }
+
   catch(error){
     console.log("the error: ", error)
         return res.status(401).send({ message: 'No authorization headers found' });
@@ -297,8 +298,6 @@ exports.approveReviewRequest = async (req, res) => {
     job.completedBy.push(userId);
     job.isCompleted = true;
 
-    const date = new Date();
-
     user.completedJobs.push({job_id: jobId, job_title: job.job_title, budget: job.budget});
 
     await user.save();
@@ -311,6 +310,7 @@ exports.approveReviewRequest = async (req, res) => {
   }
 
 };
+
 
 exports.rateClient = async (req, res) => {
   try{
@@ -331,17 +331,15 @@ exports.rateClient = async (req, res) => {
     const job_title = job.job_title;
 
     employer.realRating.push({job_id, user_id, job_title, user, ratedValue});
-
     // calculate the employers average ratings and save to the ratedValue record..
     const total = employer.realRating.reduce((acc, rating) => acc + rating.ratedValue, 0);
-
     const average = total / employer.realRating.length;
-
     employer.ratedValue = average;
-
-    // completeJob();
-
     await employer.save();
+    // and also add the user to list of users who sent feedback to the job...
+    job.userFeedbacks.push(userId);
+    await job.save();
+
     res.status(200).json({ message: 'Client feedback sent successfully!' });
 
   }
@@ -511,43 +509,44 @@ exports.declineAssignedJob = async (req, res) => {
 
 exports.saveUser = async (req, res) => {
   if (req.employer) {
-  try {
-    const userId = req.params.userId;
+    try {
+      const userId = req.params.userId;
 
-    // Find the user by its ID
-    const user = await User.findById(userId);
+      // Find the user by its ID
+      const user = await User.findById(userId);
 
-    if (!user) {
-      return res.status(404).json({ message: `user ${userId} does not exist, try again...` });
+      if (!user) {
+        return res.status(404).json({ message: `User ${userId} does not exist, try again...` });
+      }
+
+      const { firstname, lastname, profile } = user;
+      const { skillTitle, location, profileImage } = profile;
+      const id = userId;
+
+      const employer = await Employer.findById(req.employerId);
+      console.log("Saving current user for employer: ", userId);
+
+      const userAlreadySaved = employer.savedUsers.some(savedUser => savedUser.id === id);
+
+      if (userAlreadySaved) {
+        // If user already exists in savedUsers, remove the user
+        employer.savedUsers = employer.savedUsers.filter(savedUser => savedUser.id !== id);
+        await employer.save();
+        return res.status(200).json({ message: 'User removed successfully' });
+      } else {
+        // If user not found in savedUsers, add the user
+        employer.savedUsers.push({ firstname, lastname, skillTitle, location, profileImageUrl: profileImage, id });
+        await employer.save();
+        return res.status(200).json({ message: 'User saved successfully' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Error saving user', error: error.message });
     }
-
-
-
-    //using the token from the middleware which verifies that the employer is legit...
-    const firstname = user.firstname;
-    const lastname = user.lastname;
-    const skillTitle = user.profile.skillTitle;
-    const location = user.profile.location;
-    const profileImageUrl = user.profile.profileImage;
-    const id = userId;
-
-    const employer = await Employer.findById(req.employerId);
-    console.log("saving current user for employer: ", userId);
-
-    if(employer.savedUsers.forEach(user =>{
-      user.id == id
-    })){
-      res.status(401).json({message: 'user already saved...'})
-    } else{
-      employer.savedUsers.push({firstname, lastname, skillTitle, location, profileImageUrl, id});
-      await employer.save();
-    }
-    res.status(200).json({ message: 'user saved successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error saving user', error: error.message });
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
   }
-}
 };
+
 
 exports.editJob = async (req, res) => {
   try{
