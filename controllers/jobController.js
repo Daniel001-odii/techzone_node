@@ -134,7 +134,6 @@ exports.listJobs = async (req, res) => {
   }
 };
 
-
 // Controller to get a job by its ID
 exports.getJobById = async (req, res) => {
   try {
@@ -144,7 +143,7 @@ exports.getJobById = async (req, res) => {
     const job = await Job.findById(jobId);
 
     if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
+      return res.status(200).json({ message: 'Job not found' });
     }
 
     // Send the job as a JSON response

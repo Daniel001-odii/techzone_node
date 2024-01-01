@@ -1,9 +1,7 @@
 var mongoose = require('mongoose'),
   Schema = mongoose.Schema;
 
-/**
- * User Schema
- */
+/***User Schema ***/
 var employerSchema = new Schema({
   email: {
     type: String,
@@ -65,7 +63,6 @@ var employerSchema = new Schema({
   ratedValue: {type: Number},
 
   profile: {
-    // skillTitle: String,
     tagline: String,
     description: String,
     company_name: {type: String, default: "Techzone Employer"},

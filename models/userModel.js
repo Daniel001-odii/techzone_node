@@ -40,6 +40,7 @@ var userSchema = new Schema({
     type: Date,
     default: Date.now
   },
+  state: {type: String},
   savedJobs: [{ type: Schema.Types.ObjectId, ref: 'Job' }],
   completedJobs: [{
     job_id: {type: Schema.Types.ObjectId, ref: 'Job' },
@@ -47,7 +48,6 @@ var userSchema = new Schema({
     completion_date: {type: Date, default: Date.now},
     budget: Number,
     rated: Number}],
-  // assignedJobs: {
     pendingJobs:[{
       job_id: {type: Schema.Types.ObjectId, ref: 'Job' },
       job_title: String,
@@ -69,8 +69,7 @@ var userSchema = new Schema({
       budget: Number,
       employer: {company: String, id: String},
     }],
-  // },
-
+    preferences:[],
   profile: {
     skillTitle: String,
     bio: String,
