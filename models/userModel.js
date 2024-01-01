@@ -77,7 +77,7 @@ var userSchema = new Schema({
     phone: String,
     socialAccount: String,
     skillsList: String, // Store skills as an array of strings
-    profileImage: {type: String, default: 'https://images.freeimg.net/thumbs/blank-profile-picture-973460_1280.png'},
+    profileImage: {type: String, default: 'https://icon-library.com/images/no-profile-pic-icon/no-profile-pic-icon-11.jpg'},
     },
   portfolio: String, // Store content type (e.g., 'application/pdf')
   isVerified: {

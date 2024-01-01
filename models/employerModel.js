@@ -73,7 +73,7 @@ var employerSchema = new Schema({
     location: String,
     city:{city_name: String, zip: String},
     socialAccount: String,
-    profileImage: {type: String, default: 'https://images.freeimg.net/thumbs/blank-profile-picture-973460_1280.png'},
+    profileImage: {type: String, default: 'https://icon-library.com/images/no-profile-pic-icon/no-profile-pic-icon-11.jpg'},
   },
   savedUsers: [{
     firstname: String,
