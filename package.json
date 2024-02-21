@@ -1,0 +1,24 @@
+{
+  "name": "tech-zone-api",
+  "version": "2.0.0",
+  "description": "2nd redefined version of techzone api, faster more scalable and with modern code practice",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "dannie.js",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1562.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.4",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.1.3",
+    "multer": "^1.4.5-lts.1",
+    "multer-s3": "^3.0.1",
+    "nodemailer": "^6.9.9"
+  }
+}
