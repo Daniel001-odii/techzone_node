@@ -16,7 +16,6 @@ const employerSchema = new Schema({
     },
     password: {
       type: String,
-      required: true
     },
     role: {type: String, default: "employer"},
     firstname: {
@@ -30,6 +29,15 @@ const employerSchema = new Schema({
     settings: {
         // profile_visibility: {type: String, enum: ["public", "private"]}
     },
+    // PROVIDER AND GOOGLE ID....
+    provider: {
+      type: String,
+      enum: ["tech-zone", "google"],
+      default: "tech-zone"
+    },
+    googleId: Number,
+    // PROVIDER AND GOOGLE ID ENDS HERE....
+
     preffered_talent_types: [],
     profile: {
       company_name: String,

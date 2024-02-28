@@ -10,7 +10,7 @@ const verifyToken = async (req, res, next) => {
     
     if(!token){
       console.error("user token not found, please login...");
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ message: "No token foun" });
     };
     
     if (
@@ -18,47 +18,57 @@ const verifyToken = async (req, res, next) => {
       req.headers.authorization.split(" ")[0] === "JWT"
     ) {
       const decoded = jwt.verify(token, process.env.API_SECRET);
+      console.log("decoded stuff: ", decoded)
 
       if (decoded.role === "user") {
         const user = await User.findById(decoded.id);
-        if (!user) {
-          return res.status(401).json({ message: "User not found" });
+        if(user){
+          req.user = user;
+          req.userId = user._id;
         }
-        req.user = user;
-        req.userId = user._id;
+       
+        else if (!user) {
+           // If user is not found by userId, try finding by googleId
+            const userByGoogleId = await User.findOne({ googleId: decoded.googleId });
+            console.log("user from google found: ", userByGoogleId.profile)
+          
+            if (!userByGoogleId) {
+              // If user is not found by googleId as well, return an error
+              return res.status(401).json({ message: 'Invalid token. User not found' });
+            }
+            
+            req.userGoogleId = userByGoogleId.googleId;
+            req.userId = userByGoogleId._id;
+            req.user = userByGoogleId;
+        }
+        
       } 
       else if (decoded.role === "employer") {
         const employer = await Employer.findById(decoded.id);
-        if (!employer) {
-          return res.status(401).json({ message: "Employer not found" });
+        if(employer){
+          req.employer = employer;
+          req.employerId = decoded.id;
         }
-        req.employer = employer;
-        req.employerId = decoded.id;
-      }
-      else if (decoded.role === "Admin") {
-        const Admin = await Administrator.findById(decoded.id);
-        if (!Admin) {
-          return res.status(401).json({ message: "Admin not found" });
+        else if (!employer) {
+           // If user is not found by userId, try finding by googleId
+          const userByGoogleId = await Employer.findOne({ googleId: decoded.googleId });
+        
+          if (!userByGoogleId) {
+            // If user is not found by googleId as well, return an error
+            return res.status(401).json({ message: 'Invalid token. User not found' });
+          }
+          
+          req.userGoogleId = userByGoogleId.googleId;
+          req.userId = userByGoogleId._id;
+          req.user = userByGoogleId;
+          console.log(req)
         }
-        req.user = undefined;
-        req.employer = undefined;
-        req.admin = Admin;
-        req.adminId = decoded.id;
-      }else {
-        req.user = undefined;
-        req.employer = undefined;
-        req.admin = undefined;
-      }
-    } else {
-      req.user = undefined;
-      req.employer = undefined;
-      req.employerId = undefined;
-      req.admin = undefined;
-      req.decROle
+       
     }
+  }
     next();
   } catch (error) {
-    console.error("user token not found, please login...");
+    console.error("user token not found, please login...", error);
     res.status(401).json({ message: "Unauthorized"});
 }
 };

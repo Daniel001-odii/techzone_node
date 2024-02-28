@@ -6,6 +6,19 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 
+const { OAuth2Client } = require('google-auth-library')
+const client = new OAuth2Client(
+  {
+    clientId: '546104205241-g4vtopr689l3vb5cfjmphard09e1ia2k.apps.googleusercontent.com',
+    clientSecret: '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',
+    redirectUri: 'http://localhost:8080'
+  }
+)
+
+
+  
+
+
 // user signup....
 exports.userSignup = async (req, res) => {
     try {
@@ -97,7 +110,7 @@ exports.login = async (req, res) => {
 
             // Assign user/employer id to response and generate token
             const userId = user ? user.id : employer.id;
-            const token = jwt.sign({ id: userId, role }, process.env.API_SECRET, { expiresIn: 86400 });
+            const token = jwt.sign({ id: userId, role }, process.env.API_SECRET, { expiresIn: '1d' });
 
             // Send a response
             const response = {
@@ -120,3 +133,140 @@ exports.login = async (req, res) => {
         res.status(500).send({ message: "Login failed" });
     }
 };
+
+// HANDLE USER LOGIN WITH GOOGLE...
+exports.googleAuthHandler = async (req, res) => {
+    try{
+      const { googleId, email, firstname, lastname, picture } = req.body;
+  
+      const existingUser = await User.findOne({ googleId });
+  
+      // IF GOOGLE USER IS ALREADY EXISITNG....
+      if(existingUser){
+         // Generate JWT token for authentication
+      const token = jwt.sign({ googleId:googleId }, process.env.API_SECRET, { expiresIn: '1d' });
+  
+      // Respond with the token and user information
+      res.status(200).json({
+        message: 'Sign-in successful',
+        token,
+        user: {
+          firstname: firstname,
+          lastname: lastname,
+          email: email,
+          googleId: googleId
+        }
+      });
+      }
+      // IF GOOGLE USER NOT EXISTING......
+      else{
+  
+        const newUser = new User({
+          googleId: googleId,
+          email: email,
+          firstname: firstname,
+          lastname: lastname,
+          provider: "google",
+          avatar_url: picture,
+        });
+  
+        await newUser.save();
+  
+        res.status(200).json({
+          message: "user registered successfully",
+          newUser
+        });
+         // Log in the new user
+        console.log('New user logged in:', newUser);
+      }
+  
+    }
+    catch(error){
+      console.error(error)
+    }
+  };
+
+
+// Call this function to validate OAuth2 authorization code sent from client-side
+async function verifyCode(code) {
+    let { tokens } = await client.getToken(code)
+    client.setCredentials({ access_token: tokens.access_token })
+    const userinfo = await client.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo'
+    })
+    return userinfo.data
+  }
+
+
+// Call this function to validate OAuth2 authorization code sent from client-side
+exports.googleClientAuthHandler = async (req, res) => {
+    try {
+        const authCodeFromClient = req.body;
+        const role = authCodeFromClient.role;
+
+        console.log("code from client: ", authCodeFromClient);
+
+        try {
+            // Verify code from client using google..
+            const userInfo = await verifyCode(authCodeFromClient.code);
+
+            const { sub: googleId, given_name: firstname, family_name: lastname, email, picture } = userInfo;
+
+            // Check if user already exists
+            const existingUser = await User.findOne({ googleId, provider: "google", email });
+
+            // const role = existingUser.role;
+
+            console.log("existing user found!");
+
+            if (existingUser) {
+                // Generate JWT token for authentication
+            const token = jwt.sign({ googleId: googleId, role:{existingUser: role} }, process.env.API_SECRET, { expiresIn: '1d' });
+
+                // Respond with the token and user information
+                res.status(200).json({
+                    message: 'Sign-in successful',
+                    token,
+                    user: {
+                        firstname,
+                        lastname,
+                        email,
+                        googleId
+                    }
+                });
+            } else {
+                console.log("new user record!");
+
+                // Create a new user
+                const newUser = new User({
+                    googleId,
+                    email,
+                    firstname,
+                    lastname,
+                    provider: "google",
+                    profile:{image_url: picture },
+                });
+
+                // Save the new user to the database
+                await newUser.save();
+
+                res.status(200).json({
+                    message: "User registered successfully",
+                    newUser
+                });
+
+                // Log in the new user
+                console.log('New user logged in:', newUser);
+            }
+        } catch (error) {
+            // Validation failed, and user info was not obtained
+            console.log(error);
+            res.status(400).json({ error: 'Invalid authorization code' });
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+

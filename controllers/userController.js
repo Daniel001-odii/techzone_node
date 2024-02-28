@@ -3,6 +3,18 @@ const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
 
 
+exports.getUser = async (req, res) => {
+  try {
+    const user = req.user;
+    console.log("get user function: ", req.userId);
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
 // route to get eitrher user or employer by their ID...
 exports.getUserOrEmployerById = async (req, res) => {
     const { id } = req.params;

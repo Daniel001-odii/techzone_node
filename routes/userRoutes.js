@@ -4,6 +4,9 @@ const userController = require("../controllers/userController");
 const jobController = require("../controllers/jobController")
 const middleware = require("../middlewares/authMiddleware")
 
+
+router.get("/user", middleware,  userController.getUser);
+
 router.get("/user/:id", userController.getUserOrEmployerById);
 
 // get user saved jobs
