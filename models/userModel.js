@@ -29,7 +29,7 @@ const userSchema = new Schema({
     settings: {
         profile_visibility: {type: String, enum: ["public", "private"]}
     },
-    
+
     // PROVIDER AND GOOGLE ID....
     provider: {
       type: String,
@@ -50,7 +50,7 @@ const userSchema = new Schema({
       },
       phone: String,
       social: String,
-      skills: [],
+      skills: String,
       image_url: {type: String, default: 'https://icon-library.com/images/no-profile-pic-icon/no-profile-pic-icon-11.jpg'},
       },
     portfolio_url: String, // Store content type (e.g., 'application/pdf')

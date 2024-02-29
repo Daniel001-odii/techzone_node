@@ -41,7 +41,7 @@ const employerSchema = new Schema({
     preffered_talent_types: [],
     profile: {
       company_name: String,
-      tag_lin: String,
+      tag_line: String,
       description: String,
       location: {
         city: String,
