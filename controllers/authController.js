@@ -198,6 +198,27 @@ async function verifyCode(code) {
   }
 
 
+// this function checks for exisitng users and is utitlized by the googleClientAuthHandler below...
+  const findExistingUser = async ({ googleId, email }) => {
+    // Check "User" model
+    const existingUserInUserModel = await User.findOne({ googleId, email });
+
+    if (existingUserInUserModel) {
+        return { model: 'User', user: existingUserInUserModel };
+    }
+
+    // Check "Employer" model
+    const existingUserInEmployerModel = await Employer.findOne({ googleId, email });
+
+    if (existingUserInEmployerModel) {
+        return { model: 'Employer', user: existingUserInEmployerModel };
+    }
+
+    // User not found in either model
+    return null;
+};
+
+
 // Call this function to validate OAuth2 authorization code sent from client-side
 exports.googleClientAuthHandler = async (req, res) => {
     try {
@@ -212,16 +233,14 @@ exports.googleClientAuthHandler = async (req, res) => {
 
             const { sub: googleId, given_name: firstname, family_name: lastname, email, picture } = userInfo;
 
-            // Check if user already exists
-            const existingUser = await User.findOne({ googleId, provider: "google", email });
+            // Check if user already exists in either "User" or "Employer" model
+            const existingUserResult = await findExistingUser({ googleId, email });
 
-            // const role = existingUser.role;
+            if (existingUserResult) {
+                const { model, user } = existingUserResult;
 
-            console.log("existing user found!");
-
-            if (existingUser) {
                 // Generate JWT token for authentication
-            const token = jwt.sign({ googleId: googleId, role:{existingUser: role} }, process.env.API_SECRET, { expiresIn: '1d' });
+                const token = jwt.sign({ googleId, role: user.role }, process.env.API_SECRET, { expiresIn: '1d' });
 
                 // Respond with the token and user information
                 res.status(200).json({
@@ -231,32 +250,58 @@ exports.googleClientAuthHandler = async (req, res) => {
                         firstname,
                         lastname,
                         email,
-                        googleId
+                        googleId,
+                        model, // Include the model information in the response
                     }
                 });
             } else {
                 console.log("new user record!");
 
-                // Create a new user
-                const newUser = new User({
-                    googleId,
-                    email,
-                    firstname,
-                    lastname,
-                    provider: "google",
-                    profile:{image_url: picture },
-                });
+                // check user role from request and create new user based on the defined role...
+                if(role == "user"){
+                    // Create a new user in the "User" model
+                    const newUser = new User({
+                        googleId,
+                        email,
+                        firstname,
+                        lastname,
+                        provider: "google",
+                        profile: { image_url: picture },
+                        // role,
+                    });
 
-                // Save the new user to the database
-                await newUser.save();
+                    // Save the new user to the "User" model
+                    await newUser.save();
 
-                res.status(200).json({
-                    message: "User registered successfully",
-                    newUser
-                });
+                    res.status(200).json({
+                        message: "User registered successfully",
+                        newUser
+                    });
 
+                } else if(role == "employer"){
+                    // Create a new user in the "User" model
+                    const newUser = new Employer({
+                        googleId,
+                        email,
+                        firstname,
+                        lastname,
+                        provider: "google",
+                        profile: { image_url: picture },
+                        // role,
+                    });
+
+                    // Save the new user to the "User" model
+                    await newUser.save();
+
+                    res.status(200).json({
+                        message: "User registered successfully",
+                        newUser
+                    });
+                }
+
+                
                 // Log in the new user
-                console.log('New user logged in:', newUser);
+                // console.log('New user logged in:', newUser);
             }
         } catch (error) {
             // Validation failed, and user info was not obtained

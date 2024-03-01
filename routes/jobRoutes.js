@@ -20,6 +20,9 @@ router.get("/jobs", middleware, jobController.listJobs);
 // save a job (for users only)
 router.post("/jobs/:job_id/save", middleware, jobController.saveJob);
 
+// get user's application for a particular job...
+router.get("/jobs/:job_id/application", middleware, jobController.getUserApplicationForJob);
+
 // apply for a job
 router.post("/jobs/:job_id/apply", middleware, jobController.submitApplicationMain);
 

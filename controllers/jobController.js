@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 
+const mongoose = require('mongoose');
 
 
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
@@ -106,12 +107,17 @@ exports.postJob = async (req, res) => {
 exports.getJobById = async (req, res) => {
     try {
       const job_id = req.params.job_id; // Get the job ID from the URL parameter
+
+      // Validate if job_id is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(job_id)) {
+        return res.status(400).json({ message: 'Invalid job ID format' });
+      }
   
       // Query the database to find the job by its ID
       const job = await Job.findById(job_id).populate("employer", "is_verified profile created");
   
       if (!job) {
-        return res.status(200).json({ message: 'Job not found' });
+        return res.status(404).json({ message: 'Job not found' });
       }
   
       // Send the job as a JSON response
@@ -155,10 +161,51 @@ exports.listJobs = async (req, res) => {
     }
 };
 
+// controller to get application for a job..
+exports.getUserApplicationForJob = async (req, res) => {
+  try {
+    const job_id = req.params.job_id;
+
+    // Validate if job_id is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(job_id)) {
+      return res.status(400).json({ message: 'Invalid job ID format' });
+    }
+
+    // Convert job_id to a valid ObjectId
+    const objectIdJobId = new mongoose.Types.ObjectId(job_id);
+
+    // Query the database to find the job by its ID
+    const job = await Job.findById(objectIdJobId);
+
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    // Job is found, proceed to find the application
+    try {
+      const application = await Application.findOne({ job: objectIdJobId });
+
+      if (!application) {
+        return res.status(404).json({ message: 'Application for job not found' });
+      }
+
+      return res.status(200).json({ application });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
 // controller to save a job...
 exports.saveJob = async (req, res) => {
     try {
-        const user = await User.findById(req.userId);
+        const user = req.user;
         const job_id = req.params.job_id;
         const job = await Job.findById(job_id);
 

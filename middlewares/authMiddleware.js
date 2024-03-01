@@ -7,7 +7,9 @@ const Employer = require("../models/employerModel"); // Import the Employer mode
 const verifyToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization.split(' ')[1];
-    
+    console.log("the headers: ", req.headers)
+    // const role = 
+
     if(!token){
       console.error("user token not found, please login...");
     res.status(401).json({ message: "No token foun" });
