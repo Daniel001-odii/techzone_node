@@ -15,7 +15,10 @@ router.get("/jobs/:job_id", jobController.getJobById);
 router.put("/jobs/:job_id", middleware, jobController.editJob);
 
 // list job based on user preferences...
-router.get("/jobs", middleware, jobController.listJobs);
+router.get("/user/jobs", middleware, jobController.listUserDefinedJobs);
+
+// list job for general users...
+router.get("/jobs", jobController.listJobs);
 
 // save a job (for users only)
 router.post("/jobs/:job_id/save", middleware, jobController.saveJob);

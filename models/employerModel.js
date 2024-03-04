@@ -40,7 +40,7 @@ const employerSchema = new Schema({
 
     preffered_talent_types: [],
     profile: {
-      company_name: String,
+      company_name: {type: String, default: "A tech-zone company"},
       tag_line: String,
       description: String,
       location: {

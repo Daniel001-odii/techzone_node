@@ -5,9 +5,16 @@ const Application = require('../models/applicationModel');
 
 exports.getUser = async (req, res) => {
   try {
-    const user = req.user;
-    console.log("get user function: ", req.userId);
-    return res.status(200).json({ user });
+    if(req.user){
+      const user = req.user;
+      console.log("from get user function: ", user);
+      return res.status(200).json({ user });
+    } else if(req.employer){
+      const user = req.employer;
+      console.log("from get user function: ", user);
+      return res.status(200).json({ user });
+    }
+    
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal Server Error" });

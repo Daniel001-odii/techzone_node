@@ -48,10 +48,11 @@ const bufferToStream = (buffer) => {
 
 // Controller for posting a job (for employers)
 exports.postJob = async (req, res) => {
+    console.log("job posting by: ",req.employer)
     if (req.employer) {
       // The user is an employer, allow them to post a job
       try {
-        const { title, description, skills, period, budget, budget_type, location } = req.body;
+        const { title, description, type, skills, period, budget, budget_type, location } = req.body;
   
         // Validate the request body
         if (!title) {
@@ -129,7 +130,7 @@ exports.getJobById = async (req, res) => {
 };
 
 // Controller for listing jobs (for users)
-exports.listJobs = async (req, res) => {
+exports.listUserDefinedJobs = async (req, res) => {
     try {
         // Assuming the user's preferred job types are stored in req.user.preferred_job_types
         const userPreferredJobTypes = req.user.preferred_job_types;
@@ -161,10 +162,56 @@ exports.listJobs = async (req, res) => {
     }
 };
 
+exports.listJobs = async (req, res) => {
+  try{
+    const jobs = await Job.find().populate("employer", "is_verified profile created");
+    res.status(200).json({ jobs })
+  }catch(error){
+    console.log(error)
+    res.status(500).message("internal server error")
+  }
+}
+
+// exports.listJobs = async (req, res) => {
+//   try {
+//     const jobs = await Job.find();
+
+//     // Filter out jobs without a valid employer
+//     const populatedJobs = await Promise.all(
+//       jobs.map(async (job) => {
+//         if (job.employer) {
+//           const employer = await Employer.findById(job.employer);
+//           if (employer) {
+//             // If employer is found, populate the job with selected fields
+//             return {
+//               ...job.toJSON(),
+//               employer: {
+//                 is_verified: employer.is_verified,
+//                 profile: employer.profile,
+//                 created: employer.created,
+//               },
+//             };
+//           }
+//         }
+//         return job.toJSON(); // No employer found or employer field is null
+//       })
+//     );
+
+//     res.status(200).json({ jobs: populatedJobs });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+
+
 // controller to get application for a job..
+
 exports.getUserApplicationForJob = async (req, res) => {
   try {
     const job_id = req.params.job_id;
+    const user_id = req.userId;
 
     // Validate if job_id is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(job_id)) {
@@ -183,7 +230,7 @@ exports.getUserApplicationForJob = async (req, res) => {
 
     // Job is found, proceed to find the application
     try {
-      const application = await Application.findOne({ job: objectIdJobId });
+      const application = await Application.findOne({ job: objectIdJobId, user: user_id });
 
       if (!application) {
         return res.status(404).json({ message: 'Application for job not found' });
@@ -200,7 +247,19 @@ exports.getUserApplicationForJob = async (req, res) => {
   }
 };
 
-
+// controller to fetch all users that have applied for a job...
+exports.getApplicationsForJob = async (req, res) => {
+  try{
+    const job_id = req.params.job_id;
+    const applications = await Application.find({ job:job_id }).populate("user", "firstname lastname profile");
+    if(!applications){
+      return res.status(200).json({ message: "no applications yet"})
+    }
+    return res.status(200).json({ applications })
+  }catch(error){
+    console.log("get applications error: ",error)
+  }
+};
 
 // controller to save a job...
 exports.saveJob = async (req, res) => {
@@ -336,6 +395,11 @@ exports.submitApplicationMain = async (req, res) => {
   
       // Access files if they exist
       const attachments = req.files ? Object.values(req.files) : [];
+
+      // increase number of applications...
+      const job = await Job.findOne({ _id:req.params.job_id });
+      job.no_of_applications += 1;
+      await job.save();
   
       // Perform any necessary validations or processing here
   

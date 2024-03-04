@@ -60,6 +60,7 @@ const userSchema = new Schema({
     is_verified: {type: Boolean, default: false},
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},
+    earned: {type: Number, default: 0},
     verification_token: String,
     pass_reset: {
         token: String,

@@ -10,6 +10,7 @@ const cors = require("cors");
 // IMPORT ALL ROUTE FILES HERE....
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const employerRoutes = require("./routes/employerRoutes");
 const jobRoutes = require("./routes/jobRoutes");
 
 
@@ -38,6 +39,8 @@ app.use(fileUpload());
 app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', jobRoutes);
+app.use('/api', employerRoutes);
+app.use("/api", require("./routes/contractRoutes"))
 
 
 //setup server to listen on port declared on env

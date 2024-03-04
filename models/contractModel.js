@@ -10,14 +10,27 @@ const contractSchema = new Schema({
     job: {
         type: mongoose.Schema.Types.ObjectId, ref: 'Job'
     },
-    status: {
+    action: {
         type: String, 
-        enum: ["open", "closed"]
+        enum: ["accepted", "declined", "pending"],
+        default: "pending"
+    },
+    status: {
+        type: String,
+        enum: ["open", "closed", "completed", "paused"],
+        default: "open",
+    },
+    payment: {
+        type: String, 
+        enum: ["funded", "not-funded"],
+        default: "not-funded",
     },
     payment_status: {
         type: String, 
-        enum: ["funded", "not-funded"]
+        enum: ["paid", "unpaid"],
+        defualt: "unpaid",
     },
+    review: {type: String, enum:["accepted", "declined", "pending", "none"], defualt: "none"},
     user_rating: Number,
     employer_rating: Number,
     user_review: String,
