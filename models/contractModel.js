@@ -31,15 +31,20 @@ const contractSchema = new Schema({
         defualt: "unpaid",
     },
     review: {type: String, enum:["accepted", "declined", "pending", "none"], defualt: "none"},
-    user_rating: Number,
-    employer_rating: Number,
-    user_review: String,
-    employer_review: String,
+    user_feedback: {
+        rating: Number,
+        feedback: String,
+    },
+    employer_feedback: {
+        rating: Number,
+        feedback: String,
+    },
     created: {
         type: Date,
         default: Date.now
-    }
-});
+    },
+
+}, {timestamps: true});
 
 
 module.exports = mongoose.model('Contract', contractSchema);

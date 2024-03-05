@@ -12,18 +12,25 @@ const contractConttroller = require("../controllers/contractController");
 router.post("/contracts/:user_id/:job_id/send", middleware, contractConttroller.sendContractOffer);
 
 // route to accept offer by user...
-router.post("/contracts/accept/:job_id", middleware, contractConttroller.acceptOffer);
+router.post("/contracts/accept/:contract_id", middleware, contractConttroller.acceptOffer);
 
 // route to decline offer by user...
-router.post("/contracts/decline/:job_id/", middleware, contractConttroller.declineOffer);
+router.post("/contracts/decline/:contract_id/", middleware, contractConttroller.declineOffer);
+
+// route to mark offer as completed
+router.post("/contracts/complete/:contract_id/", middleware, contractConttroller.markContractAsComplete);
+
+// route to pause contract
+router.post("/contracts/pause/:contract_id/", middleware, contractConttroller.pauseContract);
+
+// route to close contract
+router.post("/contracts/close/:contract_id/", middleware, contractConttroller.closeContract);
 
 // route to get all user and emloyer contracts...
 router.get("/contracts", middleware, contractConttroller.getContracts);
 
-// controllers for
-// CLOSE CONTRACT [HAS NOTIFICATION]
-// COMPLETE CONTRACT [HAS NOTIFICATION]
-// PAUSE CONTRACT [HAS NOTIFICATION]
+// route to get a contract by its ID
+router.get("/contracts/:contract_id", middleware, contractConttroller.getContractById);
 
 // PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS
 
