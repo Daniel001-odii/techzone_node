@@ -32,12 +32,12 @@ const contractSchema = new Schema({
     },
     review: {type: String, enum:["accepted", "declined", "pending", "none"], defualt: "none"},
     user_feedback: {
-        rating: Number,
-        feedback: String,
+        rating: {type: Number, default: 0},
+        review: String,
     },
     employer_feedback: {
-        rating: Number,
-        feedback: String,
+        rating: {type: Number, default: 0},
+        review: String,
     },
     created: {
         type: Date,

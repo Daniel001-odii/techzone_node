@@ -15,22 +15,43 @@ router.post("/contracts/:user_id/:job_id/send", middleware, contractConttroller.
 router.post("/contracts/accept/:contract_id", middleware, contractConttroller.acceptOffer);
 
 // route to decline offer by user...
-router.post("/contracts/decline/:contract_id/", middleware, contractConttroller.declineOffer);
-
-// route to mark offer as completed
-router.post("/contracts/complete/:contract_id/", middleware, contractConttroller.markContractAsComplete);
-
-// route to pause contract
-router.post("/contracts/pause/:contract_id/", middleware, contractConttroller.pauseContract);
-
-// route to close contract
-router.post("/contracts/close/:contract_id/", middleware, contractConttroller.closeContract);
+router.post("/contracts/decline/:contract_id", middleware, contractConttroller.declineOffer);
 
 // route to get all user and emloyer contracts...
 router.get("/contracts", middleware, contractConttroller.getContracts);
 
+// route to get only user completed and active contracts
+router.get("/contracts/good/:user_id?", middleware, contractConttroller.getCompletedContracts);
+
 // route to get a contract by its ID
 router.get("/contracts/:contract_id", middleware, contractConttroller.getContractById);
+
+
+
+
+// route to mark offer as completed
+router.post("/contracts/:contract_id/complete", middleware, contractConttroller.markContractAsComplete);
+
+// route to pause contract
+router.post("/contracts/:contract_id/pause", middleware, contractConttroller.pauseContract);
+
+// route to close contract
+router.post("/contracts/:contract_id/close", middleware, contractConttroller.closeContract);
+
+// route to close contract
+router.post("/contracts/:contract_id/resume", middleware, contractConttroller.resumeContract);
+
+
+// route to close contract
+router.post("/contracts/:contract_id/employer-feedback", middleware, contractConttroller.sendEmployerFeedback);
+
+// route to close contract
+router.post("/contracts/:contract_id/user-feedback", middleware, contractConttroller.sendUserFeedback);
+
+
+
+
+
 
 // PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS
 

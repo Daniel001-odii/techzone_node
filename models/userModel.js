@@ -57,6 +57,9 @@ const userSchema = new Schema({
     saved_jobs: [{
       type: mongoose.Schema.Types.ObjectId, ref: 'Job'
     }],
+    ratings: [
+      {type: Number}
+    ],
     is_verified: {type: Boolean, default: false},
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},

@@ -12,7 +12,7 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const employerRoutes = require("./routes/employerRoutes");
 const jobRoutes = require("./routes/jobRoutes");
-
+const contractRoutes = require("./routes/contractRoutes");
 
 
 // Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
@@ -40,7 +40,7 @@ app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', jobRoutes);
 app.use('/api', employerRoutes);
-app.use("/api", require("./routes/contractRoutes"))
+app.use("/api", contractRoutes)
 
 
 //setup server to listen on port declared on env
