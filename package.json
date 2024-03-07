@@ -4,7 +4,8 @@
   "description": "2nd redefined version of techzone api, faster more scalable and with modern code practice",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
   },
   "author": "dannie.js",
   "license": "ISC",
@@ -23,3 +24,4 @@
     "nodemailer": "^6.9.9"
   }
 }
+
