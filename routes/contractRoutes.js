@@ -21,7 +21,7 @@ router.post("/contracts/decline/:contract_id", middleware, contractConttroller.d
 router.get("/contracts", middleware, contractConttroller.getContracts);
 
 // route to get only user completed and active contracts
-router.get("/contracts/good/:user_id?", middleware, contractConttroller.getCompletedContracts);
+router.get("/contracts/good/:user_id?", contractConttroller.getCompletedContracts);
 
 // route to get a contract by its ID
 router.get("/contracts/:contract_id", middleware, contractConttroller.getContractById);

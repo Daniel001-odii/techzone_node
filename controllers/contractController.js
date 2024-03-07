@@ -184,6 +184,7 @@ exports.getContracts = async(req, res) => {
 
 // controller to get all user completed contracts...
 exports.getCompletedContracts = async(req, res) => {
+    console.log("parameters from completed contracts: ", req.params)
     try{
         if(req.params.user_id){
             const contracts = await Contract.find({ user:req.params.user_id, action: "accepted", $or: [{ status: "completed" }, { status: "open" }] })
