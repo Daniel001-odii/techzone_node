@@ -38,6 +38,7 @@ const userSchema = new Schema({
     },
     googleId: Number,
     // PROVIDER AND GOOGLE ID ENDS HERE....
+    // PROVIDER AND GOOGLE ID ENDS HERE....
 
     preffered_job_types: [],
     profile: {
