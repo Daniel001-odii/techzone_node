@@ -84,6 +84,7 @@ exports.employerSignup = async (req, res) => {
 }
 
 exports.login = async (req, res) => {
+    console.log("login detected...")
     try {
         const { email, password } = req.body;
 
