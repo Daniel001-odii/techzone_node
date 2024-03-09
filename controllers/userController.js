@@ -7,11 +7,11 @@ exports.getUser = async (req, res) => {
   try {
     if(req.user){
       const user = req.user;
-      console.log("from get user function: ", user);
+      // console.log("from get user function: ", user);
       return res.status(200).json({ user });
     } else if(req.employer){
       const user = req.employer;
-      console.log("from get user function: ", user);
+      // console.log("from get user function: ", user);
       return res.status(200).json({ user });
     }
     

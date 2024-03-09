@@ -84,7 +84,7 @@ exports.employerSignup = async (req, res) => {
 }
 
 exports.login = async (req, res) => {
-    console.log("login detected...")
+    console.log("login detected...");
     try {
         const { email, password } = req.body;
 
@@ -100,10 +100,11 @@ exports.login = async (req, res) => {
             // Determine user's role
             const role = user ? 'user' : 'employer';
 
-            // Compare password
-            const isValidPassword = user
-                ? bcrypt.compareSync(password, user.password)
-                : bcrypt.compareSync(password, employer.password);
+            // Check if the user has a password (not a Google-authenticated user)
+            const hasPassword = user && user.provider !== 'google';
+
+            // Compare password only if the user has a password
+            const isValidPassword = hasPassword && bcrypt.compareSync(password, user.password);
 
             if (!isValidPassword) {
                 return res.status(401).send({ message: "Invalid username or password" });
@@ -134,6 +135,7 @@ exports.login = async (req, res) => {
         res.status(500).send({ message: "Login failed" });
     }
 };
+
 
 // HANDLE USER LOGIN WITH GOOGLE...
 exports.googleAuthHandler = async (req, res) => {
