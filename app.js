@@ -6,7 +6,8 @@ const path = require('path');
 const app = express();
 const mongoose = require('mongoose');
 const cors = require("cors");
-
+// Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
+app.use(cors());
 // IMPORT ALL ROUTE FILES HERE....
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -15,8 +16,7 @@ const jobRoutes = require("./routes/jobRoutes");
 const contractRoutes = require("./routes/contractRoutes");
 
 
-// Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
-app.use(cors());
+
 
 // Connect to the db
 mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true } )
