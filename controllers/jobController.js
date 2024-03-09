@@ -168,7 +168,7 @@ exports.listJobs = async (req, res) => {
     res.status(200).json({ jobs })
   }catch(error){
     console.log(error)
-    res.status(500).message("internal server error")
+    res.status(500).json({ message: "internal server error" })
   }
 }
 
