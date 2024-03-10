@@ -7,7 +7,13 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 // Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
-app.use(cors());
+// app.use(cors());
+const allowedOrigins = ['https://tech-zone-navy.vercel.app', '*'];
+
+app.use(cors({
+  origin: allowedOrigins,
+}));
+
 // IMPORT ALL ROUTE FILES HERE....
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
