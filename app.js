@@ -1,11 +1,11 @@
 require('dotenv').config();
 const express = require("express");
-const fileUpload = require('express-fileupload');
-
-const path = require('path');
-const app = express();
-const mongoose = require('mongoose');
 const cors = require("cors");
+const app = express();
+const fileUpload = require('express-fileupload');
+const path = require('path');
+const mongoose = require('mongoose');
+
 // Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
 app.use(cors());
 // IMPORT ALL ROUTE FILES HERE....
