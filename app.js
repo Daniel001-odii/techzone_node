@@ -7,22 +7,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 // Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
-// app.use(cors());
-const corsOpts = {
-  origin: '*',
-
-  methods: [
-    'GET',
-    'POST',
-  ],
-
-  allowedHeaders: [
-    'Content-Type',
-  ],
-};
-
-app.use(cors(corsOpts));
-
+app.use(cors());
 // IMPORT ALL ROUTE FILES HERE....
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
