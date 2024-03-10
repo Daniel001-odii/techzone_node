@@ -11,7 +11,9 @@ const client = new OAuth2Client(
   {
     clientId: '546104205241-g4vtopr689l3vb5cfjmphard09e1ia2k.apps.googleusercontent.com',
     clientSecret: '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',
-    redirectUri: 'http://localhost:8080'
+    // redirectUri: 'http://localhost:8080'
+    redirectUri: 'https://tech-zone-navy.vercel.app'
+    
   }
 )
 
