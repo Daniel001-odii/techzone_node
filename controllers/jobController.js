@@ -404,7 +404,7 @@ exports.submitApplicationMain = async (req, res) => {
       // Perform any necessary validations or processing here
   
       // Move files to a public folder (you might want to improve this for security)
-      const publicFolder = 'public/applications/attachments/';
+      const publicFolder = 'public/applications/attachments';
       if (!fs.existsSync(publicFolder)) {
         fs.mkdirSync(publicFolder, { recursive: true });
       }
@@ -415,10 +415,10 @@ exports.submitApplicationMain = async (req, res) => {
         const flatAttachments = attachments.flat();
       
         flatAttachments.forEach((file) => {
-            console.log(flatAttachments)
-            console.log("attachments are: ", typeof(attachments));
+            // console.log(flatAttachments)
+            // console.log("attachments are: ", typeof(attachments));
 
-          const destinationPath = path.join(publicFolder, file.name);
+          const destinationPath = path.join(__dirname, publicFolder, file.name);
           file.mv(destinationPath, (err) => {
             if (err) throw err;
           });
@@ -430,7 +430,7 @@ exports.submitApplicationMain = async (req, res) => {
         cover_letter,
         counter_offer,
         reason_for_co,
-        attachments: attachments.length > 0 ? attachments.flat().map((file) => path.join(publicFolder, file.name)) : [],
+        // attachments: attachments.length > 0 ? attachments.flat().map((file) => path.join(publicFolder, file.name)) : [],
       });
 
 
@@ -439,7 +439,12 @@ exports.submitApplicationMain = async (req, res) => {
         job: req.params.job_id,
         user: req.userId,
         cover_letter,
-        attachments: attachments.length > 0 ? attachments.flat().map((file) => path.join(publicFolder, file.name)) : [],
+        attachment: attachments.length > 0
+      ? attachments.flat().map((file) => ({
+          name: file.name,
+          url: path.join(__dirname, publicFolder, file.name),
+        }))
+      : [],
         counter_offer,
         reason_for_co
       })
