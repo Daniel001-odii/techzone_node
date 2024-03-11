@@ -102,15 +102,28 @@ exports.login = async (req, res) => {
             // Determine user's role
             const role = user ? 'user' : 'employer';
 
-            // Check if the user has a password (not a Google-authenticated user)
-            const hasPassword = user && user.provider !== 'google';
+            if(role == 'user'){
+                // Check if the user has a password (not a Google-authenticated user)
+                const hasPassword = user && user.provider != 'google';
 
-            // Compare password only if the user has a password
-            const isValidPassword = hasPassword && bcrypt.compareSync(password, user.password);
+                // Compare password only if the user has a password
+                const isValidPassword = hasPassword && bcrypt.compareSync(password, user.password);
 
-            if (!isValidPassword) {
-                return res.status(401).send({ message: "Invalid username or password" });
+                if (!isValidPassword) {
+                    return res.status(401).send({ message: "Invalid username or password" });
+                }
+            } else if (role == 'employer'){
+                // Check if the user has a password (not a Google-authenticated user)
+                const hasPassword = employer && employer.provider != 'google';
+
+                // Compare password only if the user has a password
+                const isValidPassword = hasPassword && bcrypt.compareSync(password, employer.password);
+
+                if (!isValidPassword) {
+                    return res.status(401).send({ message: "Invalid employer username or password" });
+                }
             }
+            
 
             // Assign user/employer id to response and generate token
             const userId = user ? user.id : employer.id;
