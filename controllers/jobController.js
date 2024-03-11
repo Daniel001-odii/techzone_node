@@ -415,10 +415,10 @@ exports.submitApplicationMain = async (req, res) => {
         const flatAttachments = attachments.flat();
       
         flatAttachments.forEach((file) => {
-            // console.log(flatAttachments)
-            // console.log("attachments are: ", typeof(attachments));
-
-          const destinationPath = path.join(__dirname, publicFolder, file.name);
+          // for local uploads...
+          // const destinationPath = path.join(__dirname, publicFolder, file.name); 
+          // for heroku uploads...
+          const destinationPath = path.join(process.cwd(), publicFolder, file.name);
           file.mv(destinationPath, (err) => {
             if (err) throw err;
           });
@@ -442,7 +442,8 @@ exports.submitApplicationMain = async (req, res) => {
         attachment: attachments.length > 0
       ? attachments.flat().map((file) => ({
           name: file.name,
-          url: path.join(__dirname, publicFolder, file.name),
+          // url: path.join(__dirname, publicFolder, file.name),
+          url: path.join(process.cwd()e, publicFolder, file.name),
         }))
       : [],
         counter_offer,
