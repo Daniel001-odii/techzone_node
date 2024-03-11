@@ -415,10 +415,7 @@ exports.submitApplicationMain = async (req, res) => {
         const flatAttachments = attachments.flat();
       
         flatAttachments.forEach((file) => {
-          // for local uploads...
-          // const destinationPath = path.join(__dirname, publicFolder, file.name); 
-          // for heroku uploads...
-          const destinationPath = path.join(process.cwd(), publicFolder, file.name);
+          const destinationPath = path.join(__dirname, publicFolder, file.name);
           file.mv(destinationPath, (err) => {
             if (err) throw err;
           });
@@ -439,13 +436,10 @@ exports.submitApplicationMain = async (req, res) => {
         job: req.params.job_id,
         user: req.userId,
         cover_letter,
-        attachment: attachments.length > 0
-      ? attachments.flat().map((file) => ({
+        attachment: attachments.length > 0 ? attachments.flat().map((file) => ({
           name: file.name,
-          // url: path.join(__dirname, publicFolder, file.name),
-          url: path.join(process.cwd()e, publicFolder, file.name),
-        }))
-      : [],
+          url: path.join(__dirname, publicFolder, file.name),
+        })): [],
         counter_offer,
         reason_for_co
       })
@@ -489,14 +483,18 @@ exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
         cover_letter,
         counter_offer,
         reason_for_co,
-        attachments: attachments.map((file) => file.location), // Use file.location for S3 URLs
+        // attachments: attachments.map((file) => file.location), // Use file.location for S3 URLs
       });
   
       const newApplication = new Application({
         job: req.params.job_id,
         user: req.userId,
         cover_letter,
-        attachments: attachments.map((file) => file.location),
+        // attachments: attachments.map((file) => file.location),
+        attachment: attachments.length > 0 ? attachments.flat().map((file) => ({
+          name: file.name,
+          url: file.location
+        })): [],
         counter_offer,
         reason_for_co,
       });
@@ -508,11 +506,3 @@ exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
     }
   });
 
-
-
-// exports.getAppliedJobs = async (req, res) => {
-//     try{}
-//     catch(error){
-//         console.log(error)
-//     }
-// }
