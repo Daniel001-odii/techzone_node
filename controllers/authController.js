@@ -9,11 +9,9 @@ const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library')
 const client = new OAuth2Client(
   {
-    clientId: '546104205241-g4vtopr689l3vb5cfjmphard09e1ia2k.apps.googleusercontent.com',
-    clientSecret: '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',
-    // redirectUri: 'http://localhost:8080'
-    redirectUri: 'https://tech-zone-navy.vercel.app'
-    
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri: process.env.GOOGLE_CALLBACK,
   }
 )
 
@@ -152,59 +150,6 @@ exports.login = async (req, res) => {
 };
 
 
-// HANDLE USER LOGIN WITH GOOGLE...
-exports.googleAuthHandler = async (req, res) => {
-    try{
-      const { googleId, email, firstname, lastname, picture } = req.body;
-  
-      const existingUser = await User.findOne({ googleId });
-  
-      // IF GOOGLE USER IS ALREADY EXISITNG....
-      if(existingUser){
-         // Generate JWT token for authentication
-      const token = jwt.sign({ googleId:googleId }, process.env.API_SECRET, { expiresIn: '1d' });
-  
-      // Respond with the token and user information
-      res.status(200).json({
-        message: 'Sign-in successful',
-        token,
-        user: {
-          firstname: firstname,
-          lastname: lastname,
-          email: email,
-          googleId: googleId
-        }
-      });
-      }
-      // IF GOOGLE USER NOT EXISTING......
-      else{
-  
-        const newUser = new User({
-          googleId: googleId,
-          email: email,
-          firstname: firstname,
-          lastname: lastname,
-          provider: "google",
-          avatar_url: picture,
-        });
-  
-        await newUser.save();
-  
-        res.status(200).json({
-          message: "user registered successfully",
-          newUser
-        });
-         // Log in the new user
-        console.log('New user logged in:', newUser);
-      }
-  
-    }
-    catch(error){
-      console.error(error)
-    }
-  };
-
-
 // Call this function to validate OAuth2 authorization code sent from client-side
 async function verifyCode(code) {
     let { tokens } = await client.getToken(code)
@@ -264,13 +209,7 @@ exports.googleClientAuthHandler = async (req, res) => {
                 res.status(200).json({
                     message: 'Sign-in successful',
                     token,
-                    user: {
-                        firstname,
-                        lastname,
-                        email,
-                        googleId,
-                        model, // Include the model information in the response
-                    }
+                    role: user.role,
                 });
             } else {
                 console.log("new user record!");
@@ -285,15 +224,18 @@ exports.googleClientAuthHandler = async (req, res) => {
                         lastname,
                         provider: "google",
                         profile: { image_url: picture },
-                        // role,
                     });
 
                     // Save the new user to the "User" model
                     await newUser.save();
 
+                    // Generate JWT token for authentication
+                    const token = jwt.sign({ googleId, role: "user" }, process.env.API_SECRET, { expiresIn: '1d' });
+
                     res.status(200).json({
                         message: "User registered successfully",
-                        newUser
+                        token,
+                        role: "user",
                     });
 
                 } else if(role == "employer"){
@@ -305,18 +247,41 @@ exports.googleClientAuthHandler = async (req, res) => {
                         lastname,
                         provider: "google",
                         profile: { image_url: picture },
-                        // role,
                     });
 
                     // Save the new user to the "User" model
                     await newUser.save();
 
+                    // Generate JWT token for authentication
+                    const token = jwt.sign({ googleId, role: "employer" }, process.env.API_SECRET, { expiresIn: '1d' });
+
                     res.status(200).json({
                         message: "User registered successfully",
-                        newUser
+                        token,
+                        role: "employer"
                     });
-                }
+                } 
+                if(!role){
+                    console.log("user with email not found, email registered as user account");
+                    const newUser = new User({
+                        googleId,
+                        email,
+                        firstname,
+                        lastname,
+                        provider: "google",
+                        profile: { image_url: picture },
+                        // role,
+                    });
 
+                    await newUser.save();
+                    // Generate JWT token for authentication
+                    const token = jwt.sign({ googleId, role: "user" }, process.env.API_SECRET, { expiresIn: '1d' });
+                    res.status(200).json({
+                        message: "User registered successfully",
+                        token,
+                        role: "user",
+                    });
+            }
                 
                 // Log in the new user
                 // console.log('New user logged in:', newUser);

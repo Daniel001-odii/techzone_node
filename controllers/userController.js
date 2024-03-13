@@ -129,7 +129,7 @@ exports.getAppliedJobs = async (req, res) => {
       const applications = await Application.find({ user: req.userId }).populate("job");
 
       if (applications.length === 0) {
-          return res.status(404).json({ message: 'No applied jobs found for the user' });
+          return res.status(200).json({ message: 'No applied jobs found for the user' });
       }
 
       // Extract the 'job' property from each element in the 'applications' array
