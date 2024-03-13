@@ -11,6 +11,9 @@ const contractConttroller = require("../controllers/contractController");
 // route to send contract to user...
 router.post("/contracts/:user_id/:job_id/send", middleware, contractConttroller.sendContractOffer);
 
+// route to send job assignment offer
+router.post("/contracts/:user_id/:job_id/assign", middleware, contractConttroller.assignJob);
+
 // route to accept offer by user...
 router.post("/contracts/accept/:contract_id", middleware, contractConttroller.acceptOffer);
 

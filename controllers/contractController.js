@@ -3,7 +3,19 @@ const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Contract = require('../models/contractModel');
 const Application = require('../models/applicationModel');
+const Notification = require('../models/notificationModel')
+const notificationController = require('../controllers/notificationController');
 
+const express = require("express");
+const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const io = require("socket.io")(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
 // SEND NOTIFICATIONS TO USER
 // controller to create and send offer to user...
 exports.sendContractOffer = async(req, res) =>{
@@ -22,6 +34,7 @@ exports.sendContractOffer = async(req, res) =>{
                     job: job_id,
                 });
                 await newContract.save();
+
                 return res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
             }
         }catch(error){
@@ -30,6 +43,49 @@ exports.sendContractOffer = async(req, res) =>{
         }
     }else{
         return res.status(400).json({ message: "sorry only employers can send contracts.."})
+    }
+};
+
+// SEND NOTIFICATIONS TO USER
+// controller to create and assgin offer to usert then wait for user response...
+exports.assignJob = async(req, res) =>{
+    if(req.employerId){
+        try{
+            const {user_id, job_id} = req.params;
+            const user = await User.findById(user_id);
+    
+            const alreadyExisitngContract = await Contract.findOne({ user:user_id, job:job_id });
+            if(alreadyExisitngContract){
+                return res.status(200).json({ messsage: "You already assigned the contract to this user"});
+            } else {
+                const newContract = new Contract({
+                    employer: req.employerId,
+                    user: user_id,
+                    job: job_id,
+                    type: "assigned",
+                });
+                await newContract.save();
+                res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
+                
+                // NOTIFY USER HERE >>>
+                const newNotification = new Notification({
+                    receiver: "user",
+                    user,
+                    employer: req.employerId,
+                    message: "You receive a contract offer",
+                    link_url: `/contracts/${newContract._id}`,
+                });
+                await newNotification.save();
+                // notificationController.notify(message);
+                io.emit('notification', { message: newNotification.message });
+
+            }
+        }catch(error){
+            console.log(error);
+            res.status(500).json({ message: 'internal server error from sendContract' })
+        }
+    }else{
+        return res.status(400).json({ message: "sorry only employers can assign contracts.."})
     }
 };
 

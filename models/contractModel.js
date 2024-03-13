@@ -10,6 +10,11 @@ const contractSchema = new Schema({
     job: {
         type: mongoose.Schema.Types.ObjectId, ref: 'Job'
     },
+    type: {
+        type: String,
+        enum: ["assigned", "applied"],
+        default: "applied"
+    },
     action: {
         type: String, 
         enum: ["accepted", "declined", "pending"],
