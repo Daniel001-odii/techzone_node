@@ -17,24 +17,24 @@ const userRoutes = require("./routes/userRoutes");
 const employerRoutes = require("./routes/employerRoutes");
 const jobRoutes = require("./routes/jobRoutes");
 const contractRoutes = require("./routes/contractRoutes");
-
+const notificationRoutes = require("./routes/notificationRoutes");
 
 // socket io configurations for notification...
 const server = http.createServer(app);
-const io = require("socket.io")(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
 
-io.on('connection', (socket) => {
-  console.log('A user connected');
-  // Handle events when a user connects or disconnects
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
-});
+// const io = require("socket.io")(server, {
+//   cors: {
+//     origin: "*",
+//     methods: ["GET", "POST"]
+//   }
+// });
+
+// io.on('connection', (socket) => {
+//   console.log('A user connected');
+//   socket.on('disconnect', () => {
+//     console.log('User disconnected');
+//   });
+// });
 
 
 // Connect to the db
@@ -63,6 +63,7 @@ app.use('/api', userRoutes);
 app.use('/api', jobRoutes);
 app.use('/api', employerRoutes);
 app.use("/api", contractRoutes);
+app.use("/api", notificationRoutes);
 
 
 
