@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
+const Notification = require("../models/notificationModel");
 const Employer = require("../models/employerModel"); // Correct the import for Employer model
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -139,6 +140,15 @@ exports.login = async (req, res) => {
             };
 
             res.status(200).send(response);
+
+            // NOTIFY USER HERE >>>
+            const newNotification = new Notification({
+                receiver: "both",
+                user: userId,
+                employer: userId,
+                message: `New signin alert`
+            });
+            newNotification.save();
         })
         .catch((err) => {
             res.status(500).send({ message: err });
@@ -211,6 +221,16 @@ exports.googleClientAuthHandler = async (req, res) => {
                     token,
                     role: user.role,
                 });
+
+                // NOTIFY USER HERE >>>
+                const newNotification = new Notification({
+                    receiver: "both",
+                    user: user._id,
+                    employer: user._id,
+                    message: `New google signin alert`
+                });
+                await newNotification.save();
+                
             } else {
                 console.log("new user record!");
 

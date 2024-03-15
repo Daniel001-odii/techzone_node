@@ -347,9 +347,21 @@ exports.searchJobs = async (req, res) => {
       }
   
       // Filter by location
-      if (location) {
-        filter.location = { $regex: location, $options: 'i' };
-      }
+      if (location && typeof location === 'object') {
+        const locationFilter = {};
+        if (location.state) {
+            locationFilter['location.state'] = { $regex: new RegExp(location.state, 'i') };
+        }
+        if (location.city) {
+            locationFilter['location.city'] = { $regex: new RegExp(location.city, 'i') };
+        }
+        if (location.address) {
+            locationFilter['location.address'] = { $regex: new RegExp(location.address, 'i') };
+        }
+        if (Object.keys(locationFilter).length > 0) {
+            filter.$and = [{ 'location': { $exists: true } }, locationFilter];
+        }
+    }
   
       // Calculate date range based on "posted" value
       if (posted) {
@@ -379,7 +391,7 @@ exports.searchJobs = async (req, res) => {
       }
   
       // Use the filter criteria to search for jobs
-      const jobs = await Job.find(filter);
+      const jobs = await Job.find(filter).populate("employer", "is_verified profile created");
   
       res.status(200).json({ jobs });
     } catch (error) {

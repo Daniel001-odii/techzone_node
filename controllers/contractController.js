@@ -34,8 +34,17 @@ exports.sendContractOffer = async(req, res) =>{
                     job: job_id,
                 });
                 await newContract.save();
+                res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
 
-                return res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
+                // NOTIFY USER HERE >>>
+                const newNotification = new Notification({
+                    receiver: "user",
+                    user,
+                    employer: req.employerId,
+                    message: "You received a contract offer",
+                    link_url: `/contracts/${newContract._id}`,
+                });
+                await newNotification.save();
             }
         }catch(error){
             console.log(error);
@@ -72,12 +81,12 @@ exports.assignJob = async(req, res) =>{
                     receiver: "user",
                     user,
                     employer: req.employerId,
-                    message: "You receive a contract offer",
+                    message: "You received a job assignment",
                     link_url: `/contracts/${newContract._id}`,
                 });
                 await newNotification.save();
                 // notificationController.notify(message);
-                io.emit('notification', { message: newNotification.message });
+                // io.emit('notification', { message: newNotification.message });
 
             }
         }catch(error){
@@ -101,7 +110,18 @@ exports.acceptOffer = async(req, res) => {
 
         offer.action = "accepted";
         await offer.save();
-        return res.status(200).json({ offer, message: "You accepted the offer"})
+        res.status(200).json({ offer, message: "You accepted the offer"});
+
+        // NOTIFY USER HERE >>>
+        const newNotification = new Notification({
+            receiver: "both",
+            user: req.userId,
+            employer: offer.employer,
+            message: "Your contract started",
+            link_url: `/contracts/${contract_id}`,
+        });
+        await newNotification.save();
+
 
     }catch(error){
         console.log(error);
@@ -121,7 +141,21 @@ exports.declineOffer = async(req, res) => {
         offer.action = "declined";
         offer.status = "closed";
         await offer.save();
-        return res.status(200).json({ offer, message: "You declined the offer"});
+        res.status(200).json({ offer, message: "You declined the offer"});
+
+        const contract = await Contract.findById(contract_id);
+        const user = await User.findById(contract.user)
+
+        // NOTIFY USER HERE >>>
+        const newNotification = new Notification({
+            receiver: "employer",
+            employer: contract.employer,
+            message: `${user.firstname} ${user.lastname} declined your contract offer`,
+            link_url: `client/contracts/${contract_id}`,
+        });
+        await newNotification.save();
+
+        
 
     }catch(error){
         console.log(error);
@@ -139,13 +173,24 @@ exports.markContractAsComplete = async(req, res) => {
         }
         offer.status = "completed";
         await offer.save();
-        return res.status(200).json({ offer, message: "Contract completed successfuly"});
+        res.status(200).json({ offer, message: "Contract completed successfuly"});
+
+        // NOTIFY USER HERE >>>
+        const newNotification = new Notification({
+            receiver: "both",
+            user: offer.user,
+            employer: offer.employer,
+            message: `Your contract is completed`,
+            link_url: `contracts/${contract_id}`,
+        });
+        await newNotification.save();
 
     }catch(error){
         console.log(error);
         res.status(500).json({ message: 'internal server error from complete offer' })
     }
 }
+
 
 // SEND NOTIFICATIONS TO EMPLOYER
 exports.pauseContract = async(req, res) => {
@@ -157,7 +202,17 @@ exports.pauseContract = async(req, res) => {
         }
         offer.status = "paused";
         await offer.save();
-        return res.status(200).json({ offer, message: "Contract paused successfuly"});
+        res.status(200).json({ offer, message: "Contract paused successfuly"});
+        
+        // NOTIFY USER HERE >>>
+        const newNotification = new Notification({
+            receiver: "both",
+            user: offer.user,
+            employer: offer.employer,
+            message: `Your contract is paused`,
+            link_url: `contracts/${contract_id}`,
+        });
+        await newNotification.save();
 
     }catch(error){
         console.log(error);
@@ -175,7 +230,17 @@ exports.resumeContract = async(req, res) => {
         }
         offer.status = "open";
         await offer.save();
-        return res.status(200).json({ offer, message: "Contract resumed successfuly"});
+        res.status(200).json({ offer, message: "Contract resumed successfuly"});
+
+        // NOTIFY USER HERE >>>
+        const newNotification = new Notification({
+            receiver: "both",
+            user: offer.user,
+            employer: offer.employer,
+            message: `Your contract is resumed`,
+            link_url: `contracts/${contract_id}`,
+        });
+        await newNotification.save();
 
     }catch(error){
         console.log(error);
@@ -193,7 +258,17 @@ exports.closeContract = async(req, res) => {
         }
         offer.status = "closed";
         await offer.save();
-        return res.status(200).json({ offer, message: "Contract closed successfuly"});
+        res.status(200).json({ offer, message: "Contract closed successfuly"});
+
+        // NOTIFY USER HERE >>>
+        const newNotification = new Notification({
+            receiver: "both",
+            user: offer.user,
+            employer: offer.employer,
+            message: `Your contract was closed`,
+            link_url: `contracts/${contract_id}`,
+        });
+        await newNotification.save();
 
     }catch(error){
         console.log(error);
