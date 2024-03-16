@@ -26,10 +26,7 @@ const userSchema = new Schema({
       type: String,
       required: [true, "Please specify lastname"]
     },
-    settings: {
-        profile_visibility: {type: String, enum: ["public", "private"]}
-    },
-
+ 
     // PROVIDER AND GOOGLE ID....
     provider: {
       type: String,
@@ -37,8 +34,7 @@ const userSchema = new Schema({
       default: "tech-zone"
     },
     googleId: Number,
-    // PROVIDER AND GOOGLE ID ENDS HERE....
-    // PROVIDER AND GOOGLE ID ENDS HERE....
+    // PROVIDER AND GOOGLE ID ENDS HERE...
 
     preffered_job_types: [],
     profile: {
@@ -61,7 +57,7 @@ const userSchema = new Schema({
     ratings: [
       {type: Number}
     ],
-    is_verified: {type: Boolean, default: false},
+    
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},
     earned: {type: Number, default: 0},
@@ -70,6 +66,27 @@ const userSchema = new Schema({
         token: String,
         expiry_date: Date,
     },
+
+    // settings starts....
+    settings: {
+      profile_visibility: {type: String, enum: ["public", "private"], default: "public"},
+      notifications: {
+        contracts: {type: Boolean, default: true},
+        messages: {type: Boolean, default: true},
+        emails: {type: Boolean, default: true},
+      },
+      bank: {
+        name: String,
+        account_number: Number,
+        sort_code: Number,
+      },
+      KYC: {
+        NIN_number: String,
+        is_verified: {type: Boolean, default: false},
+      }
+    },
+    // settings ends here...
+
     created: {
         type: Date,
         default: Date.now

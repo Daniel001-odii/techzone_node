@@ -7,7 +7,6 @@ exports.getUser = async (req, res) => {
   try {
     if(req.user){
       const user = req.user;
-      // console.log("from get user function: ", user);
       return res.status(200).json({ user });
     } else if(req.employer){
       const user = req.employer;
@@ -33,6 +32,9 @@ exports.getUserOrEmployerById = async (req, res) => {
       const employer = await Employer.findById(id);
   
       if (user) {
+        // if(user.settings.KYC.is_verified){
+        //   user.lastname = `${user.lastname} is verified`
+        // }
         return res.status(200).json({ user });
       } 
       
@@ -52,15 +54,16 @@ exports.getUserOrEmployerById = async (req, res) => {
   };
 
 // updating user profile....
-exports.updateUserProfile = async (req, res) => {
+exports.updateUserData= async (req, res) => {
     try {
       const userId = req.userId; // Get the user's ID from the authenticated user
       const updates = req.body; // Update fields from the request body
   
       // Update the user's profile fields
       const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true });
+      await updatedUser.save();
   
-      res.status(200).json({ message: 'Profile updated successfully', user: updatedUser });
+      res.status(200).json({ message: 'Profile updated successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Error updating profile', error: error.message });
     }
