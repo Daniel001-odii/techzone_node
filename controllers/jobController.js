@@ -392,8 +392,17 @@ exports.searchJobs = async (req, res) => {
   
       // Use the filter criteria to search for jobs
       const jobs = await Job.find(filter).populate("employer", "is_verified profile created");
+
+      jobs.forEach(job => {
+        if(!job.employer){
+          job.is_deleted = true;
+          job.save();
+        }
+      });
+
+      const legit_jobs = jobs.filter(job => !job.is_deleted);
   
-      res.status(200).json({ jobs });
+      res.status(200).json({ jobs: legit_jobs });
     } catch (error) {
       res.status(500).json({ message: 'Error searching jobs', error: error.message });
     }
