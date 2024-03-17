@@ -32,8 +32,8 @@ router.get("/jobs/:job_id/application", middleware, jobController.getUserApplica
 
 
 // apply for a job
-router.post("/jobs/:job_id/apply", middleware, jobController.submitApplication);
-// router.post("/jobs/:job_id/apply", middleware, jobController.submitApplicationMain);
+// router.post("/jobs/:job_id/apply", middleware, jobController.submitApplication);
+router.post("/jobs/:job_id/apply", middleware, jobController.submitApplicationMain);
 
 
 

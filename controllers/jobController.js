@@ -410,6 +410,10 @@ exports.searchJobs = async (req, res) => {
 
 // Function to submit job applications [SAVES ATTACHMENTS IN SERVER]
 exports.submitApplicationMain = async (req, res) => {
+  const existingAplication = await Application.findOne({ user:req.userId });
+  if(existingAplication){
+    res.status(200).json({ message: "You already submitted an application"})
+  } else {
     try {
       // Access form data
       const { cover_letter, counter_offer, reason_for_co } = req.body;
@@ -471,11 +475,17 @@ exports.submitApplicationMain = async (req, res) => {
       console.error(error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
+  }
   };
   
 
 // Function to submit job applications
 exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
+// exports.submitApplication = async (req, res) => {
+  const existingAplication = await Application.findOne({ user:req.userId });
+  if(existingAplication){
+    res.status(200).json({ message: "You already submitted an application"})
+  } else {
     try {
       // Access form data
       const { cover_letter, counter_offer, reason_for_co } = req.body;
@@ -525,5 +535,7 @@ exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
       console.error(error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
+  }
   });
+  // };
 
