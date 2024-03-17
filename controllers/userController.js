@@ -1,7 +1,7 @@
 const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
-
+const mongoose = require('mongoose');
 
 exports.getUser = async (req, res) => {
   try {
@@ -24,6 +24,10 @@ exports.getUser = async (req, res) => {
 // route to get eitrher user or employer by their ID...
 exports.getUserOrEmployerById = async (req, res) => {
     const { id } = req.params;
+
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(404).json({ message: 'User or employer not found' });
+    }
   
     try {
       // Check if the ID corresponds to a user
@@ -71,59 +75,50 @@ exports.updateUserData= async (req, res) => {
 
 // search for user...
 exports.searchUsers = async (req, res) => {
-    try {
+  try {
       const { keywords } = req.query;
       let filter = {};
-  
+
       // Check if the search query is an ObjectId (for searching by ID)
       if (keywords && mongoose.Types.ObjectId.isValid(keywords)) {
-        filter._id = keywords; // Search by ID if valid ObjectId is provided
+          filter._id = keywords; // Search by ID if valid ObjectId is provided
       } else {
-        // Search by keywords in various fields (including nested fields)
-        if (keywords) {
-          const spaceIndex = keywords.indexOf(' ');
-  
-          if (spaceIndex !== -1) {
-            // If space is found, split keywords into firstname and lastname
-            const firstname = keywords.substring(0, spaceIndex);
-            const lastname = keywords.substring(spaceIndex + 1);
-  
-            filter.$and = [
-              {
-                $or: [
-                  { firstname: { $regex: firstname, $options: 'i' } },
-                  { lastname: { $regex: lastname, $options: 'i' } },
-                ],
-              },
-              {
-                $or: [
-                  { 'profile.bio': { $regex: keywords, $options: 'i' } },
-                  { 'profile.skillTitle': { $regex: keywords, $options: 'i' } },
-                ],
-              },
-            ];
-          } else {
-            filter.$or = [
-              { firstname: { $regex: keywords, $options: 'i' } },
-              { lastname: { $regex: keywords, $options: 'i' } },
-              { 'profile.bio': { $regex: keywords, $options: 'i' } },
-              { 'profile.title': { $regex: keywords, $options: 'i' } },
-              { 'profile.location': { $regex: keywords, $options: 'i' } },
-            ];
+          // Search by keywords in various fields (including nested fields)
+          if (keywords) {
+              const spaceIndex = keywords.indexOf(' ');
+
+              if (spaceIndex !== -1) {
+                  // If space is found, split keywords into firstname and lastname
+                  const firstname = keywords.substring(0, spaceIndex);
+                  const lastname = keywords.substring(spaceIndex + 1);
+
+                  filter.$or = [
+                      { $and: [{ firstname: { $regex: firstname, $options: 'i' } }, { lastname: { $regex: lastname, $options: 'i' } }] },
+                      { 'profile.bio': { $regex: keywords, $options: 'i' } },
+                      { 'profile.skillTitle': { $regex: keywords, $options: 'i' } }
+                  ];
+              } else {
+                  filter.$or = [
+                      { firstname: { $regex: keywords, $options: 'i' } },
+                      { lastname: { $regex: keywords, $options: 'i' } },
+                      { 'profile.bio': { $regex: keywords, $options: 'i' } },
+                      { 'profile.title': { $regex: keywords, $options: 'i' } },
+                      { 'profile.location': { $regex: keywords, $options: 'i' } }
+                  ];
+              }
           }
-        }
       }
-  
+
       // Define which specific fields to return
-      const fieldsToReturn = 'firstname lastname email isVerified profile.profileImage profile.skillTitle profile.location'; // Add other fields as needed
-  
+      const fieldsToReturn = 'firstname lastname email isVerified profile'; // Add other fields as needed
+
       // Use the filter and fieldsToReturn to search for users
       const users = await User.find(filter).select(fieldsToReturn);
-  
+
       res.status(200).json({ users });
-    } catch (error) {
+  } catch (error) {
       res.status(500).json({ message: 'Error searching users', error: error.message });
-    }
+  }
 };
 
 // get user applied jobs..

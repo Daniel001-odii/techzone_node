@@ -5,6 +5,7 @@ const Contract = require('../models/contractModel');
 const Application = require('../models/applicationModel');
 const Notification = require('../models/notificationModel')
 const notificationController = require('../controllers/notificationController');
+const mongoose = require('mongoose');
 
 const express = require("express");
 const app = express();
@@ -315,7 +316,11 @@ exports.getContracts = async(req, res) => {
 
 // controller to get all user completed contracts...
 exports.getCompletedContracts = async(req, res) => {
-    console.log("parameters from completed contracts: ", req.params)
+    // console.log("parameters from completed contracts: ", req.params);
+    if(!mongoose.Types.ObjectId.isValid(req.params.user_id)){
+        return res.status(404).json({ message: 'User or employer not found' });
+      }
+
     try{
         if(req.params.user_id){
             const contracts = await Contract.find({ user:req.params.user_id, action: "accepted", $or: [{ status: "completed" }, { status: "open" }] })
