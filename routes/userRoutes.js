@@ -27,4 +27,7 @@ router.get("/user/jobs/:job_id", middleware, userController.getApplicationDetail
 // updating user's profile...
 router.patch("/user/profile", middleware, userController.updateUserData);
 
+// get user's rating...
+router.get("/user/:user_id/rating", userController.getUserRating);
+
 module.exports = router;
