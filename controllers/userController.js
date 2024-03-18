@@ -1,6 +1,8 @@
 const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
+const Contract = require('../models/contractModel');
+
 const mongoose = require('mongoose');
 
 exports.getUser = async (req, res) => {
@@ -20,6 +22,9 @@ exports.getUser = async (req, res) => {
   }
 };
 
+exports.getUserSavedJobs = async (req, res) => {
+
+};
 
 // route to get eitrher user or employer by their ID...
 exports.getUserOrEmployerById = async (req, res) => {
@@ -124,11 +129,31 @@ exports.searchUsers = async (req, res) => {
 // get user applied jobs..
 exports.getAppliedJobs = async (req, res) => {
   try {
-      const applications = await Application.find({ user: req.userId }).populate("job");
-
-      if (applications.length === 0) {
-          return res.status(200).json({ message: 'No applied jobs found for the user' });
+    const applications = await Application.aggregate([
+      {
+        $match: { user: req.userId } // Filter applications by user
+      },
+      {
+        $lookup: {
+          from: 'jobs', // Name of the referenced collection
+          localField: 'job', // Field in the current collection
+          foreignField: '_id', // Field in the referenced collection
+          as: 'job' // Output array field
+        }
+      },
+      {
+        $unwind: '$job'
+      },
+      {
+        $match: {
+          'job': { $exists: true } // Filter to only include applications with existing jobs
+        }
       }
+    ]);
+
+    if (applications.length === 0) {
+      return res.status(200).json({ message: 'No applied jobs found for the user' });
+    }
 
       // Extract the 'job' property from each element in the 'applications' array
       const appliedJobs = applications.map(appliedJob => appliedJob.job);
@@ -151,5 +176,30 @@ exports.getApplicationDetails = async (req, res) => {
   } catch (error) {
       console.error(error);
       return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getUserRating = async (req, res) => {
+  try {
+    // const user = req.params.user_id; // Corrected typo from req.prarams.user_id to req.params.user_id
+    const contracts = await Contract.find({ user: req.params.user_id });
+
+    let totalRating = 0;
+    let totalRatingsCount = 0;
+
+    contracts.forEach(contract => {
+      if (contract.user_feedback && contract.user_feedback.rating !== undefined) {
+        totalRating += contract.user_feedback.rating;
+        totalRatingsCount++; // Increment count of contracts with ratings
+      }
+    });
+
+    // Calculate average rating
+    let averageRating = totalRatingsCount > 0 ? totalRating / totalRatingsCount : 0;
+
+    return res.status(200).json({ averageRating, totalRatingsCount });
+  } catch (error) {
+    console.error("Error getting user rating: ", error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 };

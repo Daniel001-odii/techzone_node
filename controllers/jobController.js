@@ -111,7 +111,7 @@ exports.getJobById = async (req, res) => {
 
       // Validate if job_id is a valid ObjectId
       if (!mongoose.Types.ObjectId.isValid(job_id)) {
-        return res.status(400).json({ message: 'Invalid job ID format' });
+        return res.status(404).json({ message: 'Job not found' });
       }
   
       // Query the database to find the job by its ID
@@ -215,7 +215,7 @@ exports.getUserApplicationForJob = async (req, res) => {
 
     // Validate if job_id is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(job_id)) {
-      return res.status(400).json({ message: 'Invalid job ID format' });
+      return res.status(404).json({ message: 'Application not found' });
     }
 
     // Convert job_id to a valid ObjectId
@@ -266,6 +266,9 @@ exports.saveJob = async (req, res) => {
     try {
         const user = req.user;
         const job_id = req.params.job_id;
+        if (!mongoose.Types.ObjectId.isValid(job_id)) {
+          return res.status(404).json({ message: 'Job not found' });
+        }
         const job = await Job.findById(job_id);
 
         if (!job) {
@@ -293,6 +296,9 @@ exports.saveJob = async (req, res) => {
 exports.editJob = async (req, res) => {
     try{
       const job_id = req.params.job_id;
+      if (!mongoose.Types.ObjectId.isValid(job_id)) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
       const edits = req.body;
   
       const updateJob = await Job.findByIdAndUpdate(job_id, edits, {new: true});
@@ -410,7 +416,7 @@ exports.searchJobs = async (req, res) => {
 
 // Function to submit job applications [SAVES ATTACHMENTS IN SERVER]
 exports.submitApplicationMain = async (req, res) => {
-  const existingAplication = await Application.findOne({ user:req.userId });
+  const existingAplication = await Application.findOne({ user:req.userId, job: req.job });
   if(existingAplication){
     res.status(200).json({ message: "You already submitted an application"})
   } else {

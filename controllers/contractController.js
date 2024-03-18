@@ -366,6 +366,9 @@ exports.getCompletedContracts = async(req, res) => {
 exports.getContractById = async(req, res) => {
     try{
         const contract_id = req.params.contract_id;
+        if (!mongoose.Types.ObjectId.isValid(contract_id)) {
+            return res.status(404).json({ message: 'contract not found' });
+          }
         const contract = await Contract.findById(contract_id)
         .populate({
             path: "user",

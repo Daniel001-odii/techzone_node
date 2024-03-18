@@ -35,7 +35,10 @@ const contractSchema = new Schema({
         enum: ["paid", "unpaid"],
         defualt: "unpaid",
     },
-    review: {type: String, enum:["accepted", "declined", "pending", "none"], defualt: "none"},
+    review: [{
+        title: {type: String, default: "Sent a review"},
+        status: {type: String, enum:["accepted", "declined", "pending", "none"], defualt: "none"},
+    }],
     user_feedback: {
         rating: {type: Number, default: 0},
         review: String,
