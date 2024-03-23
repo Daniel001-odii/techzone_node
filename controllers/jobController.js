@@ -15,36 +15,14 @@ const { Readable } = require('stream');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 
-// Set up AWS credentials
+// Create S3 client
 const s3Client = new S3Client({
-    region: 'eu-north-1',
-    credentials: {
-      accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
-    },
-  });
-
-// Create a function to convert buffer to Readable stream
-const bufferToStream = (buffer) => {
-    const readableStream = new Readable();
-    readableStream.push(buffer);
-    readableStream.push(null);
-    return readableStream;
-  };
-  
-  const upload = multer({
-    storage: multerS3({
-      s3: s3Client,
-      bucket: 'your-s3-bucket-name',
-      acl: 'public-read',
-      contentType: multerS3.AUTO_CONTENT_TYPE,
-      key: (req, file, cb) => {
-        cb(null, 'public/applications/attachments/' + Date.now() + '-' + file.originalname);
-      },
-    }),
-  });
-
-
+  region: 'us-east-1', // Specify your AWS region
+  credentials: {
+    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
+  }
+});
 
 // Controller for posting a job (for employers)
 exports.postJob = async (req, res) => {
@@ -292,6 +270,50 @@ exports.saveJob = async (req, res) => {
     }
 };
 
+// controller to mark job as deleted...
+exports.deleteJob = async (req, res) => {
+  try{
+    const job_id = req.params.job_id;
+    const job = await Job.findById(job_id);
+
+    if (!mongoose.Types.ObjectId.isValid(job_id)) {
+      return res.status(404).json({ message: 'Job not found' });
+    };
+
+    job.is_deleted = true;
+    job.save();
+
+    res.status(200).json({ message: "Job deleted successfully!"});
+
+  }catch(error){
+    console.log("error deleting job: ", error);
+    res.status(500).json({ message: "error deleting job"});
+  }
+}
+
+// controller to mark job as closed...
+exports.closeJob = async (req, res) => {
+  try{
+    const job_id = req.params.job_id;
+    const job = await Job.findById(job_id);
+
+    if (!mongoose.Types.ObjectId.isValid(job_id)) {
+      return res.status(404).json({ message: 'Job not found' });
+    };
+
+    job.status = "closed";
+    job.save();
+
+    res.status(200).json({ message: "Job closed successfully!"});
+
+  }catch(error){
+    console.log("error closing job: ", error);
+    res.status(500).json({ message: "error closing job"});
+  }
+}
+
+
+
 // controller to edit a job...
 exports.editJob = async (req, res) => {
     try{
@@ -428,9 +450,9 @@ exports.submitApplicationMain = async (req, res) => {
       const attachments = req.files ? Object.values(req.files) : [];
 
       // increase number of applications...
-      const job = await Job.findOne({ _id:req.params.job_id });
-      job.no_of_applications += 1;
-      await job.save();
+      // const job = await Job.findOne({ _id:req.params.job_id });
+      // job.no_of_applications += 1;
+      // await job.save();
   
       // Perform any necessary validations or processing here
   
@@ -452,6 +474,8 @@ exports.submitApplicationMain = async (req, res) => {
           });
         });
       }  
+
+
       // Return necessary information
       res.status(200).json({
         message: 'Job application submitted successfully',
@@ -467,10 +491,10 @@ exports.submitApplicationMain = async (req, res) => {
         job: req.params.job_id,
         user: req.userId,
         cover_letter,
-        attachment: attachments.length > 0 ? attachments.flat().map((file) => ({
-          name: file.name,
-          url: path.join(__dirname, publicFolder, file.name),
-        })): [],
+        // attachment: attachments.length > 0 ? attachments.flat().map((file) => ({
+        //   name: file.name,
+        //   url: path.join(__dirname, publicFolder, file.name),
+        // })): [],
         counter_offer,
         reason_for_co
       })
@@ -485,7 +509,55 @@ exports.submitApplicationMain = async (req, res) => {
   };
   
 
-// Function to submit job applications
+
+
+// Configure multer for file upload
+const upload = multer({ dest: 'uploads/' });
+
+// Function to handle file upload
+exports.handleFileUpload = async(req, res) => {
+  try {
+    const files = req.files;
+
+    // Array to store uploaded file URLs
+    const fileUrls = [];
+
+    // Folder name within the bucket
+    const folderName = 'job-application-attachments/'; // Specify your desired folder name here
+
+    // Iterate through each file
+    for (const file of files) {
+      // Read file content
+      const fileContent = fs.readFileSync(file.path);
+
+      // Set params for S3 upload with the folder name included in the Key
+      const params = {
+        Bucket: 'techzone-storage',
+        Key: `${folderName}/${Date.now()}_${file.originalname}`, // Include folder name in the Key
+        Body: fileContent,
+      };
+
+      // Upload file to S3
+      const command = new PutObjectCommand(params);
+      const uploadResult = await s3Client.send(command);
+
+      // Delete local file after uploading to S3
+      fs.unlinkSync(file.path);
+
+      // Push S3 file URL to array
+      fileUrls.push(uploadResult.Location);
+    }
+
+    // Send response with array of uploaded file URLs
+    res.json({ fileUrls });
+  } catch (error) {
+    console.log("error uploading file: ", error);
+    res.status(500).json({ error: 'Error uploading file' });
+  }
+}
+
+
+// Function to submit job applications [SAVES ATTACHMENTS TO S3 BUCKET]
 exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
 // exports.submitApplication = async (req, res) => {
   const existingAplication = await Application.findOne({ user:req.userId });
@@ -497,22 +569,22 @@ exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
       const { cover_letter, counter_offer, reason_for_co } = req.body;
   
       // Access files if they exist
-      const attachments = req.files || [];
+      // const attachments = req.files || [];
   
       // Upload files to S3
-      const uploadPromises = attachments.map((file) => {
-        const uploadParams = {
-          Bucket: 'your-s3-bucket-name',
-          Key: 'public/applications/attachments/' + Date.now() + '-' + file.originalname,
-          Body: bufferToStream(file.buffer),
-          ContentType: file.mimetype,
-          ACL: 'public-read',
-        };
+      // const uploadPromises = attachments.map((file) => {
+      //   const uploadParams = {
+      //     Bucket: 'your-s3-bucket-name',
+      //     Key: 'public/applications/attachments/' + Date.now() + '-' + file.originalname,
+      //     Body: bufferToStream(file.buffer),
+      //     ContentType: file.mimetype,
+      //     ACL: 'public-read',
+      //   };
   
-        return s3Client.send(new PutObjectCommand(uploadParams));
-      });
+      //   return s3Client.send(new PutObjectCommand(uploadParams));
+      // });
   
-      await Promise.all(uploadPromises);
+      // await Promise.all(uploadPromises);
   
       // Return necessary information
       res.status(200).json({
@@ -528,10 +600,10 @@ exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
         user: req.userId,
         cover_letter,
         // attachments: attachments.map((file) => file.location),
-        attachment: attachments.length > 0 ? attachments.flat().map((file) => ({
-          name: file.name,
-          url: file.location
-        })): [],
+        // attachment: attachments.length > 0 ? attachments.flat().map((file) => ({
+        //   name: file.name,
+        //   url: file.location
+        // })): [],
         counter_offer,
         reason_for_co,
       });

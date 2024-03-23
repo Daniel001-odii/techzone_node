@@ -4,7 +4,7 @@ const app = express();
 const http = require('http');
 const cors = require("cors");
 
-const fileUpload = require('express-fileupload');
+// const fileUpload = require('express-fileupload');
 const path = require('path');
 const mongoose = require('mongoose');
 
@@ -50,7 +50,7 @@ app.use(express.urlencoded({
   extended: true
 }));
 // for file uploads...
-app.use(fileUpload());
+// app.use(fileUpload());
 
 
 

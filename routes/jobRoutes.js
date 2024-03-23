@@ -15,7 +15,7 @@ router.get("/jobs/search", jobController.searchJobs);
 router.get("/jobs/:job_id", jobController.getJobById);
 
 // jod editing route...
-router.put("/jobs/:job_id", middleware, jobController.editJob);
+router.patch("/jobs/:job_id", middleware, jobController.editJob);
 
 // list job based on user preferences...
 router.get("/user/jobs", middleware, jobController.listUserDefinedJobs);
@@ -29,11 +29,25 @@ router.post("/jobs/:job_id/save", middleware, jobController.saveJob);
 // get user's application for a particular job...
 router.get("/jobs/:job_id/application", middleware, jobController.getUserApplicationForJob);
 
+// job delete route for employers...
+router.post("/jobs/:job_id/delete", middleware, jobController.deleteJob);
+
+// job close route for employers...
+router.post("/jobs/:job_id/close", middleware, jobController.closeJob);
+
+
 
 
 // apply for a job
 // router.post("/jobs/:job_id/apply", middleware, jobController.submitApplication);
 router.post("/jobs/:job_id/apply", middleware, jobController.submitApplicationMain);
+
+
+// Configure multer for file upload
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+
+router.post("/application/files", upload.array('attachments'), jobController.handleFileUpload);
 
 
 
