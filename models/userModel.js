@@ -62,10 +62,9 @@ const userSchema = new Schema({
     is_on_hold: {type: Boolean, default: false},
     // earned: {type: Number, default: 0},
     verification_token: String,
-    pass_reset: {
-        token: String,
-        expiry_date: Date,
-    },
+    
+    pass_reset_token: String,
+    pass_reset_expiry: Date,
 
     // settings starts....
     settings: {
