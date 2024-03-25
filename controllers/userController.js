@@ -9,10 +9,14 @@ exports.getUser = async (req, res) => {
   try {
     if(req.user){
       const user = req.user;
-      return res.status(200).json({ user });
+      res.status(200).json({ user });
+
+      /*
+      ** FOR EMPLOYERS
+      **
+      */
     } else if(req.employer){
       const user = req.employer;
-      // console.log("from get user function: ", user);
       return res.status(200).json({ user });
     }
     
@@ -37,13 +41,25 @@ exports.getUserOrEmployerById = async (req, res) => {
     try {
       // Check if the ID corresponds to a user
       const user = await User.findById(id);
+
       // If not, check if the ID corresponds to an employer
       const employer = await Employer.findById(id);
-  
       if (user) {
-        // if(user.settings.KYC.is_verified){
-        //   user.lastname = `${user.lastname} is verified`
-        // }
+
+      // programmaticaly calculate user's rating while fetching user data....
+      const contracts = await Contract.find({ user: id });
+      let totalRating = 0;
+      let totalRatingsCount = 0;
+      contracts.forEach(contract => {
+        if (contract.user_feedback && contract.user_feedback.rating !== undefined) {
+          totalRating += contract.user_feedback.rating;
+          totalRatingsCount++; // Increment count of contracts with ratings
+        }
+      });
+      // Calculate average rating
+      let averageRating = totalRatingsCount > 0 ? totalRating / totalRatingsCount : 0;
+      user.rating = averageRating;
+      user.rating_count = totalRatingsCount;
         return res.status(200).json({ user });
       } 
       

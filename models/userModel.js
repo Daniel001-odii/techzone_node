@@ -36,7 +36,9 @@ const userSchema = new Schema({
     googleId: Number,
     // PROVIDER AND GOOGLE ID ENDS HERE...
 
-    preffered_job_types: [],
+    preffered_job_types: [
+      {type: String}
+    ],
     profile: {
       title: String,
       bio: String,
@@ -54,10 +56,10 @@ const userSchema = new Schema({
     saved_jobs: [{
       type: mongoose.Schema.Types.ObjectId, ref: 'Job'
     }],
-    // ratings: [
-    //   {type: Number}
-    // ],
-    
+
+    rating: Number,
+    rating_count: Number,
+
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},
     // earned: {type: Number, default: 0},
