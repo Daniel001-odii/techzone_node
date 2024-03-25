@@ -219,6 +219,7 @@ exports.googleClientAuthHandler = async (req, res) => {
                     message: 'Sign-in successful',
                     token,
                     role: user.role,
+                    user,
                 });
 
                 // NOTIFY USER HERE >>>
@@ -255,6 +256,7 @@ exports.googleClientAuthHandler = async (req, res) => {
                         message: "User registered successfully",
                         token,
                         role: "user",
+                        newUser,
                     });
 
                 } else if(role == "employer"){
@@ -277,33 +279,15 @@ exports.googleClientAuthHandler = async (req, res) => {
                     res.status(200).json({
                         message: "User registered successfully",
                         token,
-                        role: "employer"
+                        role: "employer",
+                        newUser
                     });
                 } 
                 if(!role){
                     console.log("user with email not found, email registered as user account");
-                    const newUser = new User({
-                        googleId,
-                        email,
-                        firstname,
-                        lastname,
-                        provider: "google",
-                        profile: { image_url: picture },
-                        // role,
-                    });
-
-                    await newUser.save();
-                    // Generate JWT token for authentication
-                    const token = jwt.sign({ googleId, role: "user" }, process.env.API_SECRET, { expiresIn: '1d' });
-                    res.status(200).json({
-                        message: "User registered successfully",
-                        token,
-                        role: "user",
-                    });
+                    res.status(404).json({ message: "Email not registered with any account please signup!"});
             }
                 
-                // Log in the new user
-                // console.log('New user logged in:', newUser);
             }
         } catch (error) {
             // Validation failed, and user info was not obtained
