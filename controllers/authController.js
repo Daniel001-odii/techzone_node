@@ -16,7 +16,19 @@ const client = new OAuth2Client(
 )
 
 
-  
+/*
+**
+EMAIL CONCERNED CONTROLLERS
+**/
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'danielsinterest@gmail.com',
+      pass: 'qdjctvwagyujlqyg',
+    },
+});
+
 
 
 // user signup....
@@ -44,6 +56,26 @@ exports.userSignup = async (req, res) => {
             });
 
             await newUser.save();
+
+            
+            //   SEND EMAIL HERE >>>>
+            const mailOptions = {
+                from: 'danielsinterest@gmail.com',
+                to: email,
+                subject: 'Welcome to Apex-tek',
+                html: `<p>we are so happy to have you here, we founded Apek-tek because we wanted you to have a trusted place where you as a talent to have a place where you can meet clients who are ready to pay you for the service(s) you are willing to render.</p>`
+            };
+            
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error('Error sending email:', error);
+                    return res.status(500).json({ message: 'Failed to send welcome email' });
+                }
+            
+                console.log('Reset email sent:', info.response);
+                res.status(200).json({ message: 'welcome email sent' });
+                });
+
             res.status(200).send({ message: "User registered successfully!" });
         }
     } catch (error) {
@@ -76,6 +108,25 @@ exports.employerSignup = async (req, res) => {
             });
 
             await newEmployer.save();
+            //   SEND EMAIL HERE >>>>
+            const mailOptions = {
+                from: 'danielsinterest@gmail.com',
+                to: email,
+                subject: 'Welcome to Apex-tek',
+                html: `<p>we are so happy to have you here, we founded Apek-tek because we wanted you to have a trusted place where you as an employer gets to meet talents who are willing to work on your projects and contracts without much hassles. welcome to the family!</p>`
+            };
+            
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error('Error sending email:', error);
+                    return res.status(500).json({ message: 'Failed to send welcome email' });
+                }
+            
+                console.log('Reset email sent:', info.response);
+                res.status(200).json({ message: 'welcome email sent' });
+                });
+
+
             res.status(200).send({ message: "Employer registered successfully!" });
         }
     } catch (error) {
@@ -252,6 +303,25 @@ exports.googleClientAuthHandler = async (req, res) => {
                     // Generate JWT token for authentication
                     const token = jwt.sign({ googleId, role: "user" }, process.env.API_SECRET, { expiresIn: '1d' });
 
+
+                    //   SEND EMAIL HERE >>>>
+                    const mailOptions = {
+                        from: 'danielsinterest@gmail.com',
+                        to: newUser.email,
+                        subject: 'Welcome to Apex-tek',
+                        html: `<p>we are so happy to have you here, we founded Apek-tek because we wanted you to have a trusted place where you as a talent gets to work with employers without much hassles. welcome to the family!</p>`
+                    };
+                    
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            console.error('Error sending email:', error);
+                            return res.status(500).json({ message: 'Failed to send welcome email' });
+                        }
+                    
+                        console.log('welcome email sent:', info.response);
+                        res.status(200).json({ message: 'welcome email sent' });
+                    });
+
                     res.status(200).json({
                         message: "User registered successfully",
                         token,
@@ -275,6 +345,25 @@ exports.googleClientAuthHandler = async (req, res) => {
 
                     // Generate JWT token for authentication
                     const token = jwt.sign({ googleId, role: "employer" }, process.env.API_SECRET, { expiresIn: '1d' });
+
+                    //   SEND EMAIL HERE >>>>
+                    const mailOptions = {
+                        from: 'danielsinterest@gmail.com',
+                        to: newUser.email,
+                        subject: 'Welcome to Apex-tek',
+                        html: `<p>we are so happy to have you here, we founded Apek-tek because we wanted you to have a trusted place where you as an employer gets to meet talents who are willing to work on your projects and contracts without much hassles. welcome to the family!</p>`
+                    };
+                    
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            console.error('Error sending email:', error);
+                            return res.status(500).json({ message: 'Failed to send welcome email' });
+                        }
+                    
+                        console.log('welcome email sent:', info.response);
+                        res.status(200).json({ message: 'welcome email sent' });
+                    });
+
 
                     res.status(200).json({
                         message: "User registered successfully",
@@ -302,18 +391,6 @@ exports.googleClientAuthHandler = async (req, res) => {
 
 
 
-/*
-**
-EMAIL CONCERNED CONTROLLERS
-**/
-
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: 'danielsinterest@gmail.com',
-      pass: 'qdjctvwagyujlqyg',
-    },
-  });
 
 
 //controller for passsworddd reset email....
@@ -341,15 +418,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
   
       await user.save();
   
-      // Send an email to the user with a link containing the reset token
-     const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'danielsinterest@gmail.com',
-        pass: 'qdjctvwagyujlqyg',
-      },
-    });
-  
+    //   SEND EMAIL HERE >>>>
     const mailOptions = {
       from: 'danielsinterest@gmail.com',
       to: email,
@@ -400,6 +469,15 @@ exports.resetPassword = async (req, res) => {
         user.pass_reset_expiry = undefined;
 
         await user.save();
+
+        // NOTIFY USER HERE >>>
+        const newNotification = new Notification({
+            receiver: "user",
+            user,
+            employer: req.employerId,
+            message: "You Successfully Changed Your password"
+        });
+        await newNotification.save();
 
         const mailOptions = {
             from: 'danielsinterest@gmail.com',

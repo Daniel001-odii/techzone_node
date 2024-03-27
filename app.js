@@ -22,19 +22,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 // socket io configurations for notification...
 const server = http.createServer(app);
 
-// const io = require("socket.io")(server, {
-//   cors: {
-//     origin: "*",
-//     methods: ["GET", "POST"]
-//   }
-// });
 
-// io.on('connection', (socket) => {
-//   console.log('A user connected');
-//   socket.on('disconnect', () => {
-//     console.log('User disconnected');
-//   });
-// });
 
 
 // Connect to the db
