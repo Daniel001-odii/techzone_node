@@ -6,12 +6,15 @@ const jobSchema = new Schema({
     },
     title: String,
     description: String,
-    skills: [],
+    skills: [
+        {type: String,}
+    ],
     type: {type: String, enum:["small", "medium", "large"]},
     period: {
         type: String, 
         enum: ["less than a month", "1 to 3 months", "3 to 6 months", "6 months plus"]
     },
+
     budget: Number,
     budget_type: {
         type: String,

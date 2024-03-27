@@ -6,7 +6,7 @@ const Application = require('../models/applicationModel');
 const Notification = require('../models/notificationModel')
 const notificationController = require('../controllers/notificationController');
 const mongoose = require('mongoose');
-
+const nodemailer = require('nodemailer');
 const express = require("express");
 const app = express();
 const http = require('http');
@@ -17,14 +17,30 @@ const io = require("socket.io")(server, {
       methods: ["GET", "POST"]
     }
   });
+
+/*
+* *
+* CONFIGURE EMAIL
+**
+*/
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'danielsinterest@gmail.com',
+      pass: 'qdjctvwagyujlqyg',
+    },
+  });
+
+
+
+
 // SEND NOTIFICATIONS TO USER
 // controller to create and send offer to user...
 exports.sendContractOffer = async(req, res) =>{
     if(req.employerId){
         try{
             const {user_id, job_id} = req.params;
-            const user = await User.findById(user_id);
-    
+            
             const alreadyExisitngContract = await Contract.findOne({ user:user_id, job:job_id });
             if(alreadyExisitngContract){
                 return res.status(200).json({ messsage: "You already sent the contract to this user"});
@@ -35,7 +51,11 @@ exports.sendContractOffer = async(req, res) =>{
                     job: job_id,
                 });
                 await newContract.save();
-                res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
+
+                const job = await Job.findOne({ _id: newContract.job });
+                const user = await User.findById(user_id);
+                const employer = await Employer.findById(req.employerId);
+                
 
                 // NOTIFY USER HERE >>>
                 const newNotification = new Notification({
@@ -46,6 +66,27 @@ exports.sendContractOffer = async(req, res) =>{
                     link_url: `/contracts/${newContract._id}`,
                 });
                 await newNotification.save();
+                
+                // SEND EMAIL HERE >>>
+                
+                const mailOptions = {
+                    from: 'danielsinterest@gmail.com',
+                    to: user.email,
+                    subject: 'Apex-tek Contract Offer',
+                    html: `<p>Good news, ${user.firstname} ${user.lastname} You received a contract offer from ${req.employer.company_name} for the job ${job.title} </p>
+                          <p>Login to accept the offer if you are convenient with the client's terms and begin working on the project as soon as possible</p>`
+                  };
+                
+                  transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                      console.error('Error sending contract email:', error);
+                      return res.status(500).json({ message: 'Failed to send contract email' });
+                    }
+                
+                    console.log('contract email sent', info.response);
+                  });
+
+                  res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
             }
         }catch(error){
             console.log(error);
@@ -62,7 +103,6 @@ exports.assignJob = async(req, res) =>{
     if(req.employerId){
         try{
             const {user_id, job_id} = req.params;
-            const user = await User.findById(user_id);
     
             const alreadyExisitngContract = await Contract.findOne({ user:user_id, job:job_id });
             if(alreadyExisitngContract){
@@ -86,6 +126,27 @@ exports.assignJob = async(req, res) =>{
                     link_url: `/contracts/${newContract._id}`,
                 });
                 await newNotification.save();
+                
+                // SEND EMAIL HERE >>>
+                const user = await User.findOne({ offer: offer.user });
+                const job = await Job.findOne({ _id: offer.job });
+                const mailOptions = {
+                    from: 'danielsinterest@gmail.com',
+                    to: user.email,
+                    subject: 'Apex-tek Contract Offer',
+                    html: `<p>Good news, ${user.firstname} ${user.lastname} You received a job assignment offer from ${req.employer.company_name} for the job ${job.title} </p>
+                          <p>Login to accept the offer if you are convenient with the client's terms and begin working on the project as soon as possible</p>`
+                  };
+                
+                  transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                      console.error('Error sending contract email:', error);
+                      return res.status(500).json({ message: 'Failed to send contract email' });
+                    }
+                
+                    console.log('contract email sent', info.response);
+                    // res.status(200).json({ message: 'Password reset email sent' });
+                  });
                 // notificationController.notify(message);
                 // io.emit('notification', { message: newNotification.message });
 
@@ -186,6 +247,26 @@ exports.markContractAsComplete = async(req, res) => {
         });
         await newNotification.save();
 
+        // SEND EMAIL TO USER >>>
+        const user = await User.findOne({ offer: offer.user });
+        const job = await Job.findOne({ _id: offer.job })
+        const mailOptions = {
+            from: 'danielsinterest@gmail.com',
+            to: user.email,
+            subject: 'Apex-tek Contract Completion',
+            html: `<p>Hello ${user.firstname} ${user.lastname} the contract; for the job ${job.title}  you were working on was marked as complete by the employer</p>
+                  <p>Your payout should be available any moment from now.</p>`
+          };
+        
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.error('Error sending contract email:', error);
+              return res.status(500).json({ message: 'Failed to send contract email' });
+            }
+        
+            console.log('contract email sent', info.response);
+          });
+
     }catch(error){
         console.log(error);
         res.status(500).json({ message: 'internal server error from complete offer' })
@@ -215,6 +296,26 @@ exports.pauseContract = async(req, res) => {
         });
         await newNotification.save();
 
+        // SEND EMAIL TO USER >>>
+        const user = await User.findOne({ offer: offer.user });
+        const job = await Job.findOne({ _id: offer.job })
+        const mailOptions = {
+            from: 'danielsinterest@gmail.com',
+            to: user.email,
+            subject: 'Apex-tek Contract Activity',
+            html: `<p>Hello, ${user.firstname} ${user.lastname} your contract for the job ${job.title} was paused by the employer. login to review your terms with the client.</p>`
+          };
+        
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.error('Error sending contract email:', error);
+              return res.status(500).json({ message: 'Failed to send contract email' });
+            }
+        
+            console.log('contract email sent', info.response);
+            // res.status(200).json({ message: 'Password reset email sent' });
+          });
+
     }catch(error){
         console.log(error);
         res.status(500).json({ message: 'internal server error from pause offer' })
@@ -243,6 +344,26 @@ exports.resumeContract = async(req, res) => {
         });
         await newNotification.save();
 
+        // SEND EMAILS HERE >>>
+        const user = await User.findById(offer.user);
+        const job = await Job.findOne(offer.job);
+        const mailOptions = {
+            from: 'danielsinterest@gmail.com',
+            to: user.email,
+            subject: 'Apex-tek Contract Actvity',
+            html: `<p>Hello, ${user.firstname} ${user.lastname} Your contract for the job ${job.title} was resumed by the employer </p>`
+          };
+        
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.error('Error sending contract email:', error);
+              return res.status(500).json({ message: 'Failed to send contract email' });
+            }
+        
+            console.log('contract email sent', info.response);
+            // res.status(200).json({ message: 'Password reset email sent' });
+          });
+
     }catch(error){
         console.log(error);
         res.status(500).json({ message: 'internal server error from pause offer' })
@@ -253,6 +374,7 @@ exports.resumeContract = async(req, res) => {
 exports.closeContract = async(req, res) => {
     try{
         const contract_id = req.params.contract_id;
+        
         const offer = await Contract.findOne({ employer: req.employerId , _id: contract_id });
         if(!offer){
             return res.status(404).json({ message: "Contract not found"});
@@ -270,6 +392,27 @@ exports.closeContract = async(req, res) => {
             link_url: `contracts/${contract_id}`,
         });
         await newNotification.save();
+
+        // SEND EMAILS HERE >>>
+        const user = await User.findById(offer.user);
+        const job = await Job.findOne(offer.job);
+        const mailOptions = {
+            from: 'danielsinterest@gmail.com',
+            to: user.email,
+            subject: 'Apex-tek Contract Offer',
+            html: `<p>Hello, ${user.firstname} ${user.lastname} Your contract for the job ${job.title} </p>
+                  <p>Login to accept the offer if you are convenient with the client's terms and begin working on the project as soon as possible</p>`
+          };
+        
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.error('Error sending contract email:', error);
+              return res.status(500).json({ message: 'Failed to send contract email' });
+            }
+        
+            console.log('contract email sent', info.response);
+            // res.status(200).json({ message: 'Password reset email sent' });
+          });
 
     }catch(error){
         console.log(error);

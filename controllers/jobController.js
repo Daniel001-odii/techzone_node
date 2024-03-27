@@ -345,96 +345,91 @@ exports.getSavedJobs =  async (req, res) => {
 
 // controller to search for jobs...
 exports.searchJobs = async (req, res) => {
-    try {
+  try {
       const { keywords, budgetMin, budgetMax, jobType, location, posted } = req.query;
-  
+
       // Build the filter criteria based on user's input
       const filter = {};
-  
+
       // Search keywords in job title and description
       if (keywords) {
-        filter.$or = [
-          { title: { $regex: keywords, $options: 'i' } },
-          { skills: { $regex: keywords, $options: 'i' } },
-          { description: { $regex: keywords, $options: 'i' } },
-        ];
+          filter.$or = [
+              { title: { $regex: keywords, $options: 'i' } },
+              { skills: { $regex: keywords, $options: 'i' } },
+              { description: { $regex: keywords, $options: 'i' } },
+          ];
       }
-  
+
       // Filter by budget range
       if (budgetMin && budgetMax) {
-        filter.budget = { $gte: parseInt(budgetMin), $lte: parseInt(budgetMax) };
+          filter.budget = { $gte: parseInt(budgetMin), $lte: parseInt(budgetMax) };
       } else if (budgetMin) {
-        filter.budget = { $gte: parseInt(budgetMin) };
+          filter.budget = { $gte: parseInt(budgetMin) };
       } else if (budgetMax) {
-        filter.budget = { $lte: parseInt(budgetMax) };
+          filter.budget = { $lte: parseInt(budgetMax) };
       }
-  
+
       // Filter by job type
       if (jobType) {
-        filter.period = jobType;
+          filter.type = jobType;
       }
-  
+
       // Filter by location
-      if (location && typeof location === 'object') {
-        const locationFilter = {};
-        if (location.state) {
-            locationFilter['location.state'] = { $regex: new RegExp(location.state, 'i') };
-        }
-        if (location.city) {
-            locationFilter['location.city'] = { $regex: new RegExp(location.city, 'i') };
-        }
-        if (location.address) {
-            locationFilter['location.address'] = { $regex: new RegExp(location.address, 'i') };
-        }
-        if (Object.keys(locationFilter).length > 0) {
-            filter.$and = [{ 'location': { $exists: true } }, locationFilter];
-        }
-    }
-  
+      if (location && location.states && Array.isArray(location.states)) {
+          const locationFilter = { $or: [] };
+
+          location.states.forEach(state => {
+              locationFilter.$or.push({ 'location.state': { $regex: new RegExp(state, 'i') } });
+          });
+
+          filter.$and = [{ 'location': { $exists: true } }, locationFilter];
+      }
+
       // Calculate date range based on "posted" value
       if (posted) {
-        const currentDate = new Date();
-        let startDate;
-  
-        switch (posted) {
-          case 'under 24 hrs':
-            startDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); // Subtract 24 hours
-            break;
-          case 'under a week':
-            startDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000); // Subtract 7 days
-            break;
-          case 'under a month':
-            startDate = new Date(currentDate.getFullYear() - 30 * 24 * 60 * 60 * 1000); // Subtract 1 month
-            break;
-          case 'over a month':
-            startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
-            break;
-          default:
-            break;
-        }
-  
-        if (startDate) {
-          filter.created_at = { $gte: startDate, $lte: currentDate };
-        }
+          const currentDate = new Date();
+          let startDate;
+
+          switch (posted) {
+              case 'under 24 hrs':
+                  startDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); // Subtract 24 hours
+                  break;
+              case 'under a week':
+                  startDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000); // Subtract 7 days
+                  break;
+              case 'under a month':
+                  startDate = new Date(currentDate.getFullYear() - 30 * 24 * 60 * 60 * 1000); // Subtract 1 month
+                  break;
+              case 'over a month':
+                  startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
+                  break;
+              default:
+                  break;
+          }
+
+          if (startDate) {
+              filter.created_at = { $gte: startDate, $lte: currentDate };
+          }
       }
-  
+
       // Use the filter criteria to search for jobs
       const jobs = await Job.find(filter).populate("employer", "is_verified profile created");
 
       jobs.forEach(job => {
-        if(!job.employer){
-          job.is_deleted = true;
-          job.save();
-        }
+          if (!job.employer) {
+              job.is_deleted = true;
+              job.save();
+          }
       });
 
       const legit_jobs = jobs.filter(job => !job.is_deleted);
-  
+
       res.status(200).json({ jobs: legit_jobs });
-    } catch (error) {
+  } catch (error) {
       res.status(500).json({ message: 'Error searching jobs', error: error.message });
-    }
+  }
 };
+
 
 // Function to submit job applications [SAVES ATTACHMENTS IN SERVER]
 exports.submitApplicationMain = async (req, res) => {
