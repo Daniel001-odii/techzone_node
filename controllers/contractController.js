@@ -36,7 +36,73 @@ const transporter = nodemailer.createTransport({
   });
 
 
+/*
+**
+** FOR SITE ADMINISTRATION
+**
+*/
+// controller to get all contracts...
+exports.getAllContracts = async(req, res) => {
+    try{
+     
+        const contracts = await Contract.find()
+        .populate({
+            path: "employer",
+            select: "firstname lastname profile" // Specify the properties you want to populate
+        })
+        .populate({
+            path: "employer",
+            select: "firstname lastname profile" // Specify the properties you want to populate
+        })
+        .populate({
+            path: "job"
+        });
 
+        return res.status(200).json({ contracts });
+               
+    }catch(error){
+        console.log(error)
+    }
+}
+
+
+
+// controller to get all user contracts...
+exports.getContracts = async(req, res) => {
+    try{
+        if(req.userId){
+            const contracts = await Contract.find({ user:req.userId })
+            .populate({
+                path: "employer",
+                select: "firstname lastname profile" // Specify the properties you want to populate
+            })
+            .populate({
+                path: "job"
+            });
+
+            return res.status(200).json({ contracts });
+        } else if(req.employerId){
+            const contracts = await Contract.find({ employer:req.employerId })
+            .populate({
+                path: "user",
+                select: "firstname lastname profile" // Specify the properties you want to populate
+            })
+            .populate({
+                path: "employer",
+                select: "firstname lastname profile" // Specify the properties you want to populate
+            })
+            .populate({
+                path: "job"
+            });
+
+            return res.status(200).json({ contracts });
+        }
+        return res.status(404).json({ message: "You have no contracts yet"})
+       
+    }catch(error){
+        console.log(error)
+    }
+}
 
 // SEND NOTIFICATIONS TO USER
 // controller to create and send offer to user...
@@ -96,7 +162,7 @@ exports.sendContractOffer = async(req, res) =>{
                 
                     console.log('contract email sent', info.response);
                   });
-                  
+
                 }
                   res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
             }
@@ -459,42 +525,6 @@ exports.closeContract = async(req, res) => {
     }
 }
 
-// controller to get all user contracts...
-exports.getContracts = async(req, res) => {
-    try{
-        if(req.userId){
-            const contracts = await Contract.find({ user:req.userId })
-            .populate({
-                path: "employer",
-                select: "firstname lastname profile" // Specify the properties you want to populate
-            })
-            .populate({
-                path: "job"
-            });
-
-            return res.status(200).json({ contracts });
-        } else if(req.employerId){
-            const contracts = await Contract.find({ employer:req.employerId })
-            .populate({
-                path: "user",
-                select: "firstname lastname profile" // Specify the properties you want to populate
-            })
-            .populate({
-                path: "employer",
-                select: "firstname lastname profile" // Specify the properties you want to populate
-            })
-            .populate({
-                path: "job"
-            });
-
-            return res.status(200).json({ contracts });
-        }
-        return res.status(404).json({ message: "You have no contracts yet"})
-       
-    }catch(error){
-        console.log(error)
-    }
-}
 
 // controller to get all user completed contracts...
 exports.getCompletedContracts = async(req, res) => {

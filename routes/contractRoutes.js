@@ -52,6 +52,15 @@ router.post("/contracts/:contract_id/employer-feedback", middleware, contractCon
 router.post("/contracts/:contract_id/user-feedback", middleware, contractConttroller.sendUserFeedback);
 
 
+/*
+**
+**  ADMNISTRATIVE ENDPOINTS
+**
+*/
+// route to get all user and emloyer contracts...
+// please add middleware for admins....
+router.get("/contracts/all", contractConttroller.getAllContracts);
+
 
 
 

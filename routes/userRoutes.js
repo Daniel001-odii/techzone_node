@@ -30,4 +30,10 @@ router.patch("/user/profile", middleware, userController.updateUserData);
 // get user's rating...
 router.get("/user/:user_id/rating", userController.getUserRating);
 
+
+// ADMIN...
+router.get("/users/all", userController.getAllUsers);
+
+
+
 module.exports = router;
