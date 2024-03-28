@@ -74,4 +74,15 @@ exports.getEmployerSavedUsers = async (req, res) => {
     console.log(error);
     res.status(500).json({ message: 'internal server error' })
   }
+};
+
+// ADMIN...
+exports.getAllEmployers = async (req, res) => {
+  try{
+    const employers = await Employer.find();
+    res.status(200).json({ employers });
+  }catch(error){
+    console.log(error);
+    res.status(500).json({ message: 'internal server error' })
+  }
 }

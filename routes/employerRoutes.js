@@ -12,6 +12,7 @@ router.get("/employer/jobs/:job_id/applications", middleware, jobController.getA
 
 router.get("/employer/users/saved", middleware, employerController.getEmployerSavedUsers);
 
-
+// ADMIN >>>
+router.get("/employers/all", employerController.getAllEmployers)
 
 module.exports = router;
