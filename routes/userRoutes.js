@@ -31,8 +31,7 @@ router.patch("/user/profile", middleware, userController.updateUserData);
 router.get("/user/:user_id/rating", userController.getUserRating);
 
 
-// ADMIN...
-router.get("/users/all", userController.getAllUsers);
+
 
 
 

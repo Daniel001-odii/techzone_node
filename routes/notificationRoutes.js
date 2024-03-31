@@ -12,5 +12,7 @@ router.get("/notifications/unread", middleware, notificationController.getUnread
 // mark notification as read..
 router.post("/notifications/:notification_id/read", middleware, notificationController.markAsRead);
 
+router.post("/notifications/clear", middleware, notificationController.deleteAllUserNotifications);
+
 
 module.exports = router;

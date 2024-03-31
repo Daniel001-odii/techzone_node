@@ -20,4 +20,19 @@ router.post("/password/forgot", authController.sendPasswordResetEmail);
 
 router.post("/password/reset", authController.resetPassword);
 
+/*
+**
+ADMIN ROUTES
+**
+*/
+
+router.post("/register/admin", authController.adminSignup);
+
+router.post("/login/admin", authController.adminLogin);
+
+router.post("/OTP/admin", authController.adminOTPTest);
+
+
+
+
 module.exports = router;
