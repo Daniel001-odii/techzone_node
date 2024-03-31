@@ -18,6 +18,7 @@ const employerRoutes = require("./routes/employerRoutes");
 const jobRoutes = require("./routes/jobRoutes");
 const contractRoutes = require("./routes/contractRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 // socket io configurations for notification...
 const server = http.createServer(app);
@@ -52,6 +53,7 @@ app.use('/api', jobRoutes);
 app.use('/api', employerRoutes);
 app.use("/api", contractRoutes);
 app.use("/api", notificationRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 
