@@ -1,5 +1,6 @@
 var mongoose = require('mongoose'), Schema = mongoose.Schema;
-const userSchema = new Schema({
+
+const adminSchema = new Schema({
     email: {
       type: String,
       unique: [true, "email already exists in database!"],
@@ -17,28 +18,23 @@ const userSchema = new Schema({
     password: {
       type: String,
     },
-    role: {type: String, default: "user"},
+    role: {type: String, 
+        default: "admin",
+        enum: ["admin", "manager", "moderator", "team-lead", "team-member"]
+    },
     firstname: {
       type: String,
-      // required: [true, "Please specify firstname"]
+      required: [true, "Please specify firstname"]
     },
     lastname: {
       type: String,
-      // required: [true, "Please specify lastname"]
+      required: [true, "Please specify lastname"]
     },
+
+    login_code_expiration: Date,
+    login_code: String,
  
     // PROVIDER AND GOOGLE ID....
-    provider: {
-      type: String,
-      enum: ["tech-zone", "google"],
-      default: "tech-zone"
-    },
-    googleId: Number,
-    // PROVIDER AND GOOGLE ID ENDS HERE...
-
-    preffered_job_types: [
-      {type: String}
-    ],
     profile: {
       title: String,
       bio: String,
@@ -49,24 +45,13 @@ const userSchema = new Schema({
       },
       phone: String,
       social: String,
-      skills: String,
       image_url: {type: String, default: 'https://icon-library.com/images/no-profile-pic-icon/no-profile-pic-icon-11.jpg'},
       },
-    portfolio_url: String, // Store content type (e.g., 'application/pdf')
-    saved_jobs: [{
-      type: mongoose.Schema.Types.ObjectId, ref: 'Job'
-    }],
-
-    rating: Number,
-    rating_count: Number,
 
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},
     // earned: {type: Number, default: 0},
     verification_token: String,
-    
-    pass_reset_token: String,
-    pass_reset_expiry: Date,
 
     // settings starts....
     settings: {
@@ -94,4 +79,4 @@ const userSchema = new Schema({
     },
   });
   
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('administrators', adminSchema);

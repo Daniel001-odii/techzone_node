@@ -8,9 +8,10 @@ const applicationSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId, ref: 'User'
     },
     cover_letter: String,
-    attachment: [{
-        name: {type: String},
-        url: {type: String}
+    attachments: [{
+        // name: {type: Array},
+        // url: {type: String}
+        type: String,
     }],
     counter_offer: String,
     reason_for_co: String,
