@@ -9,11 +9,13 @@ const path = require('path');
 
 const mongoose = require('mongoose');
 
-
+const formidable = require('formidable');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { Storage } = require("@aws-sdk/lib-storage");
 const { Readable } = require('stream');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
+const fileparser = require("./fileparser");
 
 // Create S3 client
 const s3Client = new S3Client({
@@ -186,6 +188,7 @@ exports.listJobs = async (req, res) => {
 
 // controller to get application for a job..
 
+// gets the application details for a user's job application...
 exports.getUserApplicationForJob = async (req, res) => {
   try {
     const job_id = req.params.job_id;
@@ -345,94 +348,94 @@ exports.getSavedJobs =  async (req, res) => {
 
 // controller to search for jobs...
 exports.searchJobs = async (req, res) => {
-  try {
-      const { keywords, budgetMin, budgetMax, jobType, location, posted } = req.query;
+    try {
+        const { keywords, budgetMin, budgetMax, jobType, location, posted } = req.query;
 
-      // Build the filter criteria based on user's input
-      const filter = {};
+        // Build the filter criteria based on user's input
+        const filter = {};
 
-      // Search keywords in job title and description
-      if (keywords) {
-          filter.$or = [
-              { title: { $regex: keywords, $options: 'i' } },
-              { skills: { $regex: keywords, $options: 'i' } },
-              { description: { $regex: keywords, $options: 'i' } },
-          ];
-      }
+        // Search keywords in job title and description
+        if (keywords) {
+            filter.$or = [
+                { title: { $regex: keywords, $options: 'i' } },
+                { skills: { $regex: keywords, $options: 'i' } },
+                { description: { $regex: keywords, $options: 'i' } },
+            ];
+        }
 
-      // Filter by budget range
-      if (budgetMin && budgetMax) {
-          filter.budget = { $gte: parseInt(budgetMin), $lte: parseInt(budgetMax) };
-      } else if (budgetMin) {
-          filter.budget = { $gte: parseInt(budgetMin) };
-      } else if (budgetMax) {
-          filter.budget = { $lte: parseInt(budgetMax) };
-      }
+        // Filter by budget range
+        if (budgetMin && budgetMax) {
+            filter.budget = { $gte: parseInt(budgetMin), $lte: parseInt(budgetMax) };
+        } else if (budgetMin) {
+            filter.budget = { $gte: parseInt(budgetMin) };
+        } else if (budgetMax) {
+            filter.budget = { $lte: parseInt(budgetMax) };
+        }
 
-      // Filter by job type
-      if (jobType) {
-          filter.type = jobType;
-      }
+        // Filter by job type
+        if (jobType) {
+            filter.type = jobType;
+        }
 
-      // Filter by location
-      if (location && location.states && Array.isArray(location.states)) {
-          const locationFilter = { $or: [] };
+        // Filter by location
+        if (location && location.states && Array.isArray(location.states)) {
+            const locationFilter = { $or: [] };
 
-          location.states.forEach(state => {
-              locationFilter.$or.push({ 'location.state': { $regex: new RegExp(state, 'i') } });
-          });
+            location.states.forEach(state => {
+                locationFilter.$or.push({ 'location.state': { $regex: new RegExp(state, 'i') } });
+            });
 
-          filter.$and = [{ 'location': { $exists: true } }, locationFilter];
-      }
+            filter.$and = [{ 'location': { $exists: true } }, locationFilter];
+        }
 
-      // Calculate date range based on "posted" value
-      if (posted) {
-          const currentDate = new Date();
-          let startDate;
+        // Calculate date range based on "posted" value
+        if (posted) {
+            const currentDate = new Date();
+            let startDate;
 
-          switch (posted) {
-              case 'under 24 hrs':
-                  startDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); // Subtract 24 hours
-                  break;
-              case 'under a week':
-                  startDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000); // Subtract 7 days
-                  break;
-              case 'under a month':
-                  startDate = new Date(currentDate.getFullYear() - 30 * 24 * 60 * 60 * 1000); // Subtract 1 month
-                  break;
-              case 'over a month':
-                  startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
-                  break;
-              default:
-                  break;
-          }
+            switch (posted) {
+                case 'under 24 hrs':
+                    startDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); // Subtract 24 hours
+                    break;
+                case 'under a week':
+                    startDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000); // Subtract 7 days
+                    break;
+                case 'under a month':
+                    startDate = new Date(currentDate.getFullYear() - 30 * 24 * 60 * 60 * 1000); // Subtract 1 month
+                    break;
+                case 'over a month':
+                    startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
+                    break;
+                default:
+                    break;
+            }
 
-          if (startDate) {
-              filter.created_at = { $gte: startDate, $lte: currentDate };
-          }
-      }
+            if (startDate) {
+                filter.created_at = { $gte: startDate, $lte: currentDate };
+            }
+        }
 
-      // Use the filter criteria to search for jobs
-      const jobs = await Job.find(filter).populate("employer", "is_verified profile created");
+        // Use the filter criteria to search for jobs
+        const jobs = await Job.find(filter).populate("employer", "is_verified profile created");
 
-      jobs.forEach(job => {
-          if (!job.employer) {
-              job.is_deleted = true;
-              job.save();
-          }
-      });
+        jobs.forEach(job => {
+            if (!job.employer) {
+                job.is_deleted = true;
+                job.save();
+            }
+        });
 
-      const legit_jobs = jobs.filter(job => !job.is_deleted);
+        const legit_jobs = jobs.filter(job => !job.is_deleted);
 
-      res.status(200).json({ jobs: legit_jobs });
-  } catch (error) {
-      res.status(500).json({ message: 'Error searching jobs', error: error.message });
-  }
+        res.status(200).json({ jobs: legit_jobs });
+    } catch (error) {
+        res.status(500).json({ message: 'Error searching jobs', error: error.message });
+    }
 };
 
 
 // Function to submit job applications [SAVES ATTACHMENTS IN SERVER]
-exports.submitApplicationMain = async (req, res) => {
+exports.submitApplicationMai = async (req, res) => {
   const existingAplication = await Application.findOne({ user:req.userId, job: req.job });
   if(existingAplication){
     res.status(200).json({ message: "You already submitted an application"})
@@ -504,10 +507,42 @@ exports.submitApplicationMain = async (req, res) => {
   };
   
 
+  exports.submitApplicationMain = async (req, res) => {
+    const existingAplication = await Application.findOne({ user:req.userId, job: req.job });
+    if(existingAplication){
+      res.status(200).json({ message: "You already submitted an application"})
+    } else {
+      try {
+        // Access form data
+        const { cover_letter, counter_offer, reason_for_co, attachments } = req.body;
+    
+        // Return necessary information
+        res.status(200).json({
+          message: 'Job application submitted successfully',
+          cover_letter,
+          counter_offer,
+          reason_for_co,
+          attachments,
+        });
+  
+        const newApplication = new Application({
+          job: req.params.job_id,
+          user: req.userId,
+          cover_letter,
+          attachments,
+          counter_offer,
+          reason_for_co
+        })
+  
+        await newApplication.save();
+  
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    }
+    };
 
-
-// Configure multer for file upload
-const upload = multer({ dest: 'uploads/' });
 
 // Function to handle file upload
 exports.handleFileUpload = async(req, res) => {
@@ -528,7 +563,7 @@ exports.handleFileUpload = async(req, res) => {
       // Set params for S3 upload with the folder name included in the Key
       const params = {
         Bucket: 'techzone-storage',
-        Key: `${folderName}/${Date.now()}_${file.originalname}`, // Include folder name in the Key
+        Key: `${folderName}${Date.now()}_${file.originalname}`, // Include folder name in the Key
         Body: fileContent,
       };
 
@@ -538,9 +573,17 @@ exports.handleFileUpload = async(req, res) => {
 
       // Delete local file after uploading to S3
       fs.unlinkSync(file.path);
+      
+      for (const file of files) {
+          const key = `${folderName}${Date.now()}_${file.originalname}`;
+      
+          const fileUrl = `https://${params.Bucket}.s3.amazonaws.com/${key}`;
+          
+          fileUrls.push(fileUrl);
+      }
 
       // Push S3 file URL to array
-      fileUrls.push(uploadResult.Location);
+      // fileUrls.push(uploadResult);
     }
 
     // Send response with array of uploaded file URLs
@@ -553,8 +596,7 @@ exports.handleFileUpload = async(req, res) => {
 
 
 // Function to submit job applications [SAVES ATTACHMENTS TO S3 BUCKET]
-exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
-// exports.submitApplication = async (req, res) => {
+exports.submitApplication = async (req, res) => {
   const existingAplication = await Application.findOne({ user:req.userId });
   if(existingAplication){
     res.status(200).json({ message: "You already submitted an application"})
@@ -562,25 +604,7 @@ exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
     try {
       // Access form data
       const { cover_letter, counter_offer, reason_for_co } = req.body;
-  
-      // Access files if they exist
-      // const attachments = req.files || [];
-  
-      // Upload files to S3
-      // const uploadPromises = attachments.map((file) => {
-      //   const uploadParams = {
-      //     Bucket: 'your-s3-bucket-name',
-      //     Key: 'public/applications/attachments/' + Date.now() + '-' + file.originalname,
-      //     Body: bufferToStream(file.buffer),
-      //     ContentType: file.mimetype,
-      //     ACL: 'public-read',
-      //   };
-  
-      //   return s3Client.send(new PutObjectCommand(uploadParams));
-      // });
-  
-      // await Promise.all(uploadPromises);
-  
+
       // Return necessary information
       res.status(200).json({
         message: 'Job application submitted successfully',
@@ -594,11 +618,7 @@ exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
         job: req.params.job_id,
         user: req.userId,
         cover_letter,
-        // attachments: attachments.map((file) => file.location),
-        // attachment: attachments.length > 0 ? attachments.flat().map((file) => ({
-        //   name: file.name,
-        //   url: file.location
-        // })): [],
+        // attachments will be added..
         counter_offer,
         reason_for_co,
       });
@@ -609,6 +629,25 @@ exports.submitApplication = upload.array('attachments', 5, async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
-  });
-  // };
+  };
+
+
+
+exports.uploadFilesToS3 = async (req, res) => {
+  await fileparser(req)
+  .then(data => {
+    res.status(200).json({
+      message: "Success",
+      data
+    });
+    
+  })
+  .catch(error => {
+    res.status(400).json({
+      message: "An error occurred.",
+      error
+    })
+  })
+};
+
 

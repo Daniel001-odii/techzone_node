@@ -36,37 +36,6 @@ const transporter = nodemailer.createTransport({
   });
 
 
-/*
-**
-** FOR SITE ADMINISTRATION
-**
-*/
-// controller to get all contracts...
-exports.getAllContracts = async(req, res) => {
-    try{
-     
-        const contracts = await Contract.find()
-        .populate({
-            path: "employer",
-            select: "firstname lastname profile" // Specify the properties you want to populate
-        })
-        .populate({
-            path: "employer",
-            select: "firstname lastname profile" // Specify the properties you want to populate
-        })
-        .populate({
-            path: "job"
-        });
-
-        return res.status(200).json({ contracts });
-               
-    }catch(error){
-        console.log(error)
-    }
-}
-
-
-
 // controller to get all user contracts...
 exports.getContracts = async(req, res) => {
     try{
