@@ -6,6 +6,8 @@ const Employer = require("../models/employerModel"); // Correct the import for E
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
+const Admin = require('../models/adminModel');
+
 const { OAuth2Client } = require('google-auth-library')
 const client = new OAuth2Client(
   {
@@ -291,10 +293,10 @@ exports.googleClientAuthHandler = async (req, res) => {
                     const newUser = new User({
                         googleId,
                         email,
-                        firstname,
-                        lastname,
+                        // firstname,
+                        // lastname,
                         provider: "google",
-                        profile: { image_url: picture },
+                        // profile: { image_url: picture },
                     });
 
                     // Save the new user to the "User" model
@@ -503,6 +505,177 @@ exports.resetPassword = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
-  
+
+
+/*
+**
+* ADMINISTRATIVE CONTROLLERS
+**
+*/
+
+// employer signup....
+exports.adminSignup = async (req, res) => {
+    try {
+        const { firstname, lastname, email, password } = req.body;
+
+        // Check if required fields are missing
+        if (!firstname || !lastname || !email || !password) {
+            return res.status(400).send({ message: "All fields are required" });
+        }
+
+        const existingUser = await User.findOne({ email });
+        const existingEmployer = await Employer.findOne({ email });
+        const exisitingAdmin = await Admin.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'The email has already been registered as a user' });
+        } else if (existingEmployer) {
+            return res.status(400).json({ message: 'The email has already been registered as an employer' });
+        }else if (exisitingAdmin) {
+            return res.status(400).json({ message: 'The email has already been registered as an administrator' });
+        }
+         else {
+            const newAdmin = new Admin({
+                firstname,
+                lastname,
+                email,
+                password: bcrypt.hashSync(password, 8)
+            });
+
+            await newAdmin.save();
+
+
+            res.status(200).send({ message: "Admin registered successfully!" });
+        }
+    } catch (error) {
+        res.status(500).send({ message: "Admin registration failed!" });
+        console.log("error registering admin: ", error)
+    }
+};
+
+
+
+exports.adminLogin = async (req, res) => {
+    console.log("login detected...");
+    try {
+        const { email, password } = req.body;
+        const user = await Admin.findOne({ email });
+
+        if (!user) {
+            return res.status(401).json({ message: "Invalid username or password" });
+        }
+
+        // Compare password only if the user has a password
+        const isValidPassword = bcrypt.compareSync(password, user.password);
+
+        if (!isValidPassword) {
+            return res.status(401).json({ message: "Invalid username or password" });
+        }
+
+        // assign user ID
+        const userId = user._id;
+
+        // Determine user's role
+        let roleSpecificData = {};
+        if (user.role === 'admin') {
+
+        } else if (user.role === 'manager') {
+            // Populate as needed for manager
+        } else if (user.role === 'moderator') {
+            // Populate as needed for moderator
+        } else if (user.role === 'team-lead') {
+            // Populate as needed for team lead
+        } else if (user.role === 'team-member') {
+            // Populate as needed for team member
+        }
+
+        const token = jwt.sign({ id: userId, role: user.role }, process.env.API_SECRET, { expiresIn: process.env.TOKEN_EXPIRY || '1d' });
+
+        // Send a response
+        const response = {
+            user: {
+                id: userId,
+                email: email,
+                role: user.role,
+                ...roleSpecificData // Merge role specific data
+            },
+            token,
+            message: "One time password sent"
+        };
+        res.status(200).json(response);
+
+        // Notify user
+        const newNotification = new Notification({
+            receiver: "user",
+            user: userId,
+            message: `New Admin signin alert`
+        });
+        await newNotification.save();
+
+
+        if (user.role === 'admin') {
+            // send 2FA email for admin login...
+            // Generate a unique reset token (6-digit random number)
+            const login_code = Math.floor(100000 + Math.random() * 900000);
+
+            // Set an expiration time for the reset token (e.g., 1 hour)
+            const login_code_expiration = Date.now() + 3600000; // 1 hour
+
+            // Update the user's document with the reset token and expiration time
+            user.login_code = login_code;
+            user.login_code_expiration = login_code_expiration;
+
+            await user.save();
+                //   SEND EMAIL HERE >>>>
+                const mailOptions = {
+                    from: 'danielsinterest@gmail.com',
+                    to: email,
+                    subject: 'Apex-tek Administrator Login',
+                    html: `<p>You are receiving this email because you (or someone else) is trying to login into your account.</p>
+                        <p>Please use this code as your OTP <strong> ${login_code}</strong> </p>
+                        <p>If you did not request this, please ignore this email.</p>`
+                };
+            
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error('Error sending email:', error);
+                    return res.status(500).json({ message: 'Failed to send login email' });
+                }
+            
+                console.log('login email sent:', info.response);
+                res.status(200).json({ message: 'login email sent' });
+                });
+        }
+    }
+    catch(error){
+        console.error("Error logging in as admin: ", error);
+        res.status(500).json("Internal server error");
+    }
+};
+
+exports.adminOTPTest = async (req, res) => {
+    const { login_code } = req.body;
+
+    console.log("from client: ", login_code);
+
+    try{
+        // Find the user by the reset token and ensure it's not expired        
+        const admin = await Admin.findOne({ login_code, login_code_expiration: { $gt: Date.now() },});
+
+        if (!admin) {
+        return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+
+        admin.login_code = undefined;
+        admin.login_code_expiration = undefined;
+        admin.save();
+;
+        res.status(200).json({ message: "Login Successful!"})
+
+    }catch(error){
+        console.log("error accepting OTP: ", error);
+        res.status(500).json({ message: "internam server error"});
+    }
+}
+
   
 
