@@ -2,8 +2,19 @@ const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
 const Contract = require('../models/contractModel');
+const imageParser = require("../utils/imageParser")
 
 const mongoose = require('mongoose');
+
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+// Create S3 client
+const s3Client = new S3Client({
+  region: 'us-east-1', // Specify your AWS region
+  credentials: {
+    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
+  }
+});
 
 exports.getUser = async (req, res) => {
   try {
@@ -217,5 +228,34 @@ exports.getUserRating = async (req, res) => {
   } catch (error) {
     console.error("Error getting user rating: ", error);
     return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
+// Express route for handling image upload
+exports.uploadProfileImageToS3 =  async (req, res) => {
+  try {
+      // Retrieve file information from the request
+      const { originalname, path } = req.file;
+
+      // Prepare parameters for S3 upload
+      const params = {
+          Bucket: 'techzone-storage',
+          Key: originalname, // Use original file name for the object key
+          Body: require('fs').createReadStream(path), // Read stream from local file
+      };
+
+      // Upload image to S3
+      const command = new PutObjectCommand(params);
+      const data = await s3Client.send(command);
+
+      // Return the S3 object URL as the response
+      const objectUrl = `https://${params.Bucket}.s3.amazonaws.com/${params.Key}`;
+      res.json({ url: objectUrl });
+
+  } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ error: 'Failed to upload image' });
   }
 };

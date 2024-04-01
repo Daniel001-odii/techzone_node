@@ -5,6 +5,9 @@ const jobController = require("../controllers/jobController")
 const middleware = require("../middlewares/authMiddleware")
 
 
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+
 router.get("/user", middleware,  userController.getUser);
 
 router.get("/user/:id", userController.getUserOrEmployerById);
@@ -30,7 +33,7 @@ router.patch("/user/profile", middleware, userController.updateUserData);
 // get user's rating...
 router.get("/user/:user_id/rating", userController.getUserRating);
 
-
+router.post("/profile/image", middleware, upload.single('image'), userController.uploadProfileImageToS3);
 
 
 
