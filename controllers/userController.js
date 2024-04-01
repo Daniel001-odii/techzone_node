@@ -242,7 +242,7 @@ exports.uploadProfileImageToS3 =  async (req, res) => {
       // Prepare parameters for S3 upload
       const params = {
           Bucket: 'techzone-storage',
-          Key: originalname, // Use original file name for the object key
+          Key: `profile-images/${originalname}`, // Use original file name for the object key
           Body: require('fs').createReadStream(path), // Read stream from local file
       };
 
@@ -252,7 +252,8 @@ exports.uploadProfileImageToS3 =  async (req, res) => {
 
       // Return the S3 object URL as the response
       const objectUrl = `https://${params.Bucket}.s3.amazonaws.com/${params.Key}`;
-      res.json({ url: objectUrl });
+      // res.json({ url: objectUrl });
+      res.json({ data });
 
   } catch (error) {
       console.error("Error uploading image:", error);
