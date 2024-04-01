@@ -12,6 +12,7 @@ router.get("/employer/jobs/:job_id/applications", middleware, jobController.getA
 
 router.get("/employer/users/saved", middleware, employerController.getEmployerSavedUsers);
 
+router.patch("/employer/profile/update", middleware, employerController.updateEmployerData)
 
 
 module.exports = router;

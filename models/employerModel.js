@@ -38,7 +38,9 @@ const employerSchema = new Schema({
     googleId: Number,
     // PROVIDER AND GOOGLE ID ENDS HERE....
 
-    preffered_talent_types: [],
+    preffered_talent_types: [
+      {type: String}
+    ],
     profile: {
       company_name: {type: String, default: "A tech-zone company"},
       tag_line: String,

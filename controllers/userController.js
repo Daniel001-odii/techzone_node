@@ -41,6 +41,7 @@ exports.getUserSavedJobs = async (req, res) => {
 
 };
 
+
 // route to get eitrher user or employer by their ID...
 exports.getUserOrEmployerById = async (req, res) => {
     const { id } = req.params;
@@ -58,11 +59,11 @@ exports.getUserOrEmployerById = async (req, res) => {
       if (user) {
 
       // programmaticaly calculate user's rating while fetching user data....
-      const contracts = await Contract.find({ user: id });
+      const contracts = await Contract.find({ user: id, status: 'completed' });
       let totalRating = 0;
       let totalRatingsCount = 0;
       contracts.forEach(contract => {
-        if (contract.user_feedback && contract.user_feedback.rating !== undefined) {
+        if (contract.user_feedback.review && contract.user_feedback.rating !== undefined) {
           totalRating += contract.user_feedback.rating;
           totalRatingsCount++; // Increment count of contracts with ratings
         }

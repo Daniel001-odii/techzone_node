@@ -76,4 +76,27 @@ exports.getEmployerSavedUsers = async (req, res) => {
   }
 };
 
+// updating user profile....
+exports.updateEmployerData= async (req, res) => {
+  try {
+    const employerId = req.employerId; // Get the user's ID from the authenticated user
+    const updates = req.body; // Update fields from the request body
+    console.log("from client: ", updates)
+    // Update the user's profile fields
+    // const employer = await Employer.findByIdAndUpdate(employerId, updates, { new: true });
+    const employer = await Employer.findById(employerId);
+
+    // console.log("found employer: ", employer);
+
+    employer.profile = updates.profile;
+    employer.preffered_job_types = updates.preffered_job_types;
+
+    await employer.save();
+
+    res.status(200).json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating profile', error: error.message });
+    console.error("error updating employer profile: ", error)
+  }
+};
 
