@@ -37,6 +37,7 @@ exports.getJobsByEmployer = async (req, res) => {
   }
 };
 
+
 exports.saveUser = async (req, res) => {
     console.log("saving user...")
       try {
@@ -65,6 +66,7 @@ exports.saveUser = async (req, res) => {
         res.status(500).json({ message: 'Error saving user', error: error.message });
       }
 };
+
 
 exports.getEmployerSavedUsers = async (req, res) => {
   try{
