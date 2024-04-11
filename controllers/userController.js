@@ -270,3 +270,41 @@ exports.uploadProfileImageToS3 = async (req, res) => {
     res.status(500).json({ error: 'Failed to upload image' });
   }
 };
+
+
+exports.uploadUserResumeToS3 = async (req, res) => {
+  try {
+    // Retrieve file information from the request
+    const { originalname, path } = req.file;
+
+    // Prepare parameters for S3 upload
+    const params = {
+      Bucket: 'techzone-storage',
+      Key: `user-resumes/${originalname}`, // Use original file name for the object key
+      Body: require('fs').createReadStream(path), // Read stream from local file
+      ACL: 'public-read'
+    };
+
+    // Upload image to S3
+    const command = new PutObjectCommand(params);
+    const data = await s3Client.send(command);
+
+    // Clean up the temporary file
+    require('fs').unlinkSync(path);
+
+    // Return the S3 object URL as the response
+    const objectUrl = `https://${params.Bucket}.s3.amazonaws.com/${params.Key}`;
+
+    // save as user's profile image ...
+    const user = req.user;
+
+    user.profile.image_url = objectUrl;
+
+    await user.save();
+
+    res.json({ message: "resume uploaded successfully" });
+  } catch (error) {
+    console.error("Error uploading resume:", error);
+    res.status(500).json({ error: 'Failed to upload resume' });
+  }
+};

@@ -35,6 +35,8 @@ router.get("/user/:user_id/rating", userController.getUserRating);
 
 router.post("/profile/image", middleware, upload.single('image'), userController.uploadProfileImageToS3);
 
+router.post("/profile/resume", middleware, upload.single('file'), userController.uploadUserResumeToS3);
+
 
 
 
