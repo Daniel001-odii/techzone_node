@@ -12,6 +12,9 @@ router.get("/user", middleware,  userController.getUser);
 
 router.get("/user/:id", userController.getUserOrEmployerById);
 
+// update user's password
+router.post("/user/password/change", middleware, userController.changePassword);
+
 // get user saved jobs
 router.get("/user/jobs/saved", middleware, jobController.getSavedJobs);
 

@@ -2,6 +2,7 @@ const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
 const Contract = require('../models/contractModel');
+const Notification = require('../models/notificationModel')
 const imageParser = require("../utils/imageParser")
 
 const mongoose = require('mongoose');
@@ -231,6 +232,52 @@ exports.getUserRating = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+const bcrypt = require('bcrypt');
+
+exports.changePassword = async (req, res) => {
+  try {
+    const user = req.user;
+    const { password, new_password, new_password_confirmation } = req.body;
+
+    console.log("password change detected: ", user, "form :", req.body)
+
+    // Compare password only if the user has a password
+    const isValidPassword = bcrypt.compareSync(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(401).send({ message: "Current password provided is invalid" });
+    }
+
+    // Check if the new password is the same as the previous one
+    if (password === new_password) {
+      return res.status(400).send({ message: "New password cannot be the same as the previous password" });
+    }
+
+    // Check if the new password matches its confirmation
+    if (new_password !== new_password_confirmation) {
+      return res.status(400).send({ message: "Passwords don't match" });
+    }
+
+    // Hash the new password and save it to the user
+    const hashedPassword = bcrypt.hashSync(new_password, 8);
+    user.password = hashedPassword;
+    await user.save();
+
+    // NOTIFY USER HERE >>>
+    const newNotification = new Notification({
+        receiver: "user",
+        user,
+        message: "You changed your password",
+    });
+    await newNotification.save();
+
+    res.status(200).send({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
 
 
 
