@@ -13,14 +13,6 @@ const mongoose = require('mongoose');
 
 // Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
 app.use(cors());
-// app.use(cors({
-//   origin: 'http://localhost:8080',
-//   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
-//   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'], // Include 'Authorization' header here
-//   credentials: true
-// }));
-
-
 
 
 // IMPORT ALL ROUTE FILES HERE....
@@ -47,13 +39,13 @@ io.on('connection', (socket) => {
   console.log("new socket io connection...")
 });
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Credentials', 'true'); // Include this line when using credentials
-  next();
-});
+// app.use((req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
+//   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+//   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+//   res.header('Access-Control-Allow-Credentials', 'true'); // Include this line when using credentials
+//   next();
+// });
 
 // Connect to the db
 mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true } )
