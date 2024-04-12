@@ -47,9 +47,9 @@ router.post("/jobs/:job_id/apply", middleware, jobController.submitApplicationMa
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-// router.post("/application/files", upload.array('attachments'), jobController.handleFileUpload);
+router.post("/application/files", upload.array('attachments'), jobController.handleFileUpload);
 
-router.post("/application/files", jobController.uploadFilesToS3);
+// router.post("/application/files", jobController.uploadFilesToS3);
 
 
 module.exports = router;

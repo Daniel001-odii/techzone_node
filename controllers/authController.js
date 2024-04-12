@@ -265,7 +265,10 @@ exports.googleClientAuthHandler = async (req, res) => {
                 const { model, user } = existingUserResult;
 
                 // Generate JWT token for authentication
-                const token = jwt.sign({ googleId, role: user.role }, process.env.API_SECRET, { expiresIn: '1d' });
+                // const token = jwt.sign({ googleId, role: user.role }, process.env.API_SECRET, { expiresIn: '1d' });
+                const token = jwt.sign({ id: user._id, role: user.role }, process.env.API_SECRET, { expiresIn: '1d' });
+
+                console.log("see user: ", user)
 
                 // Respond with the token and user information
                 res.status(200).json({

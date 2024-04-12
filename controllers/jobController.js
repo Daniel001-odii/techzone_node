@@ -481,7 +481,7 @@ exports.handleFileUpload = async(req, res) => {
     const fileUrls = [];
 
     // Folder name within the bucket
-    const folderName = 'job-application-attachments/'; // Specify your desired folder name here
+    const folderName = 'job-application-attachments/';
 
     // Iterate through each file
     for (const file of files) {
@@ -491,8 +491,9 @@ exports.handleFileUpload = async(req, res) => {
       // Set params for S3 upload with the folder name included in the Key
       const params = {
         Bucket: 'techzone-storage',
-        Key: `${folderName}${Date.now()}_${file.originalname}`, // Include folder name in the Key
+        Key: `${folderName}${Date.now()}_${file.originalname}`,
         Body: fileContent,
+        ACL: 'public-read'
       };
 
       // Upload file to S3
@@ -577,5 +578,6 @@ exports.uploadFilesToS3 = async (req, res) => {
     })
   })
 };
+
 
 

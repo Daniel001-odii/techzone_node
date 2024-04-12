@@ -298,7 +298,7 @@ exports.uploadUserResumeToS3 = async (req, res) => {
     // save as user's profile image ...
     const user = req.user;
 
-    user.profile.image_url = objectUrl;
+    user.portfolio_url = objectUrl;
 
     await user.save();
 
