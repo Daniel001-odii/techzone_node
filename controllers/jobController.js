@@ -111,36 +111,37 @@ exports.getJobById = async (req, res) => {
 
 // Controller for listing jobs (for users)
 exports.listUserDefinedJobs = async (req, res) => {
-    try {
-        // Assuming the user's preferred job types are stored in req.user.preferred_job_types
-        const userPreferredJobTypes = req.user.preferred_job_types;
+  try {
+      // Assuming the user's preferred job types are stored in req.user.preferred_job_types
+      const userPreferredJobTypes = req.user.preferred_job_types;
 
-        // Fetch all jobs
-        const allJobs = await Job.find().populate("employer", "is_verified profile created");;
+      // Fetch all jobs with non-null employers
+      const allJobs = await Job.find({ employer: { $ne: null } }).populate("employer", "is_verified profile created");
 
-        // Sort jobs based on user's preferred job types
-        const sortedJobs = allJobs.sort((jobA, jobB) => {
-            // Check if jobA's type is in the user's preferred types
-            const isJobATypePreferred = userPreferredJobTypes.includes(jobA.type);
+      // Sort jobs based on user's preferred job types
+      const sortedJobs = allJobs.sort((jobA, jobB) => {
+          // Check if jobA's type is in the user's preferred types
+          const isJobATypePreferred = userPreferredJobTypes.includes(jobA.type);
 
-            // Check if jobB's type is in the user's preferred types
-            const isJobBTypePreferred = userPreferredJobTypes.includes(jobB.type);
+          // Check if jobB's type is in the user's preferred types
+          const isJobBTypePreferred = userPreferredJobTypes.includes(jobB.type);
 
-            // Compare the two jobs based on their relevance to user's preferences
-            if (isJobATypePreferred && !isJobBTypePreferred) {
-                return -1; // jobA comes first
-            } else if (!isJobATypePreferred && isJobBTypePreferred) {
-                return 1; // jobB comes first
-            } else {
-                return 0; // no preference, maintain current order
-            }
-        });
+          // Compare the two jobs based on their relevance to user's preferences
+          if (isJobATypePreferred && !isJobBTypePreferred) {
+              return -1; // jobA comes first
+          } else if (!isJobATypePreferred && isJobBTypePreferred) {
+              return 1; // jobB comes first
+          } else {
+              return 0; // no preference, maintain current order
+          }
+      });
 
-        res.status(200).json({ jobs: sortedJobs });
-    } catch (error) {
-        res.status(500).json({ message: 'Error listing jobs', error: error.message });
-    }
+      res.status(200).json({ jobs: sortedJobs });
+  } catch (error) {
+      res.status(500).json({ message: 'Error listing jobs', error: error.message });
+  }
 };
+
 
 exports.listJobs = async (req, res) => {
   try{
