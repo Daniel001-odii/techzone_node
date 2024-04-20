@@ -504,7 +504,8 @@ exports.getCompletedContracts = async(req, res) => {
 
     try{
         if(req.params.user_id){
-            const contracts = await Contract.find({ user:req.params.user_id, action: "accepted", $or: [{ status: "completed" }, { status: "open" }] })
+            // const contracts = await Contract.find({ user:req.params.user_id, action: "accepted", $or: [{ status: "completed" }, { status: "open" }] })
+            const contracts = await Contract.find({ user:req.params.user_id, status: "completed"})
         .populate({
             path: "user",
             select: "firstname lastname profile" // Specify the properties you want to populate
@@ -517,7 +518,9 @@ exports.getCompletedContracts = async(req, res) => {
             path: "job"
         });
         return res.status(200).json({ contracts }); 
-        } else {
+        } 
+        /*
+        else {
             console.log(req.params)
             const contracts = await Contract.find({ user:req.userId, action: "accepted", $or: [{ status: "completed" }, { status: "open" }] })
             .populate({
@@ -532,11 +535,7 @@ exports.getCompletedContracts = async(req, res) => {
                 path: "job"
             });
             return res.status(200).json({ contracts });
-        }
-
-   
-
-        
+        }*/   
        
     }catch(error){
         console.log(error)
