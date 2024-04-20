@@ -73,6 +73,8 @@ exports.getContracts = async(req, res) => {
     }
 }
 
+
+const APP_CONTRACT_URL = '/in/contracts'
 // SEND NOTIFICATIONS TO USER
 // controller to create and send offer to user...
 exports.sendContractOffer = async(req, res) =>{
