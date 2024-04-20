@@ -401,113 +401,123 @@ exports.googleClientAuthHandler = async (req, res) => {
 //controller for passsworddd reset email....
 exports.sendPasswordResetEmail = async (req, res) => {
     const { email } = req.body;
-  
+
     try {
-      // Find the user by their email address
-      const user = await User.findOne({ email });
-  
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Generate a unique reset token
-    const resetToken = crypto.randomBytes(8).toString('hex');
+        // Find the user by their email address
+        const user = await User.findOne({ email });
+        const employer = await Employer.findOne({ email });
+
+        // Check if either user or employer exists
+        if (!user && !employer) {
+            return res.status(404).json({ message: 'User or Employer not found' });
+        }
+
+        // Choose the document to update based on which one was found
+        const foundDocument = user || employer;
+
+        // Generate a unique reset token
+        const resetToken = crypto.randomBytes(8).toString('hex');
         // const resetToken = Math.floor(100000 + Math.random() * 900000);
-  
-      // Set an expiration time for the reset token (e.g., 1 hour)
-    const resetTokenExpiration = Date.now() + 3600000; // 1 hour
-  
-      // Update the user's document with the reset token and expiration time
-      user.pass_reset_token = resetToken;
-      user.pass_reset_expiry = resetTokenExpiration;
-  
-      await user.save();
-  
-    //   SEND EMAIL HERE >>>>
-    const mailOptions = {
-      from: 'danielsinterest@gmail.com',
-      to: email,
-      subject: 'Apex-tek Password Reset Request',
-      html: `<p>You are receiving this email because you (or someone else) have requested the reset of your account password.</p>
+
+        // Set an expiration time for the reset token (e.g., 1 hour)
+        const resetTokenExpiration = Date.now() + 3600000; // 1 hour
+
+        // Update the found document's fields with the reset token and expiration time
+        foundDocument.pass_reset_token = resetToken;
+        foundDocument.pass_reset_expiry = resetTokenExpiration;
+
+        await foundDocument.save();
+
+        // SEND EMAIL HERE >>>>
+        const mailOptions = {
+            from: 'danielsinterest@gmail.com',
+            to: email,
+            subject: 'Apex-tek Password Reset Request',
+            html: `<p>You are receiving this email because you (or someone else) have requested the reset of your account password.</p>
             <p>Please click <a href="${process.env.GOOGLE_CALLBACK}/user/${resetToken}/password">this link</a> to securely reset your password/p>
             <p>If you did not request this, please ignore this email, and your password will remain unchanged.</p>`
-    };
-  
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error('Error sending email:', error);
-          return res.status(500).json({ message: 'Failed to send reset email' });
-        }
-  
-        console.log('Reset email sent:', info.response);
-        res.status(200).json({ message: 'Password reset email sent' });
-      });
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+                return res.status(500).json({ message: 'Failed to send reset email' });
+            }
+
+            console.log('Reset email sent:', info.response);
+            res.status(200).json({ message: 'Password reset email sent' });
+        });
 
 
     } catch (error) {
-      console.error('Error sending password reset email:', error);
-      res.status(500).json({ message: 'Internal server error' });
+        console.error('Error sending password reset email:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
-  };
+};
+
   
 
   
 exports.resetPassword = async (req, res) => {
-    const { new_password } = req.body;
-    const { reset_token } = req.body;
+    const { new_password, reset_token } = req.body;
 
     try {
         // Find the user by the reset token and ensure it's not expired
-        const user = await User.findOne({ pass_reset_token: reset_token, pass_reset_expiry: { $gt: Date.now() }, // Ensure the token is not expired
-        });
+        const user = await User.findOne({ pass_reset_token: reset_token, pass_reset_expiry: { $gt: Date.now() } });
+        const employer = await Employer.findOne({ pass_reset_token: reset_token, pass_reset_expiry: { $gt: Date.now() } });
 
-        if (!user) {
-        return res.status(400).json({ message: 'Invalid or expired reset token' });
+        // Check if either user or employer exists
+        if (!user && !employer) {
+            return res.status(400).json({ message: 'Invalid or expired reset token' });
         }
+
+        // Choose the document to update based on which one was found
+        const foundDocument = user || employer;
 
         // Hash the new password
         const hashedPassword = await bcrypt.hash(new_password, 8);
 
-        // Update the user's password and clear the reset token fields
-        user.password = hashedPassword;
-        user.pass_reset_token = undefined;
-        user.pass_reset_expiry = undefined;
+        // Update the document's password and clear the reset token fields
+        foundDocument.password = hashedPassword;
+        foundDocument.pass_reset_token = undefined;
+        foundDocument.pass_reset_expiry = undefined;
 
-        await user.save();
+        await foundDocument.save();
 
         // NOTIFY USER HERE >>>
+        const receiver = user ? "user" : "employer";
         const newNotification = new Notification({
-            receiver: "user",
+            receiver,
             user,
-            employer: req.employerId,
+            employer: employer ? req.employerId : null,
             message: "You Successfully Changed Your password"
         });
         await newNotification.save();
 
+        // SEND RESET SUCCESS EMAIL HERE >>>>
         const mailOptions = {
             from: 'danielsinterest@gmail.com',
-            to: user.email,
+            to: foundDocument.email,
             subject: 'Apex-tek Password Reset Success',
             html: `<p>You successfully reset your password!</p>`
-          };
-        
-          transporter.sendMail(mailOptions, (error, info) => {
-              if (error) {
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
                 console.error('Error sending email:', error);
                 return res.status(500).json({ message: 'Failed to send reset email' });
-              }
-        
-              console.log('Reset email sent:', info.response);
-              res.status(200).json({ message: 'Password reset email sent' });
-            });
+            }
 
+            console.log('Reset email sent:', info.response);
+            res.status(200).json({ message: 'Password reset email sent' });
+        });
 
-        res.status(200).json({ message: 'Password reset successful' });
     } catch (error) {
         console.error('Error resetting password:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 
 /*
