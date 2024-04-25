@@ -102,8 +102,8 @@ exports.sendContractOffer = async(req, res) =>{
                 const newNotification = new Notification({
                     receiver: "user",
                     user,
-                    employer: req.employerId,
-                    message: "You received a contract offer",
+                    // employer: req.employerId,
+                    message: `You received a contract offer for the job ${job.title}`,
                     link_url: `/contracts/${newContract._id}`,
                 });
                 await newNotification.save();
@@ -151,8 +151,13 @@ exports.sendContractOffer = async(req, res) =>{
 exports.assignJob = async(req, res) =>{
     if(req.employerId){
         try{
+
             const {user_id, job_id} = req.params;
             const user = await User.findById(user_id);
+
+            const job = await Job.findById(job_id);
+            const employer = await Employer.findById(job.employer)
+
             const alreadyExisitngContract = await Contract.findOne({ user:user_id, job:job_id });
             if(alreadyExisitngContract){
                 return res.status(200).json({ messsage: "You already assigned the contract to this user"});
@@ -170,16 +175,15 @@ exports.assignJob = async(req, res) =>{
                 const newNotification = new Notification({
                     receiver: "user",
                     user,
-                    employer: req.employerId,
-                    message: "You received a job assignment",
+                    // employer: req.employerId,
+                    message:  `You received a job assignment offer for the job ${job.title}`,
                     link_url: `/contracts/${newContract._id}`,
                 });
                 await newNotification.save();
                 
                 
                 
-                const job = await Job.findById(job_id);
-                const employer = await Employer.findById(job.employer)
+               
                 // SEND EMAIL HERE >>>
                 const mailOptions = {
                     from: 'danielsinterest@gmail.com',
@@ -232,9 +236,10 @@ exports.acceptOffer = async(req, res) => {
 
         // NOTIFY USER HERE >>>
         const newNotification = new Notification({
-            receiver: "both",
-            user: req.userId,
-            employer: offer.employer,
+            receiver: "user",
+            receiver: "user",
+            user: offer.user,
+            // employer: offer.employer,
             message: "Your contract started",
             link_url: `/contracts/${contract_id}`,
         });
@@ -253,6 +258,8 @@ exports.declineOffer = async(req, res) => {
     try{
         const contract_id = req.params.contract_id;
         const offer = await Contract.findOne({ user: req.userId , _id: contract_id });
+        const user = await User.findById(offer.user);
+        
         if(!offer){
             return res.status(404).json({ message: "Contract not found"});
         }
@@ -261,13 +268,13 @@ exports.declineOffer = async(req, res) => {
         await offer.save();
         res.status(200).json({ offer, message: "You declined the offer"});
 
-        const contract = await Contract.findById(contract_id);
-        const user = await User.findById(contract.user)
+
+        
 
         // NOTIFY USER HERE >>>
         const newNotification = new Notification({
-            receiver: "employer",
-            employer: contract.employer,
+            receiver: "user",
+            user: offer.user,
             message: `${user.firstname} ${user.lastname} declined your contract offer`,
             link_url: `client/contracts/${contract_id}`,
         });

@@ -84,12 +84,13 @@ exports.sendMessageToRoom = async (req, res) => {
       const { text, userId } = req.body;
 
       // Create a new message
-      const message = new Message({ text, user: userId, room: roomId });
-      await message.save();
+      // const message = new Message({ text, user: userId, room: roomId });
+      const message = await Message.create({ text, user: userId, room: roomId });
+      // await message.save();
 
       // Emit the message to the room using Socket.io
       io.to(roomId).emit('message', message);
-      console.log("new socket msg sent to room: ", roomId)
+      console.log("new socket msg sent to room: ", roomId);
 
       res.status(201).json({ message });
     } catch (error) {

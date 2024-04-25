@@ -33,7 +33,13 @@ const messageRoutes = require("./routes/messageRoutes");
 
 // socket io configurations for notification...
 const server = http.createServer(app);
-const io = require('socket.io')(server);
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
 
 // Socket.io setup
 io.on('connection', (socket) => {
@@ -80,8 +86,28 @@ app.use("/api", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/message", messageRoutes);
 
+const Message = require('./models/messageModel');
+// SEND MESSAGE CONTROLLER >>>
+app.post('/api/message/room/:room_id', async (req, res) => {
+  try {
+    const roomId = req.params.room_id;
+    const { text, userId } = req.body;
 
+    // Create a new message
+    // const message = new Message({ text, user: userId, room: roomId });
+    const message = await Message.create({ text, user: userId, room: roomId });
+    // await message.save();
 
+    // Emit the message to the room using Socket.io
+    io.to(roomId).emit('message', message);
+    console.log("new socket msg sent to room: ", roomId);
+
+    res.status(201).json({ message });
+  } catch (error) {
+    console.error('Error sending message:', error); // Log the error
+    res.status(500).json({ error: 'Unable to send message' });
+  }
+});
 
 
 //setup server to listen on port declared on env

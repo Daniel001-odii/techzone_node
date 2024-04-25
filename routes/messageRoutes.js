@@ -18,7 +18,7 @@ router.get("/employer/:employer_id/rooms", messageController.getEmployerMessageR
 router.get("/room/:room_id/messages", messageController.getMessagesInRoom);
 
 // SEND MESSAGE TO A ROOM >>>
-router.post("/room/:room_id", messageController.sendMessageToRoom)
+// router.post("/room/:room_id", messageController.sendMessageToRoom)
 
 
 module.exports = router;
