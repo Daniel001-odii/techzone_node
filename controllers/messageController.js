@@ -11,6 +11,8 @@ const server = http.createServer(app);
 const io = setupSocketIO(server);
 
 
+// const { io } = require("../app");
+
 exports.createMessageRoom = async (req, res) => {
     try {
       const { name, userId, employerId } = req.body;

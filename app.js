@@ -50,6 +50,8 @@ io.on('connection', (socket) => {
   console.log("new socket io connection...")
 });
 
+
+
 // app.use((req, res, next) => {
 //   res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
 //   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
@@ -85,6 +87,8 @@ app.use("/api", contractRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/message", messageRoutes);
+
+
 
 const Message = require('./models/messageModel');
 // SEND MESSAGE CONTROLLER >>>
