@@ -18,7 +18,7 @@ exports.createMessageRoom = async (req, res) => {
       const { name, userId, employerId } = req.body;
 
       // Check if the room already exists
-      const existingRoom = await Room.findOne({ name });
+      const existingRoom = await Room.findOne({ name, userId, employerId });
 
       if (existingRoom) {
         return res.status(400).json({ error: 'Room already exists' });
