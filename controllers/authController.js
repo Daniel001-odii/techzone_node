@@ -555,9 +555,11 @@ exports.resetPassword = async (req, res) => {
 };
 
 exports.checkPassResetToken = async (req, res) => {
+   
     const reset_token = req.params.reset_token;
-
+    // console.log("reset toke from client: ", reset_token);
     try{
+        
         const user = await User.findOne({ 
             'pass_reset.token': reset_token,
             'pass_reset.expiry_date': { $gt: new Date() } 
