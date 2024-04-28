@@ -15,7 +15,7 @@ const userSchema = new Schema({
   
     },
     password: {
-      type: String,
+      type: Object,
     },
     role: {type: String, default: "user"},
     firstname: {

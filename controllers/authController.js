@@ -18,6 +18,31 @@ const client = new OAuth2Client(
 )
 
 
+function hashPassword(password) {
+    // Generate a random salt
+    const salt = crypto.randomBytes(16).toString('hex');
+
+    // Hash the password with SHA-256 and the salt
+    const hashedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha256').toString('hex');
+
+    // Return the hashed password along with the salt
+    return {
+        hash: hashedPassword,
+        salt: salt
+    };
+}
+
+
+// Function to compare provided password with hashed password
+function comparePasswords(providedPassword, storedHash, salt) {
+    // Hash the provided password with the stored salt
+    const hashedPassword = crypto.pbkdf2Sync(providedPassword, salt, 1000, 64, 'sha256').toString('hex');
+
+    // Compare the hashed passwords
+    return storedHash === hashedPassword;
+};
+
+
 /*
 **
 EMAIL CONCERNED CONTROLLERS
@@ -54,7 +79,7 @@ exports.userSignup = async (req, res) => {
                 firstname,
                 lastname,
                 email,
-                password: bcrypt.hashSync(password, 8)
+                password: hashPassword(password)
             });
 
             await newUser.save();
@@ -82,16 +107,17 @@ exports.userSignup = async (req, res) => {
         }
     } catch (error) {
         res.status(500).send({ message: "User registration failed!" });
+        console.log("error registering user: ", error);
     }
 }
 
 // employer signup....
 exports.employerSignup = async (req, res) => {
     try {
-        const { firstname, lastname, email, password } = req.body;
+        const { firstname, lastname, email, password, company_name } = req.body;
 
         // Check if required fields are missing
-        if (!firstname || !lastname || !email || !password) {
+        if (!firstname || !lastname || !email || !password || !company_name) {
             return res.status(400).send({ message: "All fields are required" });
         }
 
@@ -106,7 +132,10 @@ exports.employerSignup = async (req, res) => {
                 firstname,
                 lastname,
                 email,
-                password: bcrypt.hashSync(password, 8)
+                password: hashPassword(password),
+                profile: { 
+                    company_name: company_name 
+                },
             });
 
             await newEmployer.save();
@@ -158,7 +187,8 @@ exports.login = async (req, res) => {
                 const hasPassword = user && user.provider != 'google';
 
                 // Compare password only if the user has a password
-                const isValidPassword = hasPassword && bcrypt.compareSync(password, user.password);
+                // const isValidPassword = hasPassword && bcrypt.compareSync(password, user.password);
+                const isValidPassword = hasPassword && comparePasswords(password, user.password.hash, user.password.salt);
 
                 if (!isValidPassword) {
                     return res.status(401).send({ message: "Invalid username or password" });
@@ -168,7 +198,7 @@ exports.login = async (req, res) => {
                 const hasPassword = employer && employer.provider != 'google';
 
                 // Compare password only if the user has a password
-                const isValidPassword = hasPassword && bcrypt.compareSync(password, employer.password);
+                const isValidPassword = hasPassword && comparePasswords(password, employer.password.hash, employer.password.salt);
 
                 if (!isValidPassword) {
                     return res.status(401).send({ message: "Invalid employer username or password" });
