@@ -4,7 +4,8 @@ const Application = require('../models/applicationModel');
 const Contract = require('../models/contractModel');
 const Notification = require('../models/notificationModel')
 const imageParser = require("../utils/imageParser")
-
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
@@ -16,6 +17,34 @@ const s3Client = new S3Client({
     secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
   }
 });
+
+
+function hashPassword(password) {
+  // Generate a random salt
+  const salt = crypto.randomBytes(16).toString('hex');
+
+  // Hash the password with SHA-256 and the salt
+  const hashedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha256').toString('hex');
+
+  // Return the hashed password along with the salt
+  return {
+      hash: hashedPassword,
+      salt: salt
+  };
+}
+
+
+// Function to compare provided password with hashed password
+function comparePasswords(providedPassword, storedHash, salt) {
+  // Hash the provided password with the stored salt
+  const hashedPassword = crypto.pbkdf2Sync(providedPassword, salt, 1000, 64, 'sha256').toString('hex');
+
+  // Compare the hashed passwords
+  return storedHash === hashedPassword;
+};
+
+
+
 
 exports.getUser = async (req, res) => {
   try {
@@ -94,11 +123,11 @@ exports.getUserOrEmployerById = async (req, res) => {
 // updating user profile....
 exports.updateUserData= async (req, res) => {
     try {
-      const userId = req.userId; // Get the user's ID from the authenticated user
+      const userId = req.userId || req.employerId; // Get the user's ID from the authenticated user
       const updates = req.body; // Update fields from the request body
   
       // Update the user's profile fields
-      const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true });
+      const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true }) || await Employer.findByIdAndUpdate(userId, updates, { new:true });
       await updatedUser.save();
   
       res.status(200).json({ message: 'Profile updated successfully' });
@@ -233,17 +262,20 @@ exports.getUserRating = async (req, res) => {
   }
 };
 
-const bcrypt = require('bcrypt');
+
 
 exports.changePassword = async (req, res) => {
   try {
-    const user = req.user;
+    const user = req.user || req.employer;
     const { password, new_password, new_password_confirmation } = req.body;
 
     console.log("password change detected: ", user, "form :", req.body)
 
     // Compare password only if the user has a password
-    const isValidPassword = bcrypt.compareSync(password, user.password);
+    // const isValidPassword = bcrypt.compareSync(password, user.password);
+    const isValidPassword =  comparePasswords(password, user.password.hash, user.password.salt);
+
+   
 
     if (!isValidPassword) {
       return res.status(401).send({ message: "Current password provided is invalid" });
@@ -260,7 +292,7 @@ exports.changePassword = async (req, res) => {
     }
 
     // Hash the new password and save it to the user
-    const hashedPassword = bcrypt.hashSync(new_password, 8);
+    const hashedPassword = hashPassword(new_password);
     user.password = hashedPassword;
     await user.save();
 
