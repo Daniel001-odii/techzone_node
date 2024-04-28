@@ -453,8 +453,8 @@ exports.sendPasswordResetEmail = async (req, res) => {
         const resetTokenExpiration = Date.now() + 3600000; // 1 hour
 
         // Update the found document's fields with the reset token and expiration time
-        foundDocument.pass_reset_token = resetToken;
-        foundDocument.pass_reset_expiry = resetTokenExpiration;
+        foundDocument.pass_reset.token = resetToken;
+        foundDocument.pass_reset.expiry_date = resetTokenExpiration;
 
         await foundDocument.save();
 
@@ -493,8 +493,14 @@ exports.resetPassword = async (req, res) => {
 
     try {
         // Find the user by the reset token and ensure it's not expired
-        const user = await User.findOne({ pass_reset_token: reset_token, pass_reset_expiry: { $gt: Date.now() } });
-        const employer = await Employer.findOne({ pass_reset_token: reset_token, pass_reset_expiry: { $gt: Date.now() } });
+        const user = await User.findOne({ 
+            'pass_reset.token': reset_token,
+            'pass_reset.expiry_date': { $gt: new Date() } 
+        });
+        const employer = await Employer.findOne({  
+            'pass_reset.token': reset_token,
+            'pass_reset.expiry_date': { $gt: new Date() } 
+        });
 
         // Check if either user or employer exists
         if (!user && !employer) {
@@ -505,12 +511,12 @@ exports.resetPassword = async (req, res) => {
         const foundDocument = user || employer;
 
         // Hash the new password
-        const hashedPassword = await bcrypt.hash(new_password, 8);
+        const hashed_password = hashPassword(new_password);
 
         // Update the document's password and clear the reset token fields
-        foundDocument.password = hashedPassword;
-        foundDocument.pass_reset_token = undefined;
-        foundDocument.pass_reset_expiry = undefined;
+        foundDocument.password = hashed_password;
+        foundDocument.pass_reset.token = undefined;
+        foundDocument.pass_reset.expiry_date = undefined;
 
         await foundDocument.save();
 
@@ -548,7 +554,32 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
+exports.checkPassResetToken = async (req, res) => {
+    const reset_token = req.params.reset_token;
 
+    try{
+        const user = await User.findOne({ 
+            'pass_reset.token': reset_token,
+            'pass_reset.expiry_date': { $gt: new Date() } 
+        });
+        const employer = await Employer.findOne({  
+            'pass_reset.token': reset_token,
+            'pass_reset.expiry_date': { $gt: new Date() } 
+        });
+
+        // Check if either user or employer exists
+        if (!user && !employer) {
+            return res.status(400).json({ message: 'Invalid or expired reset token' });
+        } else {
+            res.status(200).json({ message: "reset token is valid"});
+        }
+
+
+    }catch(error){
+        res.status(500).json({ message: "internal server error"});
+        console.log("error checking reset token: ", error);
+    }
+}
 
 /*
 **

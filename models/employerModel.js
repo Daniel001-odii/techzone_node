@@ -65,10 +65,12 @@ const employerSchema = new Schema({
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},
     verification_token: String,
+
     pass_reset: {
         token: String,
         expiry_date: Date,
     },
+
     created: {
         type: Date,
         default: Date.now

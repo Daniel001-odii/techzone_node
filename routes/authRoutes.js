@@ -20,6 +20,8 @@ router.post("/password/forgot", authController.sendPasswordResetEmail);
 
 router.post("/password/reset", authController.resetPassword);
 
+router.get("/password/:reset_token/check", authController.resetPassword);
+
 /*
 **
 ADMIN ROUTES

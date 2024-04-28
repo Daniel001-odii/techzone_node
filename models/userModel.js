@@ -65,8 +65,10 @@ const userSchema = new Schema({
     // earned: {type: Number, default: 0},
     verification_token: String,
     
-    pass_reset_token: String,
-    pass_reset_expiry: Date,
+    pass_reset: {
+      token: String,
+      expiry_date: Date,
+    },
 
     // settings starts....
     settings: {
