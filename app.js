@@ -29,6 +29,7 @@ const contractRoutes = require("./routes/contractRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const taskWatchRoutes = require("./routes/taskWatchRoutes");
 
 
 // socket io configurations for notification...
@@ -87,6 +88,7 @@ app.use("/api", contractRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/message", messageRoutes);
+app.use("/api", taskWatchRoutes);
 
 
 
