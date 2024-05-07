@@ -10,7 +10,7 @@ const middleware = require("../middlewares/authMiddleware")
 router.post("/watch/:contract_id/start", taskWatchController.startWatch);
 
 // pause watch..
-router.patch("/watch/:contract_id/pause", taskWatchController.pauseWatch);
+router.patch("/watch/:contract_id/toggle", taskWatchController.pauseAndResumeWatch);
 
 // stop watch..
 router.patch("/watch/:contract_id/stop", taskWatchController.stopWatch);

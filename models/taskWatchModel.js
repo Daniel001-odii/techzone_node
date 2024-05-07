@@ -10,9 +10,15 @@ const watchSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  status: {
+    type: String,
+    enum: ["pending", "active", "paused", "stopped"],
+    default: "pending",
+  },
+
   time_stamp: {
+    clock_in_time: Date,
     start_time: Date,
-    pause_time: Date,
     stop_time: Date,
     duration: {
       type: Number,
@@ -20,6 +26,7 @@ const watchSchema = new mongoose.Schema({
     },
     activity_description: String,
   },
+
 }, {timestamps: true});
 
 module.exports = mongoose.model('TaskWatch', watchSchema);
