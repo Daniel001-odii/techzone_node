@@ -91,6 +91,8 @@ exports.pauseAndResumeWatch = async (req, res) => {
             await watch.save()
 
             return res.status(200).json({ message: "watch resumed!", watch });
+        } else {
+            return res.status(500).json({ message: "you already clocked out today!"});
         }
 
         
@@ -113,7 +115,9 @@ exports.stopWatch = async (req, res) => {
 
         if(watch.status == 'paused'){
             watch.status = "stopped";
+            await watch.save();
             return res.status(200).json({ message: "watch stopped!", watch });
+
         } else if(watch.status == 'active'){
             // add the pause time...
             watch.time_stamp.stop_time = today;

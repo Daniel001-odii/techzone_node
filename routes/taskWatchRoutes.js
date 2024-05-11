@@ -15,8 +15,8 @@ router.patch("/watch/:contract_id/toggle", taskWatchController.pauseAndResumeWat
 // stop watch..
 router.patch("/watch/:contract_id/stop", taskWatchController.stopWatch);
 
-// get all watch list...
-router.get("/watch/:contract_id", taskWatchController.getWatch);
+// get all watches lists for a contract...
+router.get("/watch/:contract_id/all", taskWatchController.getWatch);
 
 // get current day watch list...
 router.get("/watch/:contract_id/today", taskWatchController.getCurrentDayWatch);
