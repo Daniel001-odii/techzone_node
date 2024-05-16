@@ -226,11 +226,15 @@ exports.acceptOffer = async(req, res) => {
     try{
         const contract_id = req.params.contract_id;
         const offer = await Contract.findOne({ user: req.userId, _id: contract_id});
+
+        const today = Date.now();
+
         if(!offer){
             return res.status(404).json({ message: "Contract not found"});
         }
 
         offer.action = "accepted";
+        offer.action_date = today;
         await offer.save();
         res.status(200).json({ offer, message: "You accepted the offer"});
 
@@ -259,12 +263,14 @@ exports.declineOffer = async(req, res) => {
         const contract_id = req.params.contract_id;
         const offer = await Contract.findOne({ user: req.userId , _id: contract_id });
         const user = await User.findById(offer.user);
+        const today = Date.now();
         
         if(!offer){
             return res.status(404).json({ message: "Contract not found"});
         }
         offer.action = "declined";
         offer.status = "closed";
+        offer.action_date = today;
         await offer.save();
         res.status(200).json({ offer, message: "You declined the offer"});
 
@@ -561,11 +567,11 @@ exports.getContractById = async(req, res) => {
         const contract = await Contract.findById(contract_id)
         .populate({
             path: "user",
-            select: "firstname lastname profile" // Specify the properties you want to populate
+            select: "firstname lastname profile rating created" // Specify the properties you want to populate
         })
         .populate({
             path: "employer",
-            select: "firstname lastname profile" // Specify the properties you want to populate
+            select: "firstname lastname profile rating created" // Specify the properties you want to populate
         })
         .populate({
             path: "job"

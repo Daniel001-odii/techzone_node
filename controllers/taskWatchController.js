@@ -4,7 +4,7 @@ const Employer = require('../models/employerModel');
 const Contract = require('../models/contractModel');
 const Watch = require('../models/taskWatchModel');
 
-
+// SEND NOTIFICATION TO EMPLOYER >>>>
 // START WATCH
 exports.startWatch = async (req, res) => {
     try {
@@ -142,20 +142,8 @@ exports.stopWatch = async (req, res) => {
         console.log("Error stopping time watch: ", error);
         res.status(500).json({ message: "Internal server error" });
     }
-}
+};
 
-
-// else if(watch.status == 'active') {
-
-//     // set duration...
-//     watch.time_stamp.duration += Math.abs(today - watch.time_stamp.start_time) / 1000; 
-
-//     watch.status = "stopped";
-
-//     await watch.save();
-
-//     return res.status(200).json({ message: "watch stopped!", watch });
-// }
 
 
 // GET ALL  WATCH FOR A PARTICULAR CONTRACT...
@@ -175,7 +163,9 @@ exports.getWatch = async (req, res) => {
         console.log("error getting watch list for contract: ", error);
         res.status(500).json({ message: "internal server error"});
     }
-}
+};
+
+
 
 // GET WATCH FOR CURRENT DAY...
 exports.getCurrentDayWatch = async (req, res) => {
@@ -188,14 +178,15 @@ exports.getCurrentDayWatch = async (req, res) => {
         const watch = await Watch.findOne({ contract, date });
 
         if(!watch){
-            const newWatch = new Watch({
-                contract,
-                date,
-            });
+            // const newWatch = new Watch({
+            //     contract,
+            //     date,
+            // });
 
-            await newWatch.save();
+            // await newWatch.save();
 
-            return res.status(200).json({ messsage: "new watch created!", newWatch });
+            // return res.status(200).json({ messsage: "new watch created!", newWatch });
+            return res.status(201).json({ messsage: "no watch found for today"});
         };
 
         res.status(200).json({ watch });
@@ -204,6 +195,55 @@ exports.getCurrentDayWatch = async (req, res) => {
         console.log("error getting current day watch: ", error);
     }
 }
+
+
+// SEND NOTIFICATION TO USER******
+// EMPLOYER APPROVE WATCH TIMESTAMP
+exports.approveTimestamp = async (req, res) => {
+    try{
+
+        const employer = await Employer.findById(req.employerId);
+        const watch = await Watch.findById(req.params.watch_id);
+        const contract = await Contract.findById(watch.contract);
+        
+        if(employer && contract.employer.toString() === employer._id.toString()){
+            watch.time_stamp.action = "approved";
+            await watch.save();
+            return res.status(200).json({ message: "watch approved!", watch });
+        } else {
+            res.status(400).json({ message: "you are not permitted to perform this operation"})
+        }
+    }catch(error){
+        console.log("error approving time: ", error);
+        res.status(500).json({ message: "internal server error"});
+    }
+}
+
+
+// SEND NOTIFICATION USER******
+
+// EMPLOYER DECLINE WATCH TIMESTAMP
+exports.declineTimestamp = async (req, res) => {
+    try{
+
+        const employer = await Employer.findById(req.employerId);
+        const watch = await Watch.findById(req.params.watch_id);
+        const contract = await Contract.findById(watch.contract);
+        
+        if(employer && contract.employer.toString() === employer._id.toString()){
+            watch.time_stamp.action = "declined";
+            await watch.save();
+            return res.status(200).json({ message: "watch declined!", watch });
+        } else {
+            res.status(400).json({ message: "you are not permitted to perform this operation"})
+        }
+    }catch(error){
+        console.log("error declining time: ", error);
+        res.status(500).json({ message: "internal server error"});
+    }
+}
+
+
 
 
 // Calculate duration of an activity
@@ -226,59 +266,3 @@ const calculateTotalTimeForDay = (activities) => {
 };
 
 
-
-exports.startWatch2 = async (req, res) => {
-    try {
-        const contract = req.params.contract_id;
-        const { activity_description } = req.body;
-
-        if (!activity_description) {
-            return res.status(400).json({ message: "Please provide an activity description" });
-        }
-
-        const today = new Date();
-        const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-        let watch = await Watch.findOne({ contract });
-
-        if (!watch) {
-            const newWatch = new Watch({
-                contract,
-                date,
-                time_stamp: [{ start_time: today, activity_description }]
-            });
-
-            await newWatch.save();
-
-            return res.status(200).json({ message: "New watch started!", newWatch });
-        }
-
-        if (watch.date.toString() != date.toString()) {
-            // If the watch date is different from the current date, push a new timestamp and return
-            watch.date = date;
-            watch.time_stamp.push({ start_time: today, activity_description });
-            await watch.save();
-            
-        }
-
-        // If the watch date is the same as the current date, do nothing
-
-        console.log("Found watch date and today's date same?: ", watch.date.toString() == date.toString(), " watch: ", watch.date, "today: ", date);
-        res.status(200).json({ message: "Time watch updated!", watch });
-        // res.status(200).json({ message: "Time watch already started for today!", watch });
-    } catch (error) {
-        console.log("Error starting time watch: ", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
-
-
-
-
-// PAUSE WATCH
-
-
-// STOP WATCH
-
-
-// GET WATCH BY ID

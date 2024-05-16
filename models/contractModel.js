@@ -20,6 +20,10 @@ const contractSchema = new Schema({
         enum: ["accepted", "declined", "pending"],
         default: "pending"
     },
+    action_date: {
+        type: Date,
+        default: Date.now
+    },
     status: {
         type: String,
         enum: ["open", "closed", "completed", "paused"],
@@ -37,6 +41,10 @@ const contractSchema = new Schema({
     },
     review: [{
         title: {type: String, default: "Sent a review"},
+        time: {
+            type: Date,
+            default: Date.now
+        },
         status: {type: String, enum:["accepted", "declined", "pending", "none"], defualt: "none"},
     }],
     user_feedback: {

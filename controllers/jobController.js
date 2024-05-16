@@ -145,7 +145,8 @@ exports.listUserDefinedJobs = async (req, res) => {
 
 exports.listJobs = async (req, res) => {
   try{
-    const jobs = await Job.find().populate("employer", "is_verified profile created");
+     // Fetch all jobs with non-null employers
+     const jobs = await Job.find({ employer: { $ne: null } }).populate("employer", "is_verified profile created");
     res.status(200).json({ jobs })
   }catch(error){
     console.log(error)

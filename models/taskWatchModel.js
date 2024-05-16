@@ -25,6 +25,11 @@ const watchSchema = new mongoose.Schema({
       default: 0
     },
     activity_description: String,
+    action: {
+      enum: ["approved", "declined", "pending"],
+      default: "pending",
+      type: String,
+    }
   },
 
 }, {timestamps: true});
