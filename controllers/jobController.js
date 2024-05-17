@@ -128,7 +128,7 @@ exports.listUserDefinedJobs = async (req, res) => {
       const userPreferredJobTypes = req.user.preferred_job_types;
 
       // Fetch all jobs with non-null employers
-      const allJobs = await Job.find({ employer: { $ne: null } }).populate("employer", "is_verified profile created");
+      const allJobs = await Job.find({ employer: { $ne: null }, is_deleted: false }).populate("employer", "is_verified profile created");
 
       // Sort jobs based on user's preferred job types
       const sortedJobs = allJobs.sort((jobA, jobB) => {
@@ -158,7 +158,7 @@ exports.listUserDefinedJobs = async (req, res) => {
 exports.listJobs = async (req, res) => {
   try{
      // Fetch all jobs with non-null employers
-     const jobs = await Job.find({ employer: { $ne: null } }).populate("employer", "is_verified profile created");
+     const jobs = await Job.find({ employer: { $ne: null }, is_deleted: false }).populate("employer", "is_verified profile created");
     res.status(200).json({ jobs })
   }catch(error){
     console.log(error)
@@ -298,6 +298,7 @@ exports.deleteJob = async (req, res) => {
     };
 
     job.is_deleted = true;
+    job.status = "closed";
     job.save();
 
     res.status(200).json({ message: "Job deleted successfully!"});
@@ -450,9 +451,14 @@ exports.searchJobs = async (req, res) => {
 
 // sends clients application to databse and creates a new application record >>>
 exports.submitApplicationMain = async (req, res) => {
+  const job_id = req.params.job_id;
+  const job = await Job.findById(job_id);
+
   const existingAplication = await Application.findOne({ user:req.userId, job: req.job });
   if(existingAplication){
     res.status(200).json({ message: "You already submitted an application"})
+  } else if(job.status == 'closed'){
+     return res.status(400).json({ message: "you cant send an application, this job has been closed by the employer"});
   } else {
     try {
       // Access form data
