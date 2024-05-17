@@ -31,8 +31,8 @@ const jobSchema = new Schema({
         remote: {type: Boolean, default: false},
         state: String,
         address: String,
-        latitude: Number,
-        longitude: Number,
+        latitude: String,
+        longitude: String,
     },
     no_of_applications: {type: Number, default: 0},
     visibility: {
@@ -48,10 +48,21 @@ const jobSchema = new Schema({
         enum: ["open", "closed"],
         default: "open"
     },
+
+    // does job requires task watch?
+    requires_taskwatch: {
+        type: Boolean,
+        default: false,
+    },
+    // plumbing, cabling etc...
+    category: {
+        type: String,
+    },
+
     created: {
         type: Date,
         default: Date.now
     },
-});
+}, {timestamps: true});
 
 module.exports = mongoose.model('Job', jobSchema)

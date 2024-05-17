@@ -84,7 +84,7 @@ exports.sendContractOffer = async(req, res) =>{
             
             const alreadyExisitngContract = await Contract.findOne({ user:user_id, job:job_id });
             if(alreadyExisitngContract){
-                return res.status(200).json({ messsage: "You already sent the contract to this user"});
+                return res.status(200).json({ message: "You already sent the contract to this user"});
             } else {
                 const newContract = new Contract({
                     employer: req.employerId,
@@ -160,7 +160,7 @@ exports.assignJob = async(req, res) =>{
 
             const alreadyExisitngContract = await Contract.findOne({ user:user_id, job:job_id });
             if(alreadyExisitngContract){
-                return res.status(200).json({ messsage: "You already assigned the contract to this user"});
+                return res.status(200).json({ message: "You already assigned the contract to this user"});
             } else {
                 const newContract = new Contract({
                     employer: req.employerId,
@@ -467,7 +467,7 @@ exports.closeContract = async(req, res) => {
             return res.status(404).json({ message: "Contract not found"});
         }
         offer.status = "closed";
-        // await offer.save();
+        await offer.save();
         res.status(200).json({ offer, message: "Contract closed successfuly"});
 
         // NOTIFY USER HERE >>>

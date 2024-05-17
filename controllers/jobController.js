@@ -32,7 +32,17 @@ exports.postJob = async (req, res) => {
     if (req.employer) {
       // The user is an employer, allow them to post a job
       try {
-        const { title, description, type, skills, period, budget, budget_type, location } = req.body;
+        const { title, 
+          description, 
+          type, 
+          skills, 
+          period, 
+          budget, 
+          budget_type,
+          requires_taskwatch,
+          category, 
+          location
+         } = req.body;
   
         // Validate the request body
         if (!title) {
@@ -69,6 +79,8 @@ exports.postJob = async (req, res) => {
           budget,
           budget_type,
           location,
+          requires_taskwatch,
+          category,
           // Add other job fields here
         });
 

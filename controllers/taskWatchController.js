@@ -9,6 +9,7 @@ const Watch = require('../models/taskWatchModel');
 exports.startWatch = async (req, res) => {
     try {
         const contract = req.params.contract_id;
+        const contract_obj = await Contract.findById(contract);
         const { activity_description } = req.body;
 
         if (!activity_description) {
@@ -20,18 +21,22 @@ exports.startWatch = async (req, res) => {
 
         let watch = await Watch.findOne({ contract, date });
 
-        if (!watch) {
-            // If no time tracking record exists for today, create a new one
-            watch = new Watch({
-                contract,
-                date,
-                status: "active",
-                time_stamp: { clock_in_time: today, activity_description, duration: 0 }
-            });
+        if(contract_obj && contract_obj.status == 'closed'){
+            return res.status(400).json({ message: "You can't clock in, this contract has been closed by the employer!" });
         } else {
-            // If a time tracking record exists for today, update it
-            watch.time_stamp = { clock_in_time: today, activity_description, duration: 0 };
-            watch.status = "active";
+            if (!watch) {
+                // If no time tracking record exists for today, create a new one
+                watch = new Watch({
+                    contract,
+                    date,
+                    status: "active",
+                    time_stamp: { clock_in_time: today, activity_description, duration: 0 }
+                });
+            } else {
+                // If a time tracking record exists for today, update it
+                watch.time_stamp = { clock_in_time: today, activity_description, duration: 0 };
+                watch.status = "active";
+            }
         }
 
         await watch.save();
