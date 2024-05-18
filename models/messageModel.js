@@ -11,10 +11,10 @@ const messageSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
-  employer: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employer',
-  },
+  // employer: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: 'Employer',
+  // },
   room: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',

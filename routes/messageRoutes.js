@@ -20,5 +20,8 @@ router.get("/room/:room_id/messages", messageController.getMessagesInRoom);
 // SEND MESSAGE TO A ROOM >>>
 // router.post("/room/:room_id", messageController.sendMessageToRoom)
 
+// MARK BULK MESSAGES AS READ >>
+router.put("/:room_id/read", authMiddleware, messageController.markBulkMessageAsRead);
+
 
 module.exports = router;

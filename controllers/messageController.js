@@ -6,6 +6,7 @@ const Message = require('../models/messageModel');
 const setupSocketIO = require('socket.io');
 const app = express();
 const server = http.createServer(app);
+const mongoose = require('mongoose');
 
 // Initialize Socket.io with your server
 const io = setupSocketIO(server);
@@ -36,41 +37,86 @@ exports.createMessageRoom = async (req, res) => {
     }
   };
 
-
+// GET USER MESSAGE ROOMS
 exports.getUserMessageRooms = async (req, res) => {
-    const userId = req.params.user_id;
-    try{
-      const rooms = await Room.find({ user: userId }).populate("employer");
-  
-      res.status(200).json({ rooms })
-    }catch(error){
-      res.status(500).json({ error: 'Unable to fetch rooms' });
-      console.log("error getting user rooms: ", error);
-    }
-  }
+  const userId = req.params.user_id;
 
-// GET EMPLOYER MESSAGE ROOMS >>>
+  try {
+    // Fetch rooms for the user and populate employer data
+    const rooms = await Room.find({ user: userId }).populate({
+      path: 'employer',
+      select: 'firstname lastname profile',
+    });
+
+    // Fetch unread messages for the employers in those rooms
+    const unreadMessages = await Message.find({
+      room: { $in: rooms.map(room => room._id) },
+      user: { $ne: userId }, // Messages sent by the employer
+      isRead: false,
+    });
+
+    // Create a map to count unread messages for each room
+    const unreadMap = unreadMessages.reduce((acc, message) => {
+      const roomId = message.room.toString();
+      if (!acc[roomId]) {
+        acc[roomId] = 0;
+      }
+      acc[roomId] += 1;
+      return acc;
+    }, {});
+
+    // Attach unread message counts to rooms
+    rooms.forEach(room => {
+      room.unread_messages = unreadMap[room._id.toString()] || 0;
+    });
+
+    res.status(200).json({ rooms });
+  } catch (error) {
+    res.status(500).json({ error: 'Unable to fetch rooms' });
+    console.log('error getting user rooms: ', error);
+  }
+};
+
+// GET EMPLOYER MESSAGE ROOMS
 exports.getEmployerMessageRooms = async (req, res) => {
-    const employerId = req.params.employer_id;
-    try{
-      const rooms = await Room.find({ employer: employerId }).populate({
-          path: "user",
-          select: "firstname lastname profile" // Specify the properties you want to populate
-      });
+  const employerId = req.params.employer_id;
 
-    // trying to get unread messages;
-    const messages = await Message.find({ employer: employerId });
-    messages.forEach(message => {
+  try {
+    // Fetch rooms for the employer and populate user data
+    const rooms = await Room.find({ employer: employerId }).populate({
+      path: 'user',
+      select: 'firstname lastname profile',
+    });
 
-    })
-    // rooms.unread_messages = 
-  
-      res.status(200).json({ rooms })
-    }catch(error){
-      res.status(500).json({ error: 'Unable to fetch rooms' });
-      console.log("error getting user rooms: ", error);
-    }
+    // Fetch unread messages for the users in those rooms
+    const unreadMessages = await Message.find({
+      room: { $in: rooms.map(room => room._id) },
+      user: { $ne: employerId }, // Messages sent by the user
+      isRead: false,
+    });
+
+    // Create a map to count unread messages for each room
+    const unreadMap = unreadMessages.reduce((acc, message) => {
+      const roomId = message.room.toString();
+      if (!acc[roomId]) {
+        acc[roomId] = 0;
+      }
+      acc[roomId] += 1;
+      return acc;
+    }, {});
+
+    // Attach unread message counts to rooms
+    rooms.forEach(room => {
+      room.unread_messages = unreadMap[room._id.toString()] || 0;
+    });
+
+    res.status(200).json({ rooms });
+  } catch (error) {
+    res.status(500).json({ error: 'Unable to fetch rooms' });
+    console.log('error getting employer rooms: ', error);
   }
+};
+
 
 
 // GET MESSAGES IN ROOM CONTROLLLER >>>
@@ -115,3 +161,29 @@ exports.sendMessageToRoom = async (req, res) => {
       res.status(500).json({ error: 'Unable to send message' });
     }
   }
+
+// MARK BULK MESSAGE AS READ >>>
+exports.markBulkMessageAsRead = async (req, res) => {
+  const userId = req.userId || req.employerId;
+  const roomId = req.params.room_id;
+
+  try {
+    // Fetch unread messages for the room where the user is not the current user
+    const unreadMessages = await Message.find({
+      room: roomId,
+      isRead: false,
+      user: { $ne: userId },
+    });
+
+    // Mark each unread message as read
+    for (const message of unreadMessages) {
+      message.isRead = true;
+      await message.save();
+    }
+
+    res.status(200).send({ message: 'Messages marked as read' });
+  } catch (error) {
+    res.status(500).send({ message: 'Error marking messages as read', error });
+    console.log('Error marking messages as read:', error);
+  }
+};
