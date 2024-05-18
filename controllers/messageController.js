@@ -54,9 +54,16 @@ exports.getEmployerMessageRooms = async (req, res) => {
     const employerId = req.params.employer_id;
     try{
       const rooms = await Room.find({ employer: employerId }).populate({
-        path: "user",
-        select: "firstname lastname profile" // Specify the properties you want to populate
-    });
+          path: "user",
+          select: "firstname lastname profile" // Specify the properties you want to populate
+      });
+
+    // trying to get unread messages;
+    const messages = await Message.find({ employer: employerId });
+    messages.forEach(message => {
+
+    })
+    // rooms.unread_messages = 
   
       res.status(200).json({ rooms })
     }catch(error){
@@ -85,9 +92,17 @@ exports.sendMessageToRoom = async (req, res) => {
       const roomId = req.params.room_id;
       const { text, userId } = req.body;
 
+      const room = await Room.findById(roomId);
+      const today = Date.now();
+
       // Create a new message
       // const message = new Message({ text, user: userId, room: roomId });
       const message = await Message.create({ text, user: userId, room: roomId });
+
+      room.updatedAt = today;
+      console.log("room date updated!!!")
+
+      await room.save();
       // await message.save();
 
       // Emit the message to the room using Socket.io

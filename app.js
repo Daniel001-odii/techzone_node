@@ -93,16 +93,22 @@ app.use("/api", taskWatchRoutes);
 
 
 const Message = require('./models/messageModel');
+const Room = require('./models/roomModel');
+
 // SEND MESSAGE CONTROLLER >>>
 app.post('/api/message/room/:room_id', async (req, res) => {
   try {
     const roomId = req.params.room_id;
     const { text, userId } = req.body;
+    const room = await Room.findById(roomId);
+    const today = Date.now();
 
     // Create a new message
     // const message = new Message({ text, user: userId, room: roomId });
     const message = await Message.create({ text, user: userId, room: roomId });
-    // await message.save();
+    room.updatedAt = today;
+      
+    await room.save();
 
     // Emit the message to the room using Socket.io
     io.to(roomId).emit('message', message);
