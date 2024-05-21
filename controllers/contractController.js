@@ -600,17 +600,11 @@ exports.sendUserFeedback = async(req, res) => {
     
         // update feedback field
         contract.employer_feedback = {
-            rating: rating,
-            review: review,
+            rating,
+            review,
         }
         // save to db..
         await contract.save();
-        // update employer rating on employer object..
-        const employer  = await Employer.findById(contract.employer);
-        employer.ratings.push(rating);
-        await employer.save();
-
-    
         return res.status(200).json({ message: "feedback sent successfully!"})
 
 
@@ -636,11 +630,6 @@ exports.sendEmployerFeedback = async(req, res) => {
             review
         }
         await contract.save();
-        const user  = await User.findById(contract.user);
-        user.ratings.push(rating);
-        await user.save();
-
-
         res.status(200).json({ message: "feedback sent successfully!", contract})
 
     }catch(error){

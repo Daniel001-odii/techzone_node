@@ -58,9 +58,9 @@ const employerSchema = new Schema({
     saved_users: [{
         type: mongoose.Schema.Types.ObjectId, ref: 'User'
     }],
-    ratings: [
-      {type: Number}
-    ],
+    rating: Number,
+    rating_count: Number,
+    
     is_verified: {type: Boolean, default: false},
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},

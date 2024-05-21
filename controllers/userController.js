@@ -58,6 +58,21 @@ exports.getUser = async (req, res) => {
       */
     } else if(req.employer){
       const user = req.employer;
+       // programmaticaly calculate employer's rating while fetching user data....
+       const contracts = await Contract.find({ employer: user._id, status: 'completed' });
+       let totalRating = 0;
+       let totalRatingsCount = 0;
+       contracts.forEach(contract => {
+         if (contract.employer_feedback.review && contract.employer_feedback.rating !== undefined) {
+           totalRating += contract.employer_feedback.rating;
+           totalRatingsCount++; // Increment count of contracts with ratings
+         }
+       });
+       // Calculate average rating
+       let averageRating = totalRatingsCount > 0 ? totalRating / totalRatingsCount : 0;
+       user.rating = averageRating;
+       user.rating_count = totalRatingsCount;
+
       return res.status(200).json({ user });
     }
     
@@ -106,6 +121,20 @@ exports.getUserOrEmployerById = async (req, res) => {
       } 
       
       if (employer) {
+         // programmaticaly calculate employer's rating while fetching user data....
+        const contracts = await Contract.find({ employer: id, status: 'completed' });
+        let totalRating = 0;
+        let totalRatingsCount = 0;
+        contracts.forEach(contract => {
+          if (contract.employer_feedback.review && contract.employer_feedback.rating !== undefined) {
+            totalRating += contract.employer_feedback.rating;
+            totalRatingsCount++; // Increment count of contracts with ratings
+          }
+        });
+        // Calculate average rating
+        let averageRating = totalRatingsCount > 0 ? totalRating / totalRatingsCount : 0;
+        employer.rating = averageRating;
+        employer.rating_count = totalRatingsCount;
         return res.status(200).json({ employer });
       }
 
