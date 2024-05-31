@@ -2,18 +2,8 @@ const Job = require('../models/jobModel');
 const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
+const Contract = require('../models/contractModel.js');
 const jwt = require('jsonwebtoken');
-
-// get jobs posted by emplyer...
-// exports.getJobsByEmployer = async (req, res) => {
-//     try{
-//         const jobs = await Job.find({ employer: req.employerId });
-//         return res.status(200).json({ jobs });
-//     }
-//     catch(error){
-//         console.log(error);
-//     }
-// };
 
 exports.getJobsByEmployer = async (req, res) => {
   try {
@@ -101,4 +91,17 @@ exports.updateEmployerData= async (req, res) => {
     console.error("error updating employer profile: ", error)
   }
 };
+
+exports.getCompletedContracts = async (req, res) => {
+  try{
+    const employer = req.employerId;
+    const contracts = await Contract.find({ employer, status: "completed" }).populate("job");
+
+    res.status(200).json({ success: true, contracts })
+
+  }catch(error){
+    res.status(500).json({ message: "internal server error"});
+    console.log("error getting completed contracts: ", error);
+  }
+}
 

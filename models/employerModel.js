@@ -60,11 +60,13 @@ const employerSchema = new Schema({
     }],
     rating: Number,
     rating_count: Number,
-    
+
     is_verified: {type: Boolean, default: false},
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},
     verification_token: String,
+
+    jobs_posted: Number,
 
     pass_reset: {
         token: String,

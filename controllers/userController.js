@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Job = require('../models/jobModel');
 const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
 const Contract = require('../models/contractModel');
@@ -59,6 +60,7 @@ exports.getUser = async (req, res) => {
     } else if(req.employer){
       const user = req.employer;
        // programmaticaly calculate employer's rating while fetching user data....
+       const jobs = await Job.find({ employer: user._id });
        const contracts = await Contract.find({ employer: user._id, status: 'completed' });
        let totalRating = 0;
        let totalRatingsCount = 0;
@@ -72,6 +74,7 @@ exports.getUser = async (req, res) => {
        let averageRating = totalRatingsCount > 0 ? totalRating / totalRatingsCount : 0;
        user.rating = averageRating;
        user.rating_count = totalRatingsCount;
+       user.jobs_posted = jobs.length;
 
       return res.status(200).json({ user });
     }

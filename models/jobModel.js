@@ -35,6 +35,8 @@ const jobSchema = new Schema({
         longitude: String,
     },
     no_of_applications: {type: Number, default: 0},
+    no_of_hires: Number,
+    no_of_assigned: Number,
     visibility: {
         type: String,
         enum: ["public", "private"],

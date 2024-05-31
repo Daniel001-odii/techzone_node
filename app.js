@@ -14,7 +14,7 @@ const mongoose = require('mongoose');
 // Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
 // app.use(cors());
 app.use(cors({
-  origin: ['http://localhost:8080', 'https://tech-zone-navy.vercel.app'], // Replace this with the origin of your frontend application
+  origin: ['http://localhost:8080', 'http://localhost:3000', 'https://tech-zone-navy.vercel.app'], // Replace this with the origin of your frontend application
   credentials: true // Allow sending cookies with the CORS request
 }));
 
@@ -31,6 +31,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const taskWatchRoutes = require("./routes/taskWatchRoutes");
 
+const waitListRoutes = require("./routes/waitListRoute");
 
 // socket io configurations for notification...
 const server = http.createServer(app);
@@ -89,7 +90,7 @@ app.use("/api", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api", taskWatchRoutes);
-
+app.use("/api", waitListRoutes);
 
 
 const Message = require('./models/messageModel');

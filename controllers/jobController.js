@@ -2,6 +2,7 @@ const Job = require('../models/jobModel');
 const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
+const Contract = require('../models/contractModel');
 const jwt = require('jsonwebtoken');
 
 const fs = require('fs');
@@ -108,6 +109,16 @@ exports.getJobById = async (req, res) => {
   
       // Query the database to find the job by its ID
       const job = await Job.findById(job_id).populate("employer", "is_verified profile created");
+      
+      // Query applications associated with the current job and count them
+      const applicationsCount = await Application.countDocuments({ job: job._id });
+      const usersAssigned = await Contract.countDocuments({ job: job._id, type: 'assigned'});
+      const usersHired = await Contract.countDocuments({ job: job._id, type: 'applied'});
+
+      // Update the number_of_applications field for the current job
+      job.no_of_applications = applicationsCount;
+      job.no_of_assigned = usersAssigned;
+      job.no_of_hires = usersHired;
   
       if (!job) {
         return res.status(404).json({ message: 'Job not found' });
