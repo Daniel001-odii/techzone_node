@@ -13,7 +13,7 @@ exports.sendWaitListEmail = async (req, res) => {
     const newUser = new waitListUser({
         email,
     });
-    // await newUser.save();
+    await newUser.save();
 
     const recipient = email;
     const subject = "You joined the waitlist!";
