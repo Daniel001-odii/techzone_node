@@ -19,6 +19,8 @@ app.use(cors({
 }));
 
 
+// CONFIGURE HANDLEBARS FOR DYNAMIC EMAIL TEMPLATING..
+const exphbs = require('express-handlebars');
 
 // IMPORT ALL ROUTE FILES HERE....
 const authRoutes = require("./routes/authRoutes");
@@ -121,6 +123,10 @@ app.post('/api/message/room/:room_id', async (req, res) => {
     res.status(500).json({ error: 'Unable to send message' });
   }
 });
+
+app.engine('handlebars', exphbs.engine());
+app.set('view engine', 'handlebars');
+app.set('views', path.join(__dirname, 'templates', 'emails'));
 
 
 //setup server to listen on port declared on env

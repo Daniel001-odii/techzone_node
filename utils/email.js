@@ -1,68 +1,82 @@
+require("dotenv").config();
+const nodemailer = require("nodemailer");
+const { google } = require("googleapis");
+const hbs = require("nodemailer-express-handlebars");
+const path = require("path");
 
-/*
-**
-EMAIL CONCERNED CONTROLLERS
-**/
-require("dotenv").config()
- const nodemailer = require("nodemailer");
- const { google } = require("googleapis");
- const OAuth2 = google.auth.OAuth2;
+const OAuth2 = google.auth.OAuth2;
 
- const createTransporter = async () => {
+const createTransporter = async () => {
   try {
     const oauth2Client = new OAuth2(
-        process.env.CLIENT_ID,
-        process.env.CLIENT_SECRET,
-        "https://developers.google.com/oauthplayground"
-      );
+      process.env.CLIENT_ID,
+      process.env.CLIENT_SECRET,
+      "https://developers.google.com/oauthplayground"
+    );
 
-      oauth2Client.setCredentials({
-        refresh_token: process.env.REFRESH_TOKEN,
-      });
+    oauth2Client.setCredentials({
+      refresh_token: process.env.REFRESH_TOKEN,
+    });
 
-      const accessToken = await new Promise((resolve, reject) => {
-        oauth2Client.getAccessToken((err, token) => {
-          if (err) {
-            console.log("*ERR: ", err)
-            reject();
-          }
-          resolve(token); 
-        });
+    const accessToken = await new Promise((resolve, reject) => {
+      oauth2Client.getAccessToken((err, token) => {
+        if (err) {
+          console.log("*ERR: ", err);
+          reject();
+        }
+        resolve(token);
       });
+    });
 
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          type: "OAuth2",
-          user: process.env.GMAIL_USER,
-          accessToken,
-          clientId: process.env.CLIENT_ID,
-          clientSecret: process.env.CLIENT_SECRET,
-          refreshToken: process.env.REFRESH_TOKEN,
-        },
-      });
-      return transporter;
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: process.env.GMAIL_USER,
+        accessToken,
+        clientId: process.env.CLIENT_ID,
+        clientSecret: process.env.CLIENT_SECRET,
+        refreshToken: process.env.REFRESH_TOKEN,
+      },
+    });
+
+    // Set up Handlebars options
+    const handlebarOptions = {
+      viewEngine: {
+        extName: ".handlebars",
+        partialsDir: path.resolve("./templates/partials"),
+        layoutsDir: path.resolve("./templates"),
+        defaultLayout: false,
+      },
+      viewPath: path.resolve("./templates"),
+      extName: ".handlebars",
+    };
+
+    transporter.use("compile", hbs(handlebarOptions));
+
+    return transporter;
   } catch (err) {
-    return err
+    return err;
   }
 };
 
-const sendEmail = async (to, subject, text, html) => {
+const sendEmail = async (to, subject, text, html, template, context) => {
   try {
     const mailOptions = {
-      // from: process.env.GMAIL_USER,
       from: "noreply@apexteks.com",
       to,
       subject,
       text,
       html,
-    }
+      template, // Template name without the extension
+      context,  // Context to pass to the template
+    };
 
     let emailTransporter = await createTransporter();
     await emailTransporter.sendMail(mailOptions);
     console.log("email sent: ", emailTransporter.response);
   } catch (err) {
-    console.log("error sending email: ", err)
+    console.log("error sending email: ", err);
   }
 };
 

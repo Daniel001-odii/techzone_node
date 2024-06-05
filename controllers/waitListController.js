@@ -1,26 +1,30 @@
 const waitListUser = require('../models/waitListUser');
 const sendEmail = require("../utils/email");
 
-exports.sendWaitListEmail = async(req, res) => {
+exports.sendWaitListEmail = async (req, res) => {
     const { email } = req.body;
 
-    const existingUSer = await waitListUser.findOne({ email });
+    const existingUser = await waitListUser.findOne({ email });
 
-    if(existingUSer){
-        return res.status(400).json({ message: "Oh looks like you already joined our early program!"})
+    if (existingUser) {
+        return res.status(400).json({ message: "Oh looks like you already joined our early program!" });
     }
 
     const newUser = new waitListUser({
         email,
-    })
-    newUser.save();
+    });
+    // await newUser.save();
 
-    sendEmail(email,
-        "You joined our waitlist!", "...",
-        `<p><b>thanks for joining our waitlist!</b> <br/>You are now part of our early users, <br/> We will keep you in touch once we go live.</p>`
-    );
+    const recipient = email;
+    const subject = "You joined the waitlist!";
+    const template = "waitlist";
+    const context = { email: email };
 
-    res.status(200).json(`you joined our waitlist! \n a confirmation email has been sent to ${email} \n Thank You!`)
+    try {
+        await sendEmail(recipient, subject, null, null, template, context);
+        res.status(200).json(`You joined our waitlist! A confirmation email has been sent to ${email}. Thank you!`);
+    } catch (error) {
+        console.error("Error sending email:", error);
+        res.status(500).json({ message: "There was an error sending the confirmation email. Please try again later." });
+    }
 };
-
-
