@@ -14,7 +14,7 @@ const mongoose = require('mongoose');
 // Use the cors middleware with options to specify the allowed origin [----DO NOT REMOVE FRPM HERE----]
 // app.use(cors());
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:3000', 'https://tech-zone-navy.vercel.app', 'https://www.apexteks.com'], // Replace this with the origin of your frontend application
+  origin: ['http://localhost:8080', 'https://www.apexteks.com', 'https://tech-zone-navy.vercel.app', 'https://www.apexteks.com'], // Replace this with the origin of your frontend application
   credentials: true // Allow sending cookies with the CORS request
 }));
 
