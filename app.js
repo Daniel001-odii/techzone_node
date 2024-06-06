@@ -15,7 +15,7 @@ const mongoose = require('mongoose');
 // app.use(cors());
 app.use(cors({
   // origin: ['http://localhost:8080', 'https://www.apexteks.com', 'https://tech-zone-navy.vercel.app', 'https://www.apexteks.com'], // Replace this with the origin of your frontend application
-  origin: ['https://www.apexteks.com', 'https://tech-zone-navy.vercel.app'],
+  origin: ['http://localhost:8080', 'https://www.apexteks.com', 'https://tech-zone-navy.vercel.app'],
   credentials: true // Allow sending cookies with the CORS request
 }));
 

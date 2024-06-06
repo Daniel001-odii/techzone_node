@@ -10,6 +10,9 @@ router.post("/register/employer", authController.employerSignup);
 router.post("/login", authController.login);
 router.post("/google-auth", authController.googleClientAuthHandler);
 
+
+router.post("/email/:email/verify", authController.verifyEmail);
+
 /*
 **
 PASSWORD RESET ROUTES

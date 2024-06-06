@@ -8,6 +8,9 @@ const nodemailer = require('nodemailer');
 
 const Admin = require('../models/adminModel');
 
+const sendEmail = require("../utils/email");
+
+
 const { OAuth2Client } = require('google-auth-library')
 const client = new OAuth2Client(
   {
@@ -85,23 +88,13 @@ exports.userSignup = async (req, res) => {
             await newUser.save();
 
             
-            //   SEND EMAIL HERE >>>>
-            const mailOptions = {
-                from: 'danielsinterest@gmail.com',
-                to: email,
-                subject: 'Welcome to Apex-tek',
-                html: `<p>we are so happy to have you here, we founded Apek-tek because we wanted you to have a trusted place where you as a talent to have a place where you can meet clients who are ready to pay you for the service(s) you are willing to render.</p>`
-            };
+            //   SEND EMAIL HERE >>>>            
+            const recipient = email;
+            const subject = "Welcome to ApexTeks!";
+            const template = "welcome";
+            const context = { firstname, lastname };
             
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('Error sending email:', error);
-                    return res.status(500).json({ message: 'Failed to send welcome email' });
-                }
-            
-                console.log('Reset email sent:', info.response);
-                res.status(200).json({ message: 'welcome email sent' });
-                });
+            await sendEmail(recipient, subject, null, null, template, context);
 
             res.status(200).send({ message: "User registered successfully!" });
         }
@@ -240,6 +233,39 @@ exports.login = async (req, res) => {
         res.status(500).send({ message: "Login failed" });
     }
 };
+
+exports.verifyEmail = async (req, res) => {
+    try{
+        const email = req.params.email;
+        const user = await User.findOne({ email });
+        const employer = await Employer.findOne({ email });
+
+        if(!user && !employer){
+            return res.status(404).json({ success: false, message: "no user or employer record with email found"});
+        }
+
+        if(user){
+            if(user.email_verified){
+                return res.status(201).json({ success: true, message: "Email already verified, please login"})
+            }
+            user.email_verified = true;
+            await user.save();
+            return res.status(201).json({ success: true, message: "Email verified successfully, please login"})
+        }
+        else if(employer){
+            if(employer.email_verified){
+                return res.status(201).json({ success: true, message: "Email already verified, please login"})
+            }
+            employer.email_verified = true;
+            await employer.save();
+            return res.status(201).json({ success: true, message: "Email verified successfully, please login"})
+        }
+        // user.email
+    }catch(error){
+        res.status(500).json({ success: false, message: "internal server error"});
+        console.log("error verifying email: ", error);
+    }
+}
 
 
 // Call this function to validate OAuth2 authorization code sent from client-side
