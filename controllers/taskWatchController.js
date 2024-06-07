@@ -22,8 +22,12 @@ exports.startWatch = async (req, res) => {
         let watch = await Watch.findOne({ contract, date });
 
         if(contract_obj && contract_obj.status == 'closed'){
-            return res.status(400).json({ message: "You can't clock in, this contract has been closed by the employer!" });
-        } else {
+            return res.status(400).json({ message: "You can't clock in, this contract has been closed!" });
+        } else if(contract_obj && contract_obj.status == 'completed'){
+            return res.status(400).json({ message: "You can't clock in, this contract is already completed" });
+        } else if(contract_obj && contract_obj.status == 'paused'){
+            return res.status(400).json({ message: "You can't clock in, this contract has been paused!" });
+        }else {
             if (!watch) {
                 // If no time tracking record exists for today, create a new one
                 watch = new Watch({
@@ -58,6 +62,10 @@ exports.pauseAndResumeWatch = async (req, res) => {
         const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
         const watch = await Watch.findOne({ contract, date });
+
+        if(!watch){
+            return res.status(400).json({ success: false, message: "you have to clock in first!"});
+        }
 
         if(watch.status == 'active'){
 
