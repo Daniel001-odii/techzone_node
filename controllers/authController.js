@@ -132,24 +132,13 @@ exports.employerSignup = async (req, res) => {
             });
 
             await newEmployer.save();
-            //   SEND EMAIL HERE >>>>
-            const mailOptions = {
-                from: 'danielsinterest@gmail.com',
-                to: email,
-                subject: 'Welcome to Apex-tek',
-                html: `<p>we are so happy to have you here, we founded Apek-tek because we wanted you to have a trusted place where you as an employer gets to meet talents who are willing to work on your projects and contracts without much hassles. welcome to the family!</p>`
-            };
+            //   SEND EMAIL HERE >>>>            
+            const recipient = email;
+            const subject = "Welcome to ApexTeks!";
+            const template = "welcome";
+            const context = { firstname, lastname };
             
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('Error sending email:', error);
-                    return res.status(500).json({ message: 'Failed to send welcome email' });
-                }
-            
-                console.log('Reset email sent:', info.response);
-                res.status(200).json({ message: 'welcome email sent' });
-                });
-
+            await sendEmail(recipient, subject, null, null, template, context);
 
             res.status(200).send({ message: "Employer registered successfully!" });
         }
