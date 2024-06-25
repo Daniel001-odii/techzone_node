@@ -4,7 +4,7 @@ const Employer = require('../models/employerModel');
 const Application = require('../models/applicationModel');
 const Contract = require('../models/contractModel');
 const jwt = require('jsonwebtoken');
-
+const Notification = require('../models/notificationModel')
 const fs = require('fs');
 const path = require('path');
 
@@ -174,6 +174,85 @@ exports.listJobs = async (req, res) => {
   }catch(error){
     console.log(error)
     res.status(500).json({ message: "internal server error" })
+  }
+}
+
+
+exports.listJobsNew = async (req, res) => {
+  try {
+    // Get the page and limit from query parameters, with default values
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // Calculate the starting index of the results for the given page
+    const startIndex = (page - 1) * limit;
+
+    // Fetch jobs with non-null employers, applying pagination
+    const jobs = await Job.find({ employer: { $ne: null }, is_deleted: false })
+      .populate("employer", "is_verified profile created")
+      .skip(startIndex)
+      .limit(limit);
+
+    // Get the total count of jobs for pagination metadata
+    const totalJobs = await Job.countDocuments({ employer: { $ne: null }, is_deleted: false });
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalJobs / limit);
+
+    res.status(200).json({
+      jobs,
+      page,
+      limit,
+      totalPages,
+      totalJobs,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+exports.flagJob = async(req, res) => {
+  try{
+    const job_id = req.params.job_id;
+    const { user , reason } = req.body;
+
+    const job = await Job.findOne({ _id: job_id });
+   
+    // Check if user has already flagged the job
+    const userFlag = job.flags.find(flag => flag.user.toString() == user);
+    if (userFlag) {
+      return res.status(400).json({ success: false, message: "You have already flagged this job!" });
+    }
+
+
+    // save users flag....
+    job.flags.push({
+      user,
+      reason
+    });
+
+
+    if(!job){
+      return res.status(404).json({ success: false, message: "job not found!"});
+    }
+    res.status(200).json({ success: true, message: "Job flagged successfully!"});
+
+    await job.save();
+
+
+    // SEND NOTIFICATION AND EMAIL TO ADMIN & JOB EMPLOYER HERE >>>
+    const newNotification = new Notification({
+        employer: job.employer,
+        message: `Your job: ${job.title} was flagged, reason: ${reason}, please review to avoid being closed`,
+        link_url: `contracts/${contract_id}`,
+    });
+    await newNotification.save();
+
+  }catch(error){
+    console.log("error flaggin job: ", error);
+    res.status(500).json({ success: false, message: "internal server error"})
   }
 }
 

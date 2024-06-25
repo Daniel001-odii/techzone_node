@@ -56,9 +56,17 @@ router.post("/contracts/:contract_id/user-feedback", middleware, contractConttro
 
 
 // PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS
-
+router.post("/contracts/pay/:contract_id", contractConttroller.makePayments);
 // SEND USER FEEDBACK
 // SEND EMPLOYER FEEDBACK
 // EDIT CONTRACT [HAS NOTIFICATION]\// EDIT CONTRACT [HAS NOTIFICATION]
+
+
+
+
+
+
+
+
 
 module.exports = router;

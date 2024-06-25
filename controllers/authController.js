@@ -117,9 +117,9 @@ exports.employerSignup = async (req, res) => {
         const existingUser = await User.findOne({ email });
         const existingEmployer = await Employer.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: 'The email has already been registered as a user' });
+            return res.status(400).json({ message: 'this email is already registered!' });
         } else if (existingEmployer) {
-            return res.status(400).json({ message: 'The email has already been registered as an employer' });
+            return res.status(400).json({ message: 'this email is already registered!' });
         } else {
             const newEmployer = new Employer({
                 firstname,
@@ -158,7 +158,7 @@ exports.login = async (req, res) => {
         ])
         .then(([user, employer]) => {
             if (!user && !employer) {
-                return res.status(404).send({ message: "User with email not found" });
+                return res.status(404).send({ message: "incorrect details!" });
             }
 
             // Determine user's role
@@ -183,7 +183,7 @@ exports.login = async (req, res) => {
                 const isValidPassword = hasPassword && comparePasswords(password, employer.password.hash, employer.password.salt);
 
                 if (!isValidPassword) {
-                    return res.status(401).send({ message: "Invalid employer username or password" });
+                    return res.status(401).send({ message: "incorrect details!" });
                 }
             }
             
@@ -442,7 +442,6 @@ exports.googleClientAuthHandler = async (req, res) => {
 
 
 
-
 //controller for passsworddd reset email....
 exports.sendPasswordResetEmail = async (req, res) => {
     const { email } = req.body;
@@ -454,7 +453,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
 
         // Check if either user or employer exists
         if (!user && !employer) {
-            return res.status(404).json({ message: 'User or Employer not found' });
+            return res.status(404).json({ message: 'Password reset information would be sent if your email exist in our record' });
         }
 
         // Choose the document to update based on which one was found
@@ -474,6 +473,14 @@ exports.sendPasswordResetEmail = async (req, res) => {
         await foundDocument.save();
 
         // SEND EMAIL HERE >>>>
+        const recipient = email;
+        const subject = "Apex-tek Password Reset Request";
+        const template = "passReset";
+        const context = { resetToken: resetToken, root_url: process.env.GOOGLE_CALLBACK};
+
+        await sendEmail(recipient, subject, null, null, template, context);
+
+        /* OLD EMAIL PATTERN
         const mailOptions = {
             from: 'danielsinterest@gmail.com',
             to: email,
@@ -490,8 +497,9 @@ exports.sendPasswordResetEmail = async (req, res) => {
             }
 
             console.log('Reset email sent:', info.response);
-            res.status(200).json({ message: 'Password reset email sent' });
+            res.status(200).json({ message: 'Password reset information would be sent if your email exist in our record' });
         });
+        */
 
 
     } catch (error) {

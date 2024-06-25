@@ -2,13 +2,14 @@ const Job = require('../models/jobModel');
 const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Contract = require('../models/contractModel');
+const Notification = require('../models/notificationModel');
 const Watch = require('../models/taskWatchModel');
 
 // SEND NOTIFICATION TO EMPLOYER >>>>
 // START WATCH
 exports.startWatch = async (req, res) => {
     try {
-        const contract = req.params.contract_id;
+        let contract = req.params.contract_id;
         const contract_obj = await Contract.findById(contract);
         const { activity_description } = req.body;
 
@@ -41,7 +42,25 @@ exports.startWatch = async (req, res) => {
                 watch.time_stamp = { clock_in_time: today, activity_description, duration: 0 };
                 watch.status = "active";
             }
-        }
+        };
+
+         // alert employer about user clock-in...
+         const mainContract = await Contract.findById(contract);
+         const employer = await Employer.findById(mainContract.employer);
+         const user = await User.findById(mainContract.user);
+         const job = await Job.findById(mainContract.job);
+         // NOTIFY USER HERE >>>
+         const newNotification = new Notification({
+             receiver: "employer",
+             employer,
+             type: 'contract',
+             // employer: req.employerId,
+             message:  `Your hired freelancer ${user.firstname} ${user.lastname} clocked-in for the contract: ${job.title}`,
+             link_url: `/contracts/${contract}`,
+         });
+         await newNotification.save();
+
+       
 
         await watch.save();
 

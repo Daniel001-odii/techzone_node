@@ -12,6 +12,8 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 
+// const axios = require("axios");
+
 const fs = require('fs');
 const handlebars = require('handlebars');
 
@@ -640,6 +642,79 @@ exports.sendEmployerFeedback = async(req, res) => {
 
 
 // 
-// TASK WATCH CONTROLLER.....
-// 
+// QOREPAY PAYMENTS >>>>>>
+//
+/*
+Each API endpoint in QorePay carries the prefix 
+ https://gate.qorepay.com/api/v1/. For example, POST
+ https://gate.qorepay.com/api/v1/purchases/.
+ In every API request, your API key is used as a
+ bearer token in the Authorization header. It should be included as follows:
+ Authorization: Bearer YOUR_API_KEY.
+*/
+
+const paymentProvider = require('Qorepay').default;
+
+paymentProvider.ApiClient.instance.basePath = process.env.QOREPAY_API_URL
+paymentProvider.ApiClient.instance.token = process.env.QOREPAY_API_TOKEN
+
+const qorepay_api_url = process.env.QOREPAY_API_URL
+
+let apiInstance = new paymentProvider.PaymentApi();
+let brandId = process.env.QOREPAY_BRAND_ID;
+
+
+
+exports.makePayments = async (req, res) => {
+    const options = {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+      },
+      body: JSON.stringify({
+        client: {
+          email: 'felix@qorepay.com',
+        },
+        purchase: {
+          currency: 'NGN',
+          products: [
+            {
+              name: 'Dog food Max',
+              quantity: 1,
+              price: 9000
+            }
+          ],
+        },
+        brand_id: process.env.QOREPAY_BRAND_ID,
+        failure_redirect: 'http://brand.com/failed-payment',
+        success_redirect: 'http://brand.com/success-payment',
+      }),
+    };
+  
+    try {
+      const response = await fetch('https://gate.qorepay.com/api/v1/purchases/', options);
+      const jsonResponse = await response.json();
+      res.status(response.status).json(jsonResponse);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  };
+  
+
+
+/*
+async function payMe(){
+    try{
+        const response = await axios.post(`${qorepay_api_url}/purchases`);
+    }catch(error){
+
+    }
+   
+}*/
+
+
+
 

@@ -21,12 +21,22 @@ const jobSchema = new Schema({
         enum: ["fixed-price", "hourly"],
         default: "fixed-price"
     },
-    flags: {
+    flags: [{
         user: {
             type: mongoose.Schema.Types.ObjectId, ref: 'User'
         },
-        reason: String,
-    },
+        reason: {
+            type: String,
+            enum: [
+                "Just not interested",
+                "Vague Description",
+                "Unrealistic Expectations",
+                "Poor reviews about the client",
+                // "Doesn't Match Skills",
+                // "Not in my preferred location"
+              ]
+        },
+    }],
     location: {
         remote: {type: Boolean, default: false},
         state: String,

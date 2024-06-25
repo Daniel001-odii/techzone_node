@@ -18,29 +18,24 @@ const createTransporter = async () => {
       refresh_token: process.env.REFRESH_TOKEN,
     });
 
-    const accessToken = await new Promise((resolve, reject) => {
-      oauth2Client.getAccessToken((err, token) => {
-        if (err) {
-          console.log("*ERR: ", err);
-          reject();
-        }
-        resolve(token);
-      });
-    });
+    const accessToken = await oauth2Client.getAccessToken();
+    
+    if (!accessToken.token) {
+      throw new Error("Failed to retrieve access token");
+    }
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         type: "OAuth2",
         user: process.env.GMAIL_USER,
-        accessToken,
+        accessToken: accessToken.token,
         clientId: process.env.CLIENT_ID,
         clientSecret: process.env.CLIENT_SECRET,
         refreshToken: process.env.REFRESH_TOKEN,
       },
     });
 
-    // Set up Handlebars options
     const handlebarOptions = {
       viewEngine: {
         extName: ".handlebars",
@@ -56,7 +51,8 @@ const createTransporter = async () => {
 
     return transporter;
   } catch (err) {
-    return err;
+    console.error("Error creating transporter:", err);
+    throw err; // Re-throw the error to be caught in sendEmail
   }
 };
 
@@ -68,15 +64,15 @@ const sendEmail = async (to, subject, text, html, template, context) => {
       subject,
       text,
       html,
-      template, // Template name without the extension
-      context,  // Context to pass to the template
+      template,
+      context,
     };
 
     let emailTransporter = await createTransporter();
     await emailTransporter.sendMail(mailOptions);
-    console.log("email sent: ", emailTransporter.response);
+    console.log("email sent:", emailTransporter.response);
   } catch (err) {
-    console.log("error sending email: ", err);
+    console.log("error sending email:", err);
   }
 };
 

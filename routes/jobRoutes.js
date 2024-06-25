@@ -52,4 +52,12 @@ router.post("/application/files", upload.array('attachments'), jobController.han
 // router.post("/application/files", jobController.uploadFilesToS3);
 
 
+// FLAG A JOB HERE...
+router.post("/jobs/:job_id/flag", middleware, jobController.flagJob);
+
+
+
+
+
+
 module.exports = router;
