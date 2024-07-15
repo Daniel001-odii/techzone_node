@@ -12,6 +12,8 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 
+const axios = require('axios');
+
 // const axios = require("axios");
 
 const fs = require('fs');
@@ -639,18 +641,26 @@ exports.sendEmployerFeedback = async(req, res) => {
     }
 };
 
+// edit contract controller ...
+
+
+
+
 
 
 // 
 // QOREPAY PAYMENTS >>>>>>
 //
+
 /*
+
 Each API endpoint in QorePay carries the prefix 
  https://gate.qorepay.com/api/v1/. For example, POST
  https://gate.qorepay.com/api/v1/purchases/.
  In every API request, your API key is used as a
  bearer token in the Authorization header. It should be included as follows:
- Authorization: Bearer YOUR_API_KEY.
+ Authorization: Bearer YOUR_API_KEY...
+
 */
 
 const paymentProvider = require('Qorepay').default;
@@ -663,58 +673,262 @@ const qorepay_api_url = process.env.QOREPAY_API_URL
 let apiInstance = new paymentProvider.PaymentApi();
 let brandId = process.env.QOREPAY_BRAND_ID;
 
+/* 
+
+    this endpoint is supposed to return
+    a checkout_url which should be sent to the client...
+    this checkout_url will enable the said employer to make payments
+    primarily using ATM CARD...
 
 
-exports.makePayments = async (req, res) => {
+*/
+
+
+//EMPLOYER FUND VIRTUAL WALLET...
+
+// FREELANCER TO WITHDRAW AVAILABLE FUNDS...
+
+
+exports.fundContract = async (req, res) => {
+    try {
+        const contract_id = req.params.contract_id;
+        const contract = await Contract.findById(contract_id).populate("employer user job");
+        const employer = contract.employer;
+
+
+        if(!contract){
+            res.status(404).json({ message: "contract not found!"});
+        };
+
+        
+        // mark contract as funded...
+        contract.funded = true;
+
+        // set contract budget to job budget if not custom set...
+        contract.budget = contract.job.budget;
+
+        await contract.save();
+
+        // notify user that contract has been funded, user can start work...
+        // also track taskwatch and notify users to avoid working on non-funded contracts...
+
+
+        const options = {
+            method: 'POST',
+            headers: {
+              accept: 'application/json',
+              'content-type': 'application/json',
+              authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+            },
+            body: JSON.stringify({
+              client: {
+                  email: employer.email,
+                  phone: employer.profile.phone,
+                  full_name: `${employer.firstname}-${employer.lastname}`,
+                  country: "Nigeria",
+                  street_address: employer.profile.location.address,
+                  city: employer.profile.location.city,
+                  state: employer.profile.location.state,
+                  zip_code: "+234",
+              },
+              purchase: {
+                currency: 'NGN',
+                products: [
+                  {
+                    name: contract.job.title,
+                    quantity: 1,
+                    // price: `${contract.job.budget}00`
+                    price: `500`
+                  }
+                ],
+              },
+              brand_id: process.env.QOREPAY_BRAND_ID,
+              failure_redirect: 'http://brand.com/failed-payment',
+              success_redirect: 'http://brand.com/success-payment',
+            }),
+          };
+        
+          try {
+            const response = await fetch('https://gate.qorepay.com/api/v1/purchases/', options);
+            const jsonResponse = await response.json();
+
+            // assign purchase_id gotten from qorepay response to contract for easy reference...
+            contract.funding_id = jsonResponse.id;
+            await contract.save();
+
+
+            res.status(response.status).json(jsonResponse);
+
+          } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'An error occurred' });
+          }
+    } catch (error) {
+        console.log("error getting contract: ", error);
+    }
+};
+
+
+
+// get a paritcular purchase status by ID.......
+exports.getPurchaseById = async (req, res) => {
+
     const options = {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'content-type': 'application/json',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+        },
+    };
+    
+    try{
+        const response = await axios.get(`https://gate.qorepay.com/api/v1/purchases/${req.params.funding_id}/`, options);
+        console.log("res: ", response)
+        res.status(response.status).json(response);
+    }catch(error){
+        console.log("error getting purchase: ", error);
+        res.status(500).json({ error: 'An error occurred' });
+    }
+};
+
+
+// initiate payout into freelancer account...
+/*
+// QOREPAY PAYOUT FLOW......
+https://www.qorepay.com/docs/payout#createPayout
+Step 1: first create new payout and return <execution_url>
+Step 2: Using <execution_url> from new payout created, get bank list and return payout_url
+step 3: Using <payout_url> returned from step 2, 
+	execute payout while providing details including... 
+	[account number, bank_code, recipient_name]
+
+step 4 (optional): get status of payout executed using payout_id
+*/
+
+exports.initiatePayoutOld = async (req, res) => {
+    try{
+        const { amount } = req.body; 
+        const response = await axios.post('https://gate.qorepay.com/api/v1/payouts/', qPayConfig);
+        res.status(200).json({ success: true, message: response });
+    }catch(error){
+        console.log("error initiating payout: ", error);
+        res.status(500).json({ message: "internal server error"});
+    }
+};
+
+const qPayConfig = {
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+    },
+};
+
+
+
+// Function to create a new payout
+async function createNewPayout() {
+    let data = JSON.stringify({
+      "client": {
+        "email": "xenithheight@gmail.com",
+        "phone": "+2348181927251"
+      },
+      "payment": {
+        "amount": 500, //5 naira, 00 is the kobo/cent value
+        "currency": "NGN",
+        "description": "Your test product."
+      },
+      "sender_name": "Odii Daniel",
+      "brand_id": `${process.env.QOREPAY_BRAND_ID}`,
+    });
+  
+    let config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: 'https://gate.qorepay.com/api/v1/payouts/',
+      headers: { 
+        'Content-Type': 'application/json', 
         authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
       },
-      body: JSON.stringify({
-        client: {
-          email: 'felix@qorepay.com',
-        },
-        purchase: {
-          currency: 'NGN',
-          products: [
-            {
-              name: 'Dog food Max',
-              quantity: 1,
-              price: 9000
-            }
-          ],
-        },
-        brand_id: process.env.QOREPAY_BRAND_ID,
-        failure_redirect: 'http://brand.com/failed-payment',
-        success_redirect: 'http://brand.com/success-payment',
-      }),
+      data: data
     };
   
     try {
-      const response = await fetch('https://gate.qorepay.com/api/v1/purchases/', options);
-      const jsonResponse = await response.json();
-      res.status(response.status).json(jsonResponse);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'An error occurred' });
+      const response = await axios.request(config);
+      console.log("Payout created:", JSON.stringify(response.data));
+      return response.data.execution_url; // Extract execution_url from the response
+    } catch (error) {
+      console.error("Error creating payout:", error);
+      throw error;
     }
-  };
+};
   
+  
+// Function to get the bank list from the execution_url
+async function getBankList(execution_url) {
+try {
+    const response = await axios.post(execution_url);
+    // console.log("Bank list:", JSON.stringify(response.data));
+    return {
+        payout_url: response.data.payout_url,
+        banks: response.data.detail.data}
+} catch (error) {
+    console.error("Error getting bank list:", error);
+    throw error;
+}
+};
+  
+  
+// Function to complete the payout
+async function completePayout(payout_url) {
+let payoutData = JSON.stringify({
+    "account_number": "8156074667",
+    "bank_code": "305",
+    "recipient_name": "Chibuikem Daniel"
+});
+
+let payoutConfig = {
+    method: 'post',
+    maxBodyLength: Infinity,
+    url: payout_url,
+    headers: { 
+    'Content-Type': 'application/json', 
+    authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+    },
+    data: payoutData
+};
+
+try {
+    const response = await axios.request(payoutConfig);
+    console.log("Payout completed:", JSON.stringify(response.data));
+} catch (error) {
+    console.error("Error completing payout:", error);
+    throw error;
+}
+};
+  
+  
+// Main function to orchestrate the entire process
+async function main() {
+try {
+    const execution_url = await createNewPayout();
+    const {payout_url, banks} = await getBankList(execution_url);
+    await completePayout(payout_url,{
+        "account_number": '8156074667',
+        "bank_code": "305",
+        "recipient_name": "Chibuikem Daniel"
+    });
+} catch (error) {
+    console.error("Error in the payout process:", error);
+}
+};
 
 
-/*
-async function payMe(){
+exports.initiatePayout=()=>{
     try{
-        const response = await axios.post(`${qorepay_api_url}/purchases`);
+        // Run the main function
+        main();
     }catch(error){
-
+        console.log("error from main function");
     }
-   
-}*/
-
-
-
-
+}

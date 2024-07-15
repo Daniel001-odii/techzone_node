@@ -15,6 +15,7 @@ const contractSchema = new Schema({
         enum: ["assigned", "applied"],
         default: "applied"
     },
+
     action: {
         type: String, 
         enum: ["accepted", "declined", "pending"],
@@ -29,11 +30,21 @@ const contractSchema = new Schema({
         enum: ["open", "closed", "completed", "paused"],
         default: "open",
     },
-    payment: {
-        type: String, 
-        enum: ["funded", "not-funded"],
-        default: "not-funded",
+
+    funded: {
+        type: Boolean,
+        default: false,
     },
+
+    funding_id: {
+        type: String,
+    },
+
+    budget: {
+        type: Number,
+        default: 0
+    },
+
     payment_status: {
         type: String, 
         enum: ["paid", "unpaid"],

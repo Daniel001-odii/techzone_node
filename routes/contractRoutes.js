@@ -4,59 +4,67 @@ const userController = require("../controllers/userController");
 const employerController = require("../controllers/employerController");
 const jobController = require("../controllers/jobController");
 const middleware = require("../middlewares/authMiddleware");
-const contractConttroller = require("../controllers/contractController");
+const contractController = require("../controllers/contractController");
 
 
 
 // route to send contract to user...
-router.post("/contracts/:user_id/:job_id/send", middleware, contractConttroller.sendContractOffer);
+router.post("/contracts/:user_id/:job_id/send", middleware, contractController.sendContractOffer);
 
 // route to send job assignment offer
-router.post("/contracts/:user_id/:job_id/assign", middleware, contractConttroller.assignJob);
+router.post("/contracts/:user_id/:job_id/assign", middleware, contractController.assignJob);
 
 // route to accept offer by user...
-router.post("/contracts/accept/:contract_id", middleware, contractConttroller.acceptOffer);
+router.post("/contracts/accept/:contract_id", middleware, contractController.acceptOffer);
 
 // route to decline offer by user...
-router.post("/contracts/decline/:contract_id", middleware, contractConttroller.declineOffer);
+router.post("/contracts/decline/:contract_id", middleware, contractController.declineOffer);
 
 // route to get all user and emloyer contracts...
-router.get("/contracts", middleware, contractConttroller.getContracts);
+router.get("/contracts", middleware, contractController.getContracts);
 
 // route to get only user completed and active contracts
-router.get("/contracts/good/:user_id?", contractConttroller.getCompletedContracts);
+router.get("/contracts/good/:user_id?", contractController.getCompletedContracts);
 
 // route to get a contract by its ID
-router.get("/contracts/:contract_id", middleware, contractConttroller.getContractById);
+router.get("/contracts/:contract_id", middleware, contractController.getContractById);
 
 
 
 
 // route to mark offer as completed
-router.post("/contracts/:contract_id/complete", middleware, contractConttroller.markContractAsComplete);
+router.post("/contracts/:contract_id/complete", middleware, contractController.markContractAsComplete);
 
 // route to pause contract
-router.post("/contracts/:contract_id/pause", middleware, contractConttroller.pauseContract);
+router.post("/contracts/:contract_id/pause", middleware, contractController.pauseContract);
 
 // route to close contract
-router.post("/contracts/:contract_id/close", middleware, contractConttroller.closeContract);
+router.post("/contracts/:contract_id/close", middleware, contractController.closeContract);
 
 // route to close contract
-router.post("/contracts/:contract_id/resume", middleware, contractConttroller.resumeContract);
+router.post("/contracts/:contract_id/resume", middleware, contractController.resumeContract);
 
 
 // route to close contract
-router.post("/contracts/:contract_id/employer-feedback", middleware, contractConttroller.sendEmployerFeedback);
+router.post("/contracts/:contract_id/employer-feedback", middleware, contractController.sendEmployerFeedback);
 
 // route to close contract
-router.post("/contracts/:contract_id/user-feedback", middleware, contractConttroller.sendUserFeedback);
+router.post("/contracts/:contract_id/user-feedback", middleware, contractController.sendUserFeedback);
 
 
 
 
+// PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS...
+router.post("/contracts/:contract_id/fund", contractController.fundContract);
 
-// PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS
-router.post("/contracts/pay/:contract_id", contractConttroller.makePayments);
+
+// PAYMENT CONTROLLER TO GET A PARTICULAR CONTRACT FUNDING BY ITS ID...
+router.get("/contracts/funds/:funding_id", contractController.getPurchaseById);
+
+// INITITATE FUNDS PAYOUT TO FREELANCER ACCOUNT...
+router.post("/contracts/funds/release", contractController.initiatePayout);
+
+
 // SEND USER FEEDBACK
 // SEND EMPLOYER FEEDBACK
 // EDIT CONTRACT [HAS NOTIFICATION]\// EDIT CONTRACT [HAS NOTIFICATION]

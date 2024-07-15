@@ -173,7 +173,7 @@ exports.login = async (req, res) => {
                 const isValidPassword = hasPassword && comparePasswords(password, user.password.hash, user.password.salt);
 
                 if (!isValidPassword) {
-                    return res.status(401).send({ message: "Invalid username or password" });
+                    return res.status(401).send({ message: "incorrect details!"});
                 }
             } else if (role == 'employer'){
                 // Check if the user has a password (not a Google-authenticated user)
@@ -479,6 +479,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
         const context = { resetToken: resetToken, root_url: process.env.GOOGLE_CALLBACK};
 
         await sendEmail(recipient, subject, null, null, template, context);
+        res.status(200).json({ message: 'Password reset information would be sent if your email exist in our record' });
 
         /* OLD EMAIL PATTERN
         const mailOptions = {

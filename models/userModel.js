@@ -92,6 +92,11 @@ const userSchema = new Schema({
         is_verified: {type: Boolean, default: false},
       }
     },
+
+    credits: { 
+      type: Number,
+      default: 0
+    },
     // settings ends here...
 
     created: {
