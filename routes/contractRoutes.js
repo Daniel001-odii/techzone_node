@@ -8,6 +8,8 @@ const contractController = require("../controllers/contractController");
 
 
 
+
+
 // route to send contract to user...
 router.post("/contracts/:user_id/:job_id/send", middleware, contractController.sendContractOffer);
 
@@ -27,7 +29,9 @@ router.get("/contracts", middleware, contractController.getContracts);
 router.get("/contracts/good/:user_id?", contractController.getCompletedContracts);
 
 // route to get a contract by its ID
-router.get("/contracts/:contract_id", middleware, contractController.getContractById);
+router.get("/contracts/:contract_id", contractController.getContractById);
+
+// router.get("/contracts/:contract_id/open", middleware, contractController.getContractById);
 
 
 
@@ -51,15 +55,19 @@ router.post("/contracts/:contract_id/employer-feedback", middleware, contractCon
 // route to close contract
 router.post("/contracts/:contract_id/user-feedback", middleware, contractController.sendUserFeedback);
 
+// route to edit contract budget...
+router.patch("/contracts/:contract_id/budget", middleware, contractController.editContractBudget);
+
 
 
 
 // PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS...
-router.post("/contracts/:contract_id/fund", contractController.fundContract);
+router.post("/contracts/:contract_id/funds", contractController.fundContract);
 
+router.get("/contracts/funded/all", middleware, contractController.getAllFundedContracts);
 
 // PAYMENT CONTROLLER TO GET A PARTICULAR CONTRACT FUNDING BY ITS ID...
-router.get("/contracts/funds/:funding_id", contractController.getPurchaseById);
+router.get("/contracts/:contract_id/funds/status", contractController.getPurchaseById);
 
 // INITITATE FUNDS PAYOUT TO FREELANCER ACCOUNT...
 router.post("/contracts/funds/release", contractController.initiatePayout);

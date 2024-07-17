@@ -5,6 +5,7 @@ const Application = require('../models/applicationModel');
 const Contract = require('../models/contractModel.js');
 const jwt = require('jsonwebtoken');
 
+
 exports.getJobsByEmployer = async (req, res) => {
   try {
       // Fetch jobs by employer
@@ -103,5 +104,5 @@ exports.getCompletedContracts = async (req, res) => {
     res.status(500).json({ message: "internal server error"});
     console.log("error getting completed contracts: ", error);
   }
-}
+};
 

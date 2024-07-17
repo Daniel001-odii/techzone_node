@@ -66,10 +66,6 @@ const contractSchema = new Schema({
         rating: {type: Number, default: 0},
         review: String,
     },
-    created: {
-        type: Date,
-        default: Date.now
-    },
 
 }, {timestamps: true});
 

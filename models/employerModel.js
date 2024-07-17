@@ -1,3 +1,5 @@
+const { toNumber } = require('@adiwajshing/baileys');
+
 var mongoose = require('mongoose'), Schema = mongoose.Schema;
 const employerSchema = new Schema({
     email: {
@@ -71,6 +73,10 @@ const employerSchema = new Schema({
     verification_token: String,
 
     jobs_posted: Number,
+    total_spent: {
+      default: 0,
+      type: Number
+    },
 
     pass_reset: {
         token: String,

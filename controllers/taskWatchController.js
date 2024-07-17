@@ -17,6 +17,10 @@ exports.startWatch = async (req, res) => {
             return res.status(400).json({ message: "Please provide an activity description" });
         }
 
+        if(contract_obj.funded != true){
+            return res.status(400).json({ message: "this contract has not been funded yet. please contact your employer!"})
+        }
+
         const today = new Date();
         const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 

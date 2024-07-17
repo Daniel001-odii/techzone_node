@@ -85,21 +85,23 @@ exports.sendContractOffer = async(req, res) =>{
     if(req.employerId){
         try{
             const {user_id, job_id} = req.params;
+            const job = await Job.findById(job_id);
+            const user = await User.findById(user_id);
+            const employer = await Employer.findById(req.employerId);
             
             const alreadyExisitngContract = await Contract.findOne({ user:user_id, job:job_id });
             if(alreadyExisitngContract){
                 return res.status(400).json({ message: "You already sent the contract to this user"});
             } else {
                 const newContract = new Contract({
+                    budget: job.budget,
                     employer: req.employerId,
                     user: user_id,
                     job: job_id,
                 });
                 await newContract.save();
 
-                const job = await Job.findOne({ _id: newContract.job });
-                const user = await User.findById(user_id);
-                const employer = await Employer.findById(req.employerId);
+                
                 
 
                 // NOTIFY USER HERE >>>
@@ -171,6 +173,7 @@ exports.assignJob = async(req, res) =>{
                     user: user_id,
                     job: job_id,
                     type: "assigned",
+                    budget: job.budget,
                 });
                 await newContract.save();
                
@@ -223,6 +226,8 @@ exports.assignJob = async(req, res) =>{
         return res.status(400).json({ message: "sorry only employers can assign contracts.."})
     }
 };
+
+
 
 // SEND NOTIFICATIONS TO EMPLOYER
 // controller to allow users to accept a contract
@@ -302,13 +307,24 @@ exports.declineOffer = async(req, res) => {
 exports.markContractAsComplete = async(req, res) => {
     try{
         const contract_id = req.params.contract_id;
+        
         const offer = await Contract.findOne({ _id: contract_id });
+        const user = await User.findById(offer.user);
+        const job = await Job.findById(offer.job);
+
+
         if(!offer){
             return res.status(404).json({ message: "Contract not found"});
         }
+
+        if(offer.funded != true){
+            return res.status(400).json({ message: "Sorry contract must be funded before being marked as complete"});
+        }
+
         offer.status = "completed";
+        offer.payment_status = "paid";
         await offer.save();
-        res.status(200).json({ offer, message: "Contract completed successfuly"});
+       
 
         // NOTIFY USER HERE >>>
         const newNotification = new Notification({
@@ -321,8 +337,7 @@ exports.markContractAsComplete = async(req, res) => {
         await newNotification.save();
 
         // SEND EMAIL TO USER >>>
-        const user = await User.findById(offer.user);
-        const job = await Job.findById(offer.job);
+      
         const mailOptions = {
             from: 'danielsinterest@gmail.com',
             to: user.email,
@@ -344,6 +359,16 @@ exports.markContractAsComplete = async(req, res) => {
           });
 
         }
+
+
+        // PAY TO USER WALLET...
+        // SUBSTRACT APEXTEKS PLATFORM FEES OF 12.99%
+        // CREDIT THE REST TO USER'S WALLET...
+        user.credits += (offer.budget - (offer.budget * 12.99)/100);
+        await user.save();
+
+
+        res.status(200).json({ offer, message: "Contract completed successfuly"});
 
     }catch(error){
         console.log(error);
@@ -642,9 +667,29 @@ exports.sendEmployerFeedback = async(req, res) => {
 };
 
 // edit contract controller ...
+exports.editContractBudget = async(req, res) => {
+    try{
+        const contract = await Contract.findById(req.params.contract_id);
+        if(!contract){
+            return res.status(404).json({ message: "contract not found!"});
+        }
 
+        const { budget } = req.body;
 
+        if(contract.funded){
+            return res.status(400).json({ message: "sorry contract budget cannot be altered after being funded!"})
+        } else{
+            contract.budget = budget;
+            await contract.save();
+        }
 
+        res.status(201).json({ message: "contract budget updated!"});
+
+    }catch(error){
+        console.log("error updating contract budget: ", error);
+        res.status(500).json({ message: "internal server error"});
+    }
+}
 
 
 
@@ -686,7 +731,38 @@ let brandId = process.env.QOREPAY_BRAND_ID;
 
 //EMPLOYER FUND VIRTUAL WALLET...
 
+
 // FREELANCER TO WITHDRAW AVAILABLE FUNDS...
+const qPayConfig = {
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+    },
+};
+
+
+exports.getAllFundedContracts = async (req, res) => {
+    try{
+       const contracts = await Contract.find({ employer: req.employer, funded: true }).populate({
+        path: "user",
+        select: "firstname lastname" // Specify the properties you want to populate
+    })
+    .populate({
+        path: "job",
+        select: "title"
+    });;
+       const employer = req.employer;
+
+       employer.total_spent = contracts.reduce((total, item) => total + (item.budget || 0), 0);
+       
+       res.status(200).json({ contracts, employer });
+
+    }catch(error){
+        console.log("error getting funded contracts: ", error);
+        res.status(500).json({ error: 'An error occurred' });
+    }
+}
 
 
 exports.fundContract = async (req, res) => {
@@ -702,12 +778,12 @@ exports.fundContract = async (req, res) => {
 
         
         // mark contract as funded...
-        contract.funded = true;
+        // contract.funded = true;
 
         // set contract budget to job budget if not custom set...
-        contract.budget = contract.job.budget;
+        // contract.budget = contract.job.budget;
 
-        await contract.save();
+        // await contract.save();
 
         // notify user that contract has been funded, user can start work...
         // also track taskwatch and notify users to avoid working on non-funded contracts...
@@ -724,7 +800,8 @@ exports.fundContract = async (req, res) => {
               client: {
                   email: employer.email,
                   phone: employer.profile.phone,
-                  full_name: `${employer.firstname}-${employer.lastname}`,
+                  legal_name: `${employer.firstname} ${employer.lastname}`,
+                  full_name: `${employer.firstname} ${employer.lastname}`,
                   country: "Nigeria",
                   street_address: employer.profile.location.address,
                   city: employer.profile.location.city,
@@ -737,14 +814,14 @@ exports.fundContract = async (req, res) => {
                   {
                     name: contract.job.title,
                     quantity: 1,
-                    // price: `${contract.job.budget}00`
-                    price: `500`
+                    price: `${contract.budget}00`
+                    // price: `500`
                   }
                 ],
               },
               brand_id: process.env.QOREPAY_BRAND_ID,
-              failure_redirect: 'http://brand.com/failed-payment',
-              success_redirect: 'http://brand.com/success-payment',
+              failure_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding/failed`,
+              success_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding/success`,
             }),
           };
         
@@ -772,19 +849,24 @@ exports.fundContract = async (req, res) => {
 
 // get a paritcular purchase status by ID.......
 exports.getPurchaseById = async (req, res) => {
-
-    const options = {
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
-        },
-    };
-    
     try{
-        const response = await axios.get(`https://gate.qorepay.com/api/v1/purchases/${req.params.funding_id}/`, options);
-        console.log("res: ", response)
-        res.status(response.status).json(response);
+        const contract = await Contract.findById(req.params.contract_id);
+
+        if(!contract){
+            return res.status(404).json({ message:"requested contract was not found"});
+        };
+
+        const response = await axios.get(`https://gate.qorepay.com/api/v1/purchases/${contract.funding_id}/`, qPayConfig);
+        // const jsonResponse = await response.json();
+
+        // set contract funding status as true..
+        if(response.data.status == "paid"){
+            contract.funded = true;
+            await contract.save();
+        }
+        // console.log("res: ", response)
+        // res.status(response.status).json({ message: response.data, status: response.data.status });
+        res.status(response.status).json({ status: response.data.status, contract });
     }catch(error){
         console.log("error getting purchase: ", error);
         res.status(500).json({ error: 'An error occurred' });
@@ -816,13 +898,7 @@ exports.initiatePayoutOld = async (req, res) => {
     }
 };
 
-const qPayConfig = {
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/json',
-      authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
-    },
-};
+
 
 
 
