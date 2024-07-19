@@ -67,11 +67,15 @@ router.post("/contracts/:contract_id/funds", contractController.fundContract);
 router.get("/contracts/funded/all", middleware, contractController.getAllFundedContracts);
 
 // PAYMENT CONTROLLER TO GET A PARTICULAR CONTRACT FUNDING BY ITS ID...
-router.get("/contracts/:contract_id/funds/status", contractController.getPurchaseById);
+router.get("/contracts/:contract_id/funds/status", middleware, contractController.getPurchaseById);
 
-// INITITATE FUNDS PAYOUT TO FREELANCER ACCOUNT...
-router.post("/contracts/funds/release", contractController.initiatePayout);
 
+// ROUTE TO GET BANKS LISTS...
+router.get("/contracts/banks/list", contractController.fetchAllBankLists);
+
+
+// ROUTE TO INITIATE ACTUAL WITHDRAWAL...
+router.post("/funds/withdraw", middleware, contractController.withdrawFunds)
 
 // SEND USER FEEDBACK
 // SEND EMPLOYER FEEDBACK

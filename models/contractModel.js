@@ -45,6 +45,11 @@ const contractSchema = new Schema({
         default: 0
     },
 
+    budget_type: {
+        type: String,
+        enum: ["hourly", 'fixed-price']
+    },
+
     payment_status: {
         type: String, 
         enum: ["paid", "unpaid"],

@@ -1,6 +1,7 @@
-const { toNumber } = require('@adiwajshing/baileys');
+const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose'), Schema = mongoose.Schema;
 
-var mongoose = require('mongoose'), Schema = mongoose.Schema;
+
 const employerSchema = new Schema({
     email: {
       type: String,
@@ -48,6 +49,7 @@ const employerSchema = new Schema({
       tag_line: String,
       description: String,
       location: {
+        LGA: String,
         city: String,
         state: String,
         address: String,
@@ -83,15 +85,18 @@ const employerSchema = new Schema({
         expiry_date: Date,
     },
 
-    credits: { 
-      type: Number,
-      default: 0
-    },
+  }, {timestamps: true});
 
-    created: {
-        type: Date,
-        default: Date.now
-    },
-  });
-  
+employerSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+        return next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+});
+
+employerSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 module.exports = mongoose.model('Employer', employerSchema);

@@ -1,4 +1,7 @@
 var mongoose = require('mongoose'), Schema = mongoose.Schema;
+const bcrypt = require('bcryptjs');
+
+
 const userSchema = new Schema({
     email: {
       type: String,
@@ -26,15 +29,17 @@ const userSchema = new Schema({
       type: String,
       // required: [true, "Please specify lastname"]
     },
+    username: {
+      type: String,
+    },
  
     // PROVIDER AND GOOGLE ID....
     provider: {
       type: String,
-      enum: ["tech-zone", "google"],
-      default: "tech-zone"
+      enum: ["native", "google"],
+      default: "native"
     },
     googleId: Number,
-    // PROVIDER AND GOOGLE ID ENDS HERE...
 
     preffered_job_types: [
       {type: String}
@@ -43,6 +48,7 @@ const userSchema = new Schema({
       title: String,
       bio: String,
       location: {
+        LGA: String,
         city: String,
         state: String,
         address: String,
@@ -93,16 +99,25 @@ const userSchema = new Schema({
       }
     },
 
-    credits: { 
+    total_earnings: {
       type: Number,
-      default: 0
-    },
-    // settings ends here...
+      default: 0,
+    }
+  }, {timestamps: true});
 
-    created: {
-        type: Date,
-        default: Date.now
-    },
-  });
-  
+
+userSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+        return next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+});
+
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+
 module.exports = mongoose.model('User', userSchema);

@@ -71,10 +71,6 @@ const jobSchema = new Schema({
         type: String,
     },
 
-    created: {
-        type: Date,
-        default: Date.now
-    },
 }, {timestamps: true});
 
 module.exports = mongoose.model('Job', jobSchema)

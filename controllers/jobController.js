@@ -108,7 +108,7 @@ exports.getJobById = async (req, res) => {
       }
   
       // Query the database to find the job by its ID
-      const job = await Job.findById(job_id).populate("employer", "is_verified profile created");
+      const job = await Job.findById(job_id).populate("employer", "is_verified profile createdAt");
       
       // Query applications associated with the current job and count them
       const applicationsCount = await Application.countDocuments({ job: job._id });
@@ -363,12 +363,12 @@ exports.saveJob = async (req, res) => {
                 // Job already exists in saved jobs, remove it
                 user.saved_jobs = user.saved_jobs.filter(savedJobId => String(savedJobId) !== String(job_id));
                 await user.save(); // Save the user after removing the job
-                res.status(200).json({ message: "Job removed from saved-jobs successfully" });
+                res.status(200).json({ message: "Job unsaved successfully" });
             } else {
                 // Job doesn't exist in saved jobs, add it
                 user.saved_jobs.push(job_id);
                 await user.save(); // Save the user after adding the job
-                res.status(200).json({ message: "Job saved successfully" });
+                res.status(201).json({ message: "Job saved successfully" });
             }
         }
     } catch (error) {

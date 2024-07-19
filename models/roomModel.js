@@ -11,7 +11,11 @@ const roomSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
-  unread_messages: {type: Number, default: 0},
+  unread_messages: {
+    type: Number, 
+    default: 0
+  },
+  
 }, {timestamps: true});
 
 module.exports = mongoose.model('Room', roomSchema);

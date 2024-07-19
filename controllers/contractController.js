@@ -336,7 +336,7 @@ exports.markContractAsComplete = async(req, res) => {
         });
         await newNotification.save();
 
-        // SEND EMAIL TO USER >>>
+        // SEND EMAIL & NOTIFY USER >>>
       
         const mailOptions = {
             from: 'danielsinterest@gmail.com',
@@ -363,8 +363,10 @@ exports.markContractAsComplete = async(req, res) => {
 
         // PAY TO USER WALLET...
         // SUBSTRACT APEXTEKS PLATFORM FEES OF 12.99%
+        const APEX_PLATFORM_FEES = 12.99;
         // CREDIT THE REST TO USER'S WALLET...
-        user.credits += (offer.budget - (offer.budget * 12.99)/100);
+        // save only 2 decimal places after the whole number..
+        user.credits += (offer.budget - (offer.budget * APEX_PLATFORM_FEES)/100).toFixed(2);
         await user.save();
 
 
@@ -694,7 +696,7 @@ exports.editContractBudget = async(req, res) => {
 
 
 // 
-// QOREPAY PAYMENTS >>>>>>
+// QOREPAY & PAYMENTS >>>>>>
 //
 
 /*
@@ -785,6 +787,7 @@ exports.fundContract = async (req, res) => {
 
         // await contract.save();
 
+        // SEND NOTIFICATION TO USER >>>
         // notify user that contract has been funded, user can start work...
         // also track taskwatch and notify users to avoid working on non-funded contracts...
 
@@ -846,7 +849,6 @@ exports.fundContract = async (req, res) => {
 };
 
 
-
 // get a paritcular purchase status by ID.......
 exports.getPurchaseById = async (req, res) => {
     try{
@@ -887,20 +889,205 @@ step 3: Using <payout_url> returned from step 2,
 step 4 (optional): get status of payout executed using payout_id
 */
 
-exports.initiatePayoutOld = async (req, res) => {
+
+
+exports.fetchAllBankLists = async (req, res) => {
     try{
-        const { amount } = req.body; 
-        const response = await axios.post('https://gate.qorepay.com/api/v1/payouts/', qPayConfig);
-        res.status(200).json({ success: true, message: response });
+        // create new payout with user details...
+        let data = JSON.stringify({
+            "client": {
+              "email": "testuser@mail.com",
+              "phone": "+2340000000000"
+            },
+            "payment": {
+              "amount": 500, //5 naira, 00 is the kobo/cent value
+              "currency": "NGN",
+              "description": "test."
+            },
+            "sender_name": "John Doe",
+            "brand_id": `${process.env.QOREPAY_BRAND_ID}`,
+        });
+
+        let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: 'https://gate.qorepay.com/api/v1/payouts/',
+            headers: { 
+              'Content-Type': 'application/json', 
+              authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+            },
+            data: data
+        };
+
+        const response = await axios.request(config);
+        console.log("new payout created...");
+
+        // get and store exec_url...
+        const execution_url = response.data.execution_url;
+
+        // get bank list...
+        const result = await getBankList(execution_url);
+        console.log("bansklist has been sent to client...")
+
+        res.status(201).json({ result });
+
     }catch(error){
-        console.log("error initiating payout: ", error);
+        console.log("error fetching banklist: ", error.response);
         res.status(500).json({ message: "internal server error"});
     }
+}
+
+exports.withdrawFunds = async (req, res) => {
+    try {
+        const user = req.user;
+        const { amount } = req.body;
+        const description = "New withdrawal";
+        const account_number = user.settings.bank.account_number;
+        const bank_code = user.settings.bank.sort_code;
+        const recipient_name = `${user.firstname} ${user.lastname}`;
+
+        /*
+        console.log(
+            "user: ", 
+            user, 
+            "amount :", 
+            amount, 
+            "description: ", 
+            description, 
+            "account_number: ", 
+            account_number,
+            "bank_code: ",
+            bank_code,
+            "recipient_name: ",
+            recipient_name
+        )*/
+
+        // check if user is performing a legal action of withdrawing only available funds in account balance..
+        // if possible add time delays for withdrawal probation incase of account hijack...
+        // check also if its weekend first before allowing withdrawal here...
+        // also minus withdrawn funds from user's available funds..
+        // send notification, email alerts to user upon successufl withrawal...
+        if(amount > user.credits){
+            return res.status(400).json({ message: "not enough funds available"});
+        } else {
+            // substract withdrawal from available balance...
+            user.credits = user.credits - amount;
+            await user.save();
+
+            // returns execution url successully...
+            const execution_url = await createNewPayout(user.email, user.profile.phone, amount, description, recipient_name);
+
+            // return payout url using exec_url...
+            // return payout url successfully...
+            const payout_url = await getBankList(execution_url);
+
+            // complete final payout process..
+            const result = await completePayout(payout_url, account_number, bank_code, recipient_name);
+            res.status(201).json({ message: `${recipient_name} requested payout amount of NGN${amount}`, result });
+        }
+    } catch (error) {
+        console.error("Error in the payout process:", error);
+        res.status(500).json({ message: "internal server error"});
+    }
+}
+
+// Function to create a new payout
+async function createNewPayout(email, phone, amount, description, sender_name) {
+    let data = JSON.stringify({
+      "client": {
+        "email": `${email}`,
+        "phone": `${phone}`
+      },
+      "payment": {
+        "amount": `${amount}00`, //5 naira, 00 is the kobo/cent value
+        "currency": "NGN",
+        "description": `${description}`
+      },
+      "sender_name": `${sender_name}`,
+      "brand_id": `${process.env.QOREPAY_BRAND_ID}`,
+    });
+  
+    let config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: 'https://gate.qorepay.com/api/v1/payouts/',
+      headers: { 
+        'Content-Type': 'application/json', 
+        authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+      },
+      data: data
+    };
+  
+    try {
+      const response = await axios.request(config);
+      console.log("Payout created:", JSON.stringify(response.data));
+      return response.data.execution_url; // Extract execution_url from the response
+    } catch (error) {
+      console.error("Error creating payout:", error);
+      throw error;
+    }
 };
+  
 
+// Function to get the bank list from the execution_url
+async function getBankList(execution_url) {
+    try {
+        const response = await axios.post(execution_url);
+        const payout_url = response.data.payout_url;
+        return payout_url;
 
+    } catch (error) {
+        console.error("Error getting bank list:", error);
+        throw error;
+    }
+};
+  
 
+// Function to complete the payout
+async function completePayout(payout_url, account_number, bank_code, recipient_name) {
+    let payoutData = JSON.stringify({
+        "account_number": `${account_number}`,
+        "bank_code": `${bank_code}`,
+        "recipient_name": `${recipient_name}`,
+    });
 
+    let payoutConfig = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: payout_url,
+        headers: { 
+        'Content-Type': 'application/json', 
+        authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
+        },
+        data: payoutData
+    };
+
+    try {
+        const response = await axios.request(payoutConfig);
+        console.log("Payout completed:", JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        console.error("Error completing payout:", error);
+        throw error;
+    }
+};
+  
+
+/*
+// Main function to orchestrate the entire process
+async function main(req, res) {
+    try {
+        const execution_url = await createNewPayout();
+        const payout_url = await getBankList(execution_url);
+        await completePayout(payout_url, account_number, bank_code, recipient_name,{
+            "account_number": '8156074667',
+            "bank_code": "305",
+            "recipient_name": "Chibuikem Daniel"
+        });
+    } catch (error) {
+        console.error("Error in the payout process:", error);
+    }
+};
 
 // Function to create a new payout
 async function createNewPayout() {
@@ -938,73 +1125,4 @@ async function createNewPayout() {
       throw error;
     }
 };
-  
-  
-// Function to get the bank list from the execution_url
-async function getBankList(execution_url) {
-try {
-    const response = await axios.post(execution_url);
-    // console.log("Bank list:", JSON.stringify(response.data));
-    return {
-        payout_url: response.data.payout_url,
-        banks: response.data.detail.data}
-} catch (error) {
-    console.error("Error getting bank list:", error);
-    throw error;
-}
-};
-  
-  
-// Function to complete the payout
-async function completePayout(payout_url) {
-let payoutData = JSON.stringify({
-    "account_number": "8156074667",
-    "bank_code": "305",
-    "recipient_name": "Chibuikem Daniel"
-});
-
-let payoutConfig = {
-    method: 'post',
-    maxBodyLength: Infinity,
-    url: payout_url,
-    headers: { 
-    'Content-Type': 'application/json', 
-    authorization: `Bearer ${process.env.QOREPAY_API_TOKEN}`
-    },
-    data: payoutData
-};
-
-try {
-    const response = await axios.request(payoutConfig);
-    console.log("Payout completed:", JSON.stringify(response.data));
-} catch (error) {
-    console.error("Error completing payout:", error);
-    throw error;
-}
-};
-  
-  
-// Main function to orchestrate the entire process
-async function main() {
-try {
-    const execution_url = await createNewPayout();
-    const {payout_url, banks} = await getBankList(execution_url);
-    await completePayout(payout_url,{
-        "account_number": '8156074667',
-        "bank_code": "305",
-        "recipient_name": "Chibuikem Daniel"
-    });
-} catch (error) {
-    console.error("Error in the payout process:", error);
-}
-};
-
-
-exports.initiatePayout=()=>{
-    try{
-        // Run the main function
-        main();
-    }catch(error){
-        console.log("error from main function");
-    }
-}
+*/

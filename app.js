@@ -36,6 +36,8 @@ const taskWatchRoutes = require("./routes/taskWatchRoutes");
 
 const waitListRoutes = require("./routes/waitListRoute");
 
+const walletRoutes = require('./routes/walletRoutes');
+
 // socket io configurations for notification...
 const server = http.createServer(app);
 const io = require("socket.io")(server, {
@@ -67,7 +69,7 @@ io.on('connection', (socket) => {
 
 // Connect to the db
 mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true } )
-.then(() => console.log('Tech-zone database connected successfully'))
+.then(() => console.log('ApexTeks database connected successfully'))
 .catch((err) => { console.error(err); });
 
 
@@ -94,6 +96,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api", taskWatchRoutes);
 app.use("/api", waitListRoutes);
+app.use("/api/wallets", walletRoutes);
 
 
 const Message = require('./models/messageModel');

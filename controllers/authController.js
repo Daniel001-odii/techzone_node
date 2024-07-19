@@ -1,10 +1,15 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+
 const User = require("../models/userModel");
 const Notification = require("../models/notificationModel");
 const Employer = require("../models/employerModel"); // Correct the import for Employer model
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const Wallet = require("../models/walletModel");
+
+
 
 const Admin = require('../models/adminModel');
 
@@ -78,14 +83,21 @@ exports.userSignup = async (req, res) => {
         } else if (existingEmployer) {
             return res.status(400).json({ message: 'The email has already been registered as an employer' });
         } else {
+            // create new user...
             const newUser = new User({
                 firstname,
                 lastname,
                 email,
-                password: hashPassword(password)
+                password
             });
-
             await newUser.save();
+
+            // create new wallet for user...
+            const userWallet = new Wallet({
+                user: newUser._id,
+            })
+
+            await userWallet.save();
 
             
             //   SEND EMAIL HERE >>>>            
@@ -125,7 +137,7 @@ exports.employerSignup = async (req, res) => {
                 firstname,
                 lastname,
                 email,
-                password: hashPassword(password),
+                password,
                 profile: { 
                     company_name: company_name 
                 },
@@ -138,58 +150,30 @@ exports.employerSignup = async (req, res) => {
             const template = "welcome";
             const context = { firstname, lastname };
             
-            await sendEmail(recipient, subject, null, null, template, context);
+            // await sendEmail(recipient, subject, null, null, template, context);
 
             res.status(200).send({ message: "Employer registered successfully!" });
         }
     } catch (error) {
+        console.log("error registering employer: ", error)
         res.status(500).send({ message: "Employer registration failed!" });
     }
 }
 
 exports.login = async (req, res) => {
-    console.log("login detected...");
     try {
         const { email, password } = req.body;
 
-        Promise.all([
-            User.findOne({ email }).exec(),
-            Employer.findOne({ email }).exec(),
-        ])
-        .then(([user, employer]) => {
-            if (!user && !employer) {
-                return res.status(404).send({ message: "incorrect details!" });
-            }
+        const user = await User.findOne({ email }) || await Employer.findOne({ email });
 
-            // Determine user's role
-            const role = user ? 'user' : 'employer';
+        // Check if user exists and password is correct
+        if (!user || !(await user.matchPassword(password))) {
+            return res.status(401).json({ message: 'Invalid credentials provided' });
+        };
 
-            if(role == 'user'){
-                // Check if the user has a password (not a Google-authenticated user)
-                const hasPassword = user && user.provider != 'google';
-
-                // Compare password only if the user has a password
-                // const isValidPassword = hasPassword && bcrypt.compareSync(password, user.password);
-                const isValidPassword = hasPassword && comparePasswords(password, user.password.hash, user.password.salt);
-
-                if (!isValidPassword) {
-                    return res.status(401).send({ message: "incorrect details!"});
-                }
-            } else if (role == 'employer'){
-                // Check if the user has a password (not a Google-authenticated user)
-                const hasPassword = employer && employer.provider != 'google';
-
-                // Compare password only if the user has a password
-                const isValidPassword = hasPassword && comparePasswords(password, employer.password.hash, employer.password.salt);
-
-                if (!isValidPassword) {
-                    return res.status(401).send({ message: "incorrect details!" });
-                }
-            }
-            
-
-            // Assign user/employer id to response and generate token
-            const userId = user ? user.id : employer.id;
+        // Assign user/employer id to response and generate token
+            const userId = user._id;
+            const role = user.role;
             const token = jwt.sign({ id: userId, role }, process.env.API_SECRET, { expiresIn: '1d' });
 
             // Send a response
@@ -213,10 +197,7 @@ exports.login = async (req, res) => {
                 message: `New signin alert`
             });
             newNotification.save();
-        })
-        .catch((err) => {
-            res.status(500).send({ message: err });
-        });
+
     } catch (error) {
         console.log(error);
         res.status(500).send({ message: "Login failed" });
@@ -269,7 +250,7 @@ async function verifyCode(code) {
 
 
 // this function checks for exisitng users and is utitlized by the googleClientAuthHandler below...
-  const findExistingUser = async ({ googleId, email }) => {
+const findExistingUser = async ({ googleId, email }) => {
     // Check "User" model
     const existingUserInUserModel = await User.findOne({ googleId, email });
 
