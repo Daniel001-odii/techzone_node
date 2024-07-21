@@ -199,7 +199,7 @@ exports.login = async (req, res) => {
             newNotification.save();
 
     } catch (error) {
-        console.log(error);
+        console.log("error during login: ", error);
         res.status(500).send({ message: "Login failed" });
     }
 };

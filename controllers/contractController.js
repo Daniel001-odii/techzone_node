@@ -778,15 +778,6 @@ exports.fundContract = async (req, res) => {
             res.status(404).json({ message: "contract not found!"});
         };
 
-        
-        // mark contract as funded...
-        // contract.funded = true;
-
-        // set contract budget to job budget if not custom set...
-        // contract.budget = contract.job.budget;
-
-        // await contract.save();
-
         // SEND NOTIFICATION TO USER >>>
         // notify user that contract has been funded, user can start work...
         // also track taskwatch and notify users to avoid working on non-funded contracts...
@@ -818,7 +809,6 @@ exports.fundContract = async (req, res) => {
                     name: contract.job.title,
                     quantity: 1,
                     price: `${contract.budget}00`
-                    // price: `500`
                   }
                 ],
               },
@@ -878,7 +868,7 @@ exports.getPurchaseById = async (req, res) => {
 
 // initiate payout into freelancer account...
 /*
-// QOREPAY PAYOUT FLOW......
+// QOREPAY PAYOUT FLOW... ... ... ... 
 https://www.qorepay.com/docs/payout#createPayout
 Step 1: first create new payout and return <execution_url>
 Step 2: Using <execution_url> from new payout created, get bank list and return payout_url
@@ -927,15 +917,19 @@ exports.fetchAllBankLists = async (req, res) => {
 
         // get bank list...
         const result = await getBankList(execution_url);
+        const banks = result.detail.data;
+
         console.log("bansklist has been sent to client...")
 
-        res.status(201).json({ result });
+        res.status(201).json({ banks });
 
     }catch(error){
         console.log("error fetching banklist: ", error.response);
         res.status(500).json({ message: "internal server error"});
     }
-}
+};
+
+
 
 exports.withdrawFunds = async (req, res) => {
     try {
@@ -979,7 +973,8 @@ exports.withdrawFunds = async (req, res) => {
 
             // return payout url using exec_url...
             // return payout url successfully...
-            const payout_url = await getBankList(execution_url);
+            const bankLists = await getBankList(execution_url);
+            const payout_url = bankLists.result.payout_url;
 
             // complete final payout process..
             const result = await completePayout(payout_url, account_number, bank_code, recipient_name);
@@ -1033,7 +1028,8 @@ async function createNewPayout(email, phone, amount, description, sender_name) {
 async function getBankList(execution_url) {
     try {
         const response = await axios.post(execution_url);
-        const payout_url = response.data.payout_url;
+        // const payout_url = response.data.payout_url;
+        const payout_url = response.data;
         return payout_url;
 
     } catch (error) {
@@ -1072,6 +1068,7 @@ async function completePayout(payout_url, account_number, bank_code, recipient_n
     }
 };
   
+
 
 /*
 // Main function to orchestrate the entire process
