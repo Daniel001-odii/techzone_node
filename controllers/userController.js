@@ -8,6 +8,8 @@ const imageParser = require("../utils/imageParser")
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const Wallet = require("../models/walletModel");
+
 
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 // Create S3 client
@@ -419,3 +421,23 @@ exports.uploadUserResumeToS3 = async (req, res) => {
     res.status(500).json({ error: 'Failed to upload resume' });
   }
 };
+
+
+// GET USER WALLET....
+exports.getUserWallet = async(req, res) => {
+  try{
+      const wallet = await Wallet.findOne({ user: req.userId });
+      if(!wallet){
+          return res.status(404).json({ message: "user wallet not found"});
+      }
+
+      res.status(200).json({ wallet });
+
+  }catch(error){
+      console.log("error getting user wallet: ", error);
+      res.status(500).json({ message: "internal server error"});
+  }
+};
+
+
+// WITHDRAW FUNDS FROM USER WALLET...

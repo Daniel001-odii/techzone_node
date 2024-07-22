@@ -12,6 +12,8 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 
+const Wallet = require("../models/walletModel");
+
 const axios = require('axios');
 
 // const axios = require("axios");
@@ -917,19 +919,22 @@ exports.fetchAllBankLists = async (req, res) => {
 
         // get bank list...
         const result = await getBankList(execution_url);
-        const banks = result.detail.data;
+        // const banks = result.detail.data;
 
-        console.log("bansklist has been sent to client...")
+        console.log("bansklist has been sent to client...", result)
 
-        res.status(201).json({ banks });
+        res.status(201).json({ result });
 
     }catch(error){
-        console.log("error fetching banklist: ", error.response);
+        console.log("error fetching banklist: ", error);
         res.status(500).json({ message: "internal server error"});
     }
 };
 
 
+
+// BEFORE GOING TO PROD... ENSURE FUNDSWITHDRAWAL IS ONLY ACTIVATED DURING WEEKENDS
+// ACCORDING TO PLATFORM POLICY FOR FUNDS AND FUNDS WITHDRAWAL...
 
 exports.withdrawFunds = async (req, res) => {
     try {
@@ -939,6 +944,20 @@ exports.withdrawFunds = async (req, res) => {
         const account_number = user.settings.bank.account_number;
         const bank_code = user.settings.bank.sort_code;
         const recipient_name = `${user.firstname} ${user.lastname}`;
+
+        // get user wallet...
+        const wallet = await Wallet.findOne({ user: req.userId });
+        if(!wallet){
+            // return res.status(404).json({ message: "user wallet not found"});
+            new Wallet({
+                user: user._id,
+            }).save();
+            return res.status(201).json({ message: "user wallet created!"});
+        } else if(wallet.status == "onhold"){
+            return res.status(400).json({ message: "sorry you cant withdraw funds, your wallet is currently onhold, please contact your administrator"});
+        }  else if(wallet.status == "block"){
+            return res.status(400).json({ message: "your wallet has been blocked, please contact your administrator"});
+        }
 
         /*
         console.log(
@@ -961,24 +980,41 @@ exports.withdrawFunds = async (req, res) => {
         // check also if its weekend first before allowing withdrawal here...
         // also minus withdrawn funds from user's available funds..
         // send notification, email alerts to user upon successufl withrawal...
-        if(amount > user.credits){
-            return res.status(400).json({ message: "not enough funds available"});
+        if(amount <= 0){
+            return res.status(400).json({ message: "please enter a valid debit amount"});
+        }
+        if(amount > wallet.balance){
+            return res.status(400).json({ message: "not enough wallet balance"});
         } else {
-            // substract withdrawal from available balance...
-            user.credits = user.credits - amount;
-            await user.save();
+            
 
             // returns execution url successully...
-            const execution_url = await createNewPayout(user.email, user.profile.phone, amount, description, recipient_name);
+            // const execution_url = await createNewPayout(user.email, user.profile.phone, amount, description, recipient_name);
 
             // return payout url using exec_url...
             // return payout url successfully...
-            const bankLists = await getBankList(execution_url);
-            const payout_url = bankLists.result.payout_url;
+            // const bankLists = await getBankList(execution_url);
+            // const payout_url = bankLists.result.payout_url;
 
             // complete final payout process..
-            const result = await completePayout(payout_url, account_number, bank_code, recipient_name);
-            res.status(201).json({ message: `${recipient_name} requested payout amount of NGN${amount}`, result });
+            // const result = await completePayout(payout_url, account_number, bank_code, recipient_name);
+
+            // substract withdrawal from available balance...
+            wallet.balance = wallet.balance - amount;
+
+            // track last funds withdrawal too...
+            wallet.transactions.push({
+                date: Date.now(),
+                type: "withdrawal",
+            });
+
+            // await wallet.save();
+
+            // SEND EMAIL HERE TOO..
+
+
+            // res.status(201).json({ message: `payout amount of NGN${amount} has been successfully sent to ${recipient_name} `, result });
+            res.status(201).json({ message: `you initiated a withdrawal of NGN${amount} to your bank account successfully` });
         }
     } catch (error) {
         console.error("Error in the payout process:", error);

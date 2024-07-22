@@ -85,6 +85,13 @@ const employerSchema = new Schema({
         expiry_date: Date,
     },
 
+    // account status...
+    account_status: {
+      type: String,
+      enum: ["active", "onhold", "blocked"],
+      default: "active"
+    },
+
   }, {timestamps: true});
 
 employerSchema.pre('save', async function (next) {

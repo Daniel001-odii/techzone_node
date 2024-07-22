@@ -1,6 +1,7 @@
 var mongoose = require('mongoose'), Schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
 
+const Wallet = require("../models/walletModel");
 
 const userSchema = new Schema({
     email: {
@@ -66,13 +67,18 @@ const userSchema = new Schema({
     rating: Number,
     rating_count: Number,
 
-    is_deleted: {type: Boolean, default: false},
-    is_on_hold: {type: Boolean, default: false},
+    // user account status...
+    account_status: {
+      type: String,
+      enum: ["active", "onhold", "blocked"],
+      default: "active"
+    },
+
+    // email verification & verification status...
     email_verified: {
       type: Boolean,
       default: false,
     },
-    // earned: {type: Number, default: 0},
     verification_token: String,
     
     pass_reset: {
@@ -80,7 +86,7 @@ const userSchema = new Schema({
       expiry_date: Date,
     },
 
-    // settings starts....
+    // user settings starts....
     settings: {
       profile_visibility: {type: String, enum: ["public", "private"], default: "public"},
       notifications: {
@@ -102,7 +108,15 @@ const userSchema = new Schema({
     total_earnings: {
       type: Number,
       default: 0,
-    }
+    },
+
+    wallet: {
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'wallet', 
+      autopopulate: true
+    },
+
+
   }, {timestamps: true});
 
 
@@ -118,6 +132,7 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
 
 
 module.exports = mongoose.model('User', userSchema);

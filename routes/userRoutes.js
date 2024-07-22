@@ -40,6 +40,8 @@ router.post("/profile/image", middleware, upload.single('image'), userController
 
 router.post("/profile/resume", middleware, upload.single('file'), userController.uploadUserResumeToS3);
 
+// GET USER's WALLET...
+router.get("/user/wallet/get", middleware, userController.getUserWallet);
 
 
 

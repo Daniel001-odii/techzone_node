@@ -90,14 +90,18 @@ exports.userSignup = async (req, res) => {
                 email,
                 password
             });
-            await newUser.save();
+           
 
             // create new wallet for user...
             const userWallet = new Wallet({
                 user: newUser._id,
-            })
+            });
+
+            // assing wallet Id to user account...
+            newUser.wallet = userWallet._id;
 
             await userWallet.save();
+            await newUser.save();
 
             
             //   SEND EMAIL HERE >>>>            
@@ -106,7 +110,8 @@ exports.userSignup = async (req, res) => {
             const template = "welcome";
             const context = { firstname, lastname };
             
-            await sendEmail(recipient, subject, null, null, template, context);
+            // disable registration email sending...
+            // await sendEmail(recipient, subject, null, null, template, context);
 
             res.status(200).send({ message: "User registered successfully!" });
         }
@@ -234,6 +239,27 @@ exports.verifyEmail = async (req, res) => {
     }catch(error){
         res.status(500).json({ success: false, message: "internal server error"});
         console.log("error verifying email: ", error);
+    }
+};
+
+
+exports.passwordCheck = async (req, res) => {
+    try{
+        const { password } = req.body;
+        if(!password){
+            return res.status(400).json({ message: "please provide a password"});
+        }
+        const user = await User.findById(req.userId);
+
+
+        if(await user.matchPassword(password)){
+            return res.status(200).json({ authenticated: true, message: "password is correct!" })
+        }
+
+        res.status(400).json({ authenticated: false, message: "password is incorrect"})
+
+    }catch(error){
+        res.status(500).json({ message: "internal server error"});
     }
 }
 

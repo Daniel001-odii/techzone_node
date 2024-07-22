@@ -2,6 +2,8 @@ const express = require("express");
 const authController = require("../controllers/authController");
 const router = express.Router();
 
+const protect = require("../middlewares/authMiddleware");
+
 router.get('/', function(req, res){
     return res.status(200).json({ message: 'Apex-tek API is live...'})
 })
@@ -24,6 +26,12 @@ router.post("/password/forgot", authController.sendPasswordResetEmail);
 router.post("/password/reset", authController.resetPassword);
 
 router.get("/password/:reset_token/check", authController.checkPassResetToken);
+
+
+
+// ORDINARY PASSWORD CHECKER FOR CERTAIN APPROVALS
+router.post("/password/check", protect, authController.passwordCheck);
+
 
 /*
 **

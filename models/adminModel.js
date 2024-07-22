@@ -31,6 +31,13 @@ const adminSchema = new Schema({
       required: [true, "Please specify lastname"]
     },
 
+    // user account status...
+    account_status: {
+      type: String,
+      enum: ["active", "onhold", "blocked"],
+      default: "active"
+    },
+
     login_code_expiration: Date,
     login_code: String,
  

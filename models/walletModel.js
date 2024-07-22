@@ -10,6 +10,11 @@ const walletSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  status: {
+    type: String,
+    enum: ["active", "onhold", "blocked"],
+    default: "active"
+  },
   transactions: [{
     date: {
         type: Date,

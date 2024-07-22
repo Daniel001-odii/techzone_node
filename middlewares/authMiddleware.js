@@ -14,11 +14,11 @@ const verifyToken = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.API_SECRET);
 
-    console.log("found a role: ", decoded.role);
+    // console.log("found a role: ", decoded.role);
 
     if (decoded.role === "user") {
       const user = await User.findById(decoded.id) || await User.findOne({ googleId: decoded.googleId });
-      console.log(" user data: ", user)
+      // console.log(" user data: ", user)
       if (!user) {
         return res.status(401).json({ message: 'Invalid token. User not found' });
       }
@@ -27,7 +27,7 @@ const verifyToken = async (req, res, next) => {
       req.userId = user._id;
     } else if (decoded.role === "employer") {
       const employer = await Employer.findById(decoded.id) || await Employer.findOne({ googleId: decoded.googleId });
-      console.log(" employer data: ", employer)
+      // console.log(" employer data: ", employer)
 
       if (!employer) {
         return res.status(401).json({ message: 'Invalid token. Employer not found' });
