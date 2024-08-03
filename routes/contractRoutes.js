@@ -62,16 +62,21 @@ router.patch("/contracts/:contract_id/budget", middleware, contractController.ed
 
 
 // PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS...
-router.post("/contracts/:contract_id/funds", contractController.fundContract);
+router.post("/contracts/:contract_id/fund/", contractController.fundContract);
 
 router.get("/contracts/funded/all", middleware, contractController.getAllFundedContracts);
 
 // PAYMENT CONTROLLER TO GET A PARTICULAR CONTRACT FUNDING BY ITS ID...
-router.get("/contracts/:contract_id/funds/status", middleware, contractController.getPurchaseById);
+router.get("/contracts/:contract_id/funds/status", contractController.getPurchaseById);
 
 
 // ROUTE TO GET BANKS LISTS...
-router.get("/contracts/banks/list", contractController.fetchAllBankLists);
+// router.get("/contracts/banks/list", contractController.fetchAllBankLists);
+
+
+// ROUTE TO GET BANKS LISTS...
+router.get("/banks/all", contractController.getBankLists);
+
 
 
 // ROUTE TO INITIATE ACTUAL WITHDRAWAL...

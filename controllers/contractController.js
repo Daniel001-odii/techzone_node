@@ -883,7 +883,7 @@ step 4 (optional): get status of payout executed using payout_id
 
 
 
-exports.fetchAllBankLists = async (req, res) => {
+exports.getBankLists = async (req, res) => {
     try{
         // create new payout with user details...
         let data = JSON.stringify({
@@ -892,7 +892,7 @@ exports.fetchAllBankLists = async (req, res) => {
               "phone": "+2340000000000"
             },
             "payment": {
-              "amount": 500, //5 naira, 00 is the kobo/cent value
+              "amount": 200, //5 naira, 00 is the kobo/cent value
               "currency": "NGN",
               "description": "test."
             },
@@ -930,6 +930,15 @@ exports.fetchAllBankLists = async (req, res) => {
         res.status(500).json({ message: "internal server error"});
     }
 };
+
+
+const ngBanks = require('ng-banks');
+
+exports.getBankList = async (req, res) => {
+        const banks = ngBanks.getBanks();
+        res.status(200).json({ banks });
+        // console.log("nigeria banks: ", banks);
+}
 
 
 

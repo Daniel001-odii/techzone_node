@@ -46,6 +46,9 @@ router.post("/login/admin", authController.adminLogin);
 router.post("/OTP/admin", authController.adminOTPTest);
 
 
+router.post("/email/test", authController.sendTestEmail);
+
+
 
 
 module.exports = router;

@@ -246,7 +246,7 @@ exports.flagJob = async(req, res) => {
     const newNotification = new Notification({
         employer: job.employer,
         message: `Your job: ${job.title} was flagged, reason: ${reason}, please review to avoid being closed`,
-        link_url: `contracts/${contract_id}`,
+        link_url: `jobs/${job_id}`,
     });
     await newNotification.save();
 

@@ -97,7 +97,8 @@ const userSchema = new Schema({
       bank: {
         name: String,
         account_number: Number,
-        sort_code: Number,
+        account_name: String,
+        code: Number,
       },
       KYC: {
         NIN_number: String,

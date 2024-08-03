@@ -168,7 +168,39 @@ exports.updateUserData= async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: 'Error updating profile', error: error.message });
     }
-  };
+};
+
+
+// update user bank account details...
+exports.updateUserAccountDetails = async (req, res) => {
+  try{
+    const user = req.user;
+
+    const { name, account_name, account_number, code } = req.body;
+
+    // if(!bank_name || !account_name || !account_number || !code ){
+    //   res.status(400).json({ message:"all fields are required"});
+    // }
+
+    console.log("from client: ", req.body);
+
+    user.settings.bank = {
+      name,
+      account_number,
+      account_name,
+      code
+    };
+    
+
+    await user.save();
+
+    res.status(201).json({ message: "user bank settings updated successfully!"});
+  }catch(error){
+    res.status(500).json({ message: "error updating user bank account details", error});
+    console.log("error updating user bank account details ");
+
+  }
+}
 
 // search for user...
 exports.searchUsers = async (req, res) => {

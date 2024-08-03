@@ -65,6 +65,24 @@ const transporter = nodemailer.createTransport({
 });
 
 
+exports.sendTestEmail = async (req, res) => {
+    try{
+        //   SEND EMAIL HERE >>>>       
+        const { email, firstname, lastname }  = req.body;
+
+        const recipient = email;
+        const subject = "ApexTeks Test Email :)";
+        const template = "welcome";
+        const context = { firstname, lastname };
+        
+        // disable registration email sending...
+        await sendEmail(recipient, subject, null, null, template, context);
+        res.status(200).json({ message: "email sent peacefully!"});
+    }catch(error){
+        console.log("error sending test email: ", error);
+        res.status(500).json({ message: "error sending test email"})
+    }
+}
 
 // user signup....
 exports.userSignup = async (req, res) => {

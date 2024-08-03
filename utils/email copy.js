@@ -14,16 +14,41 @@ const transporter = nodemailer.createTransport({
     pass: process.env.GMAIL_PASS,
   },
 });
+const handlebarOptions = {
+  viewEngine: {
+    extName: ".handlebars",
+    partialsDir: path.resolve("./templates/partials"),
+    layoutsDir: path.resolve("./templates"),
+    defaultLayout: false,
+  },
+  viewPath: path.resolve("./templates"),
+  extName: ".handlebars",
+};
 
-// const transporter = nodemailer.createTransport({
-//   host: process.env.MAILTRAP_HOST,
-//   port: process.env.MAILTRAP_PORT,
-//   auth: {
-//     user: process.env.MAILTRAP_USER,
-//     pass: process.env.MAILTRAP_PASS,
-//   },
-// });
+transporter.use("compile", hbs(handlebarOptions));
 
+
+const sendEmail = async (to, subject, text, html, template, context) => {
+  try {
+    const mailOptions = {
+      from: "noreply@apexteks.com",
+      to,
+      subject,
+      text,
+      html,
+      template,
+      context,
+    };
+
+
+    await transporter.sendMail(mailOptions);
+    console.log("email sent:", transporter.response);
+  } catch (err) {
+    console.log("error sending email:", err);
+  }
+};
+
+/*
 const sendEmail = async (to, subject, text, html) => {
   try {
     const mailOptions = {
@@ -42,5 +67,6 @@ const sendEmail = async (to, subject, text, html) => {
     throw error;
   }
 };
+*/
 
 module.exports = sendEmail;
