@@ -883,7 +883,7 @@ step 4 (optional): get status of payout executed using payout_id
 
 
 
-exports.getBankLists = async (req, res) => {
+exports.getBankList = async (req, res) => {
     try{
         // create new payout with user details...
         let data = JSON.stringify({
@@ -934,7 +934,7 @@ exports.getBankLists = async (req, res) => {
 
 const ngBanks = require('ng-banks');
 
-exports.getBankList = async (req, res) => {
+exports.getBankLists = async (req, res) => {
         const banks = ngBanks.getBanks();
         res.status(200).json({ banks });
         // console.log("nigeria banks: ", banks);
