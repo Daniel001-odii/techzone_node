@@ -47,8 +47,6 @@ function comparePasswords(providedPassword, storedHash, salt) {
 };
 
 
-
-
 exports.getUser = async (req, res) => {
   try {
     if(req.user){
@@ -87,10 +85,10 @@ exports.getUser = async (req, res) => {
   }
 };
 
+
 exports.getUserSavedJobs = async (req, res) => {
 
 };
-
 
 // route to get eitrher user or employer by their ID...
 exports.getUserOrEmployerById = async (req, res) => {
@@ -169,7 +167,6 @@ exports.updateUserData= async (req, res) => {
       res.status(500).json({ message: 'Error updating profile', error: error.message });
     }
 };
-
 
 // update user bank account details...
 exports.updateUserAccountDetails = async (req, res) => {
@@ -329,7 +326,6 @@ exports.getUserRating = async (req, res) => {
 };
 
 
-
 exports.changePassword = async (req, res) => {
   try {
     const user = req.user || req.employer;
@@ -376,7 +372,6 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 }
-
 
 
 exports.uploadProfileImageToS3 = async (req, res) => {
@@ -472,4 +467,70 @@ exports.getUserWallet = async(req, res) => {
 };
 
 
-// WITHDRAW FUNDS FROM USER WALLET...
+exports.verifyUserIdentity = async(req, res) => {
+  try{
+
+  }catch(error){
+    res.status(500).json({ message: "internal server error"});
+    console.log("error verifying user ID");
+  }
+};
+
+
+// search for users profile by employers...
+exports.searchUsers = async (req, res) => {
+  try {
+    const { keywords } = req.query;
+    let filter = {};
+
+    // Check if the search query is an ObjectId (for searching by ID)
+    if (keywords && mongoose.Types.ObjectId.isValid(keywords)) {
+      filter._id = keywords; // Search by ID if valid ObjectId is provided
+    } else {
+      // Search by keywords in various fields (including nested fields)
+      if (keywords) {
+        const spaceIndex = keywords.indexOf(' ');
+
+        if (spaceIndex !== -1) {
+          // If space is found, split keywords into firstname and lastname
+          const firstname = keywords.substring(0, spaceIndex);
+          const lastname = keywords.substring(spaceIndex + 1);
+
+          filter.$and = [
+            {
+              $or: [
+                { firstname: { $regex: firstname, $options: 'i' } },
+                { lastname: { $regex: lastname, $options: 'i' } },
+              ],
+            },
+            {
+              $or: [
+                { 'profile.bio': { $regex: keywords, $options: 'i' } },
+                { 'profile.skillTitle': { $regex: keywords, $options: 'i' } },
+              ],
+            },
+          ];
+        } else {
+          filter.$or = [
+            { firstname: { $regex: keywords, $options: 'i' } },
+            { lastname: { $regex: keywords, $options: 'i' } },
+            { 'profile.title': { $regex: keywords, $options: 'i' } },
+            { 'profile.bio': { $regex: keywords, $options: 'i' } },
+            { 'profile.location.state': { $regex: keywords, $options: 'i' } },
+          ];
+        }
+      }
+    }
+
+    // Define which specific fields to return
+    const fieldsToReturn = 'firstname lastname email isVerified profile'; // Add other fields as needed
+
+    // Use the filter and fieldsToReturn to search for users
+    const users = await User.find(filter).select(fieldsToReturn);
+
+    res.status(200).json({ users });
+  } catch (error) {
+    res.status(500).json({ message: 'Error searching users', error: error.message });
+  }
+};
+

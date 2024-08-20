@@ -47,6 +47,8 @@ router.post("/profile/resume", secure, upload.single('file'), userController.upl
 // GET USER's WALLET...
 router.get("/user/wallet/get", secure, userController.getUserWallet);
 
+// search users...
+router.get("/users/search", userController.searchUsers);
 
 
 module.exports = router;

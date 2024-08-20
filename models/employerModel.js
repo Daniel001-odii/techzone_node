@@ -18,7 +18,7 @@ const employerSchema = new Schema({
   
     },
     password: {
-      type: Object,
+      type: String,
     },
     role: {type: String, default: "employer"},
     firstname: {

@@ -17,4 +17,6 @@ router.get("/employer/contracts/completed", middleware, employerController.getCo
 router.patch("/employer/profile/update", middleware, employerController.updateEmployerData)
 
 
+
+
 module.exports = router;

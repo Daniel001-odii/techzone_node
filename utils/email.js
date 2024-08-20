@@ -3,37 +3,24 @@ const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
+const expressAsyncHandler = require("express-async-handler");
 
-const OAuth2 = google.auth.OAuth2;
+const userModel = require("../models/userModel");
+const employerModel = require("../models/employerModel");
+
 
 const createTransporter = async () => {
   try {
-    const oauth2Client = new OAuth2(
-      process.env.CLIENT_ID,
-      process.env.CLIENT_SECRET,
-      "https://developers.google.com/oauthplayground"
-    );
-
-    oauth2Client.setCredentials({
-      refresh_token: process.env.REFRESH_TOKEN,
-    });
-
-    const accessToken = await oauth2Client.getAccessToken();
-    
-    if (!accessToken.token) {
-      throw new Error("Failed to retrieve access token");
-    }
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         type: "OAuth2",
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-        accessToken: accessToken.token,
-        clientId: process.env.CLIENT_ID,
-        clientSecret: process.env.CLIENT_SECRET,
-        refreshToken: process.env.REFRESH_TOKEN,
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+        accessToken: process.env.GOOGLE_ACCESS_TOKEN,
       },
     });
 
@@ -53,12 +40,13 @@ const createTransporter = async () => {
     return transporter;
   } catch (err) {
     console.error("Error creating transporter:", err);
-    throw err; // Re-throw the error to be caught in sendEmail
+    throw err;
   }
 };
 
-const sendEmail = async (to, subject, text, html, template, context) => {
+const sendMail = expressAsyncHandler(async (to, subject, text, html, template, context) => {
   try {
+
     const mailOptions = {
       from: "noreply@apexteks.com",
       to,
@@ -70,11 +58,37 @@ const sendEmail = async (to, subject, text, html, template, context) => {
     };
 
     let emailTransporter = await createTransporter();
-    await emailTransporter.sendMail(mailOptions);
-    console.log("email sent:", emailTransporter.response);
-  } catch (err) {
-    console.log("error sending email:", err);
-  }
-};
 
-module.exports = sendEmail;
+
+    // check if user is found
+    // if user is found check if user has enabled in-email notifications...
+    // before ending email alerts to users...
+    const user = await userModel.findOne({ email: to });
+    const employer = await employerModel.findOne({ email: to });
+
+    // Check if either user or employer exists
+    if (!user && !employer) {
+        return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    // Choose the document to update based on which one was found
+    const emailUser = user || employer;
+    if(emailUser.settings.notifications.emails){
+
+    await emailTransporter.sendMail(mailOptions);
+    console.log(" ====== an email was sent ======");
+
+    } else {
+
+    // await emailTransporter.sendMail(mailOptions);
+    console.log(" ====== email was not sent since user turned off notifications ======");
+
+  }
+    // res.status(200).send("Email sent successfully");
+  } catch (err) {
+    console.log("Error sending email:", err);
+    // res.status(500).send("Failed to send email");
+  }
+});
+
+module.exports = sendMail;

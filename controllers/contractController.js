@@ -815,8 +815,8 @@ exports.fundContract = async (req, res) => {
                 ],
               },
               brand_id: process.env.QOREPAY_BRAND_ID,
-              failure_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding/failed`,
-              success_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding/success`,
+              failure_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding-status`,
+              success_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding-status`,
             }),
           };
         
@@ -860,7 +860,7 @@ exports.getPurchaseById = async (req, res) => {
         }
         // console.log("res: ", response)
         // res.status(response.status).json({ message: response.data, status: response.data.status });
-        res.status(response.status).json({ status: response.data.status, contract });
+        res.status(response.status).json({ status: response.data, contract });
     }catch(error){
         console.log("error getting purchase: ", error);
         res.status(500).json({ error: 'An error occurred' });

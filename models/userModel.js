@@ -19,7 +19,7 @@ const userSchema = new Schema({
   
     },
     password: {
-      type: Object,
+      type: String,
     },
     role: {type: String, default: "user"},
     firstname: {
@@ -57,7 +57,12 @@ const userSchema = new Schema({
       phone: String,
       social: String,
       skills: String,
-      image_url: {type: String, default: 'https://icon-library.com/images/no-profile-pic-icon/no-profile-pic-icon-11.jpg'},
+      is_verified: { 
+        type: Boolean,
+        default: false,
+      },
+      // image_url: {type: String, default: 'https://icon-library.com/images/no-profile-pic-icon/no-profile-pic-icon-11.jpg'},
+      image_url: {type: String, default: '../uploads/profiles/no_profile_image.png'},
       },
     portfolio_url: String, // Store content type (e.g., 'application/pdf')
     saved_jobs: [{
@@ -79,7 +84,11 @@ const userSchema = new Schema({
       type: Boolean,
       default: false,
     },
-    verification_token: String,
+
+    email_verification:{
+      type: String,
+      expiry_date: Date,
+    },
     
     pass_reset: {
       token: String,
@@ -133,6 +142,17 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('firstname') || !this.isModified('lastname')) {
+      return next();
+  }
+  // generate username from user firstname and lastname...
+  const username = this.firstname + '' + this.lastname;
+  this.username = username;
+  console.log(`create username: ${this.username}`);
+  next();
+});
 
 
 

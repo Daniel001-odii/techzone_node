@@ -13,7 +13,7 @@ const Wallet = require("../models/walletModel");
 
 const Admin = require('../models/adminModel');
 
-const sendEmail = require("../utils/email");
+const sendEmail = require("../utils/email.js");
 
 
 const { OAuth2Client } = require('google-auth-library')
@@ -26,7 +26,7 @@ const client = new OAuth2Client(
 )
 
 
-function hashPassword(password) {
+function hashPassword2(password) {
     // Generate a random salt
     const salt = crypto.randomBytes(16).toString('hex');
 
@@ -38,6 +38,12 @@ function hashPassword(password) {
         hash: hashedPassword,
         salt: salt
     };
+}
+
+function hashPassword(password){
+    const salt = bcrypt.genSalt(10);
+    const hash = bcrypt.hash(password, salt);
+    return hash;
 }
 
 
@@ -129,7 +135,7 @@ exports.userSignup = async (req, res) => {
             const context = { firstname, lastname };
             
             // disable registration email sending...
-            // await sendEmail(recipient, subject, null, null, template, context);
+            await sendEmail(recipient, subject, null, null, template, context);
 
             res.status(200).send({ message: "User registered successfully!" });
         }
@@ -221,6 +227,14 @@ exports.login = async (req, res) => {
             });
             newNotification.save();
 
+            const recipient = user.email;
+            const context = {
+                firstname: user.firstname,
+                lastname: user.lastname
+            };
+
+            await sendEmail(recipient, "New Login Detected", null, null, "login-greet", context);
+
     } catch (error) {
         console.log("error during login: ", error);
         res.status(500).send({ message: "Login failed" });
@@ -290,7 +304,7 @@ async function verifyCode(code) {
       url: 'https://www.googleapis.com/oauth2/v3/userinfo'
     })
     return userinfo.data
-  }
+}
 
 
 // this function checks for exisitng users and is utitlized by the googleClientAuthHandler below...
@@ -465,8 +479,6 @@ exports.googleClientAuthHandler = async (req, res) => {
 };
 
 
-
-
 //controller for passsworddd reset email....
 exports.sendPasswordResetEmail = async (req, res) => {
     const { email } = req.body;
@@ -506,37 +518,13 @@ exports.sendPasswordResetEmail = async (req, res) => {
         await sendEmail(recipient, subject, null, null, template, context);
         res.status(200).json({ message: 'Password reset information would be sent if your email exist in our record' });
 
-        /* OLD EMAIL PATTERN
-        const mailOptions = {
-            from: 'danielsinterest@gmail.com',
-            to: email,
-            subject: 'Apex-tek Password Reset Request',
-            html: `<p>You are receiving this email because you (or someone else) have requested the reset of your account password.</p>
-            <p>Please click <a href="${process.env.GOOGLE_CALLBACK}/user/${resetToken}/password">this link</a> to securely reset your password/p>
-            <p>If you did not request this, please ignore this email, and your password will remain unchanged.</p>`
-        };
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error('Error sending email:', error);
-                return res.status(500).json({ message: 'Failed to send reset email' });
-            }
-
-            console.log('Reset email sent:', info.response);
-            res.status(200).json({ message: 'Password reset information would be sent if your email exist in our record' });
-        });
-        */
-
-
     } catch (error) {
         console.error('Error sending password reset email:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
 
-  
 
-  
 exports.resetPassword = async (req, res) => {
     const { new_password, reset_token } = req.body;
 
@@ -560,10 +548,10 @@ exports.resetPassword = async (req, res) => {
         const foundDocument = user || employer;
 
         // Hash the new password
-        const hashed_password = hashPassword(new_password);
+        // const hashed_password = hashPassword(new_password);
 
         // Update the document's password and clear the reset token fields
-        foundDocument.password = hashed_password;
+        foundDocument.password = new_password;
         foundDocument.pass_reset.token = undefined;
         foundDocument.pass_reset.expiry_date = undefined;
 
@@ -580,28 +568,20 @@ exports.resetPassword = async (req, res) => {
         await newNotification.save();
 
         // SEND RESET SUCCESS EMAIL HERE >>>>
-        const mailOptions = {
-            from: 'danielsinterest@gmail.com',
-            to: foundDocument.email,
-            subject: 'Apex-tek Password Reset Success',
-            html: `<p>You successfully reset your password!</p>`
+        const recipient = user.email;
+        const context = {
+            firstname: user.firstname,
+            lastname: user.lastname
         };
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error('Error sending email:', error);
-                return res.status(500).json({ message: 'Failed to send reset email' });
-            }
-
-            console.log('Reset email sent:', info.response);
-            res.status(200).json({ message: 'Password reset email sent' });
-        });
+        // await sendEmail(recipient, "New Login Detected", null, null, "login-greet", context);
 
     } catch (error) {
         console.error('Error resetting password:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 exports.checkPassResetToken = async (req, res) => {
    
