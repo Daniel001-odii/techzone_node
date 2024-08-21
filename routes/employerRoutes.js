@@ -12,6 +12,8 @@ router.get("/employer/jobs/:job_id/applications", middleware, jobController.getA
 
 router.get("/employer/users/saved", middleware, employerController.getEmployerSavedUsers);
 
+router.get("/employer/users/saved/id_only", middleware, employerController.getEmployerSavedUsersIdOnly);
+
 router.get("/employer/contracts/completed", middleware, employerController.getCompletedContracts);
 
 router.patch("/employer/profile/update", middleware, employerController.updateEmployerData)

@@ -523,7 +523,7 @@ exports.searchUsers = async (req, res) => {
     }
 
     // Define which specific fields to return
-    const fieldsToReturn = 'firstname lastname email isVerified profile'; // Add other fields as needed
+    const fieldsToReturn = 'firstname lastname email isVerified profile createdAt'; // Add other fields as needed
 
     // Use the filter and fieldsToReturn to search for users
     const users = await User.find(filter).select(fieldsToReturn);

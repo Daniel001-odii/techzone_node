@@ -69,6 +69,16 @@ exports.getEmployerSavedUsers = async (req, res) => {
   }
 };
 
+exports.getEmployerSavedUsersIdOnly = async (req, res) => {
+  try{
+    const employer = await Employer.findById(req.employerId);
+    return res.status(200).json({ saved_users: employer.saved_users });
+  }catch(error){
+    console.log(error);
+    res.status(500).json({ message: 'internal server error' })
+  }
+};
+
 // updating user profile....
 exports.updateEmployerData= async (req, res) => {
   try {
