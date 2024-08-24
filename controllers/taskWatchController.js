@@ -5,6 +5,8 @@ const Contract = require('../models/contractModel');
 const Notification = require('../models/notificationModel');
 const Watch = require('../models/taskWatchModel');
 
+const { notify } = require('../utils/notifcation');
+
 // SEND NOTIFICATION TO EMPLOYER >>>>
 // START WATCH
 exports.startWatch = async (req, res) => {
@@ -54,6 +56,7 @@ exports.startWatch = async (req, res) => {
          const user = await User.findById(mainContract.user);
          const job = await Job.findById(mainContract.job);
          // NOTIFY USER HERE >>>
+        /*
          const newNotification = new Notification({
              receiver: "employer",
              employer,
@@ -63,7 +66,7 @@ exports.startWatch = async (req, res) => {
              link_url: `/contracts/${contract}`,
          });
          await newNotification.save();
-
+         */
        
 
         await watch.save();
@@ -240,15 +243,27 @@ exports.approveTimestamp = async (req, res) => {
 
         const employer = await Employer.findById(req.employerId);
         const watch = await Watch.findById(req.params.watch_id);
-        const contract = await Contract.findById(watch.contract);
+        const contract = await Contract.findById(watch.contract).populate("user employer job");
         
-        if(employer && contract.employer.toString() === employer._id.toString()){
+        // if(contract.employer.toString() === employer._id.toString()){
             watch.time_stamp.action = "approved";
             await watch.save();
-            return res.status(200).json({ message: "watch approved!", watch });
-        } else {
+            
+        /*} else {
             res.status(400).json({ message: "you are not permitted to perform this operation"})
-        }
+        }*/
+
+        // notify user about watch approval..
+        await notify(
+            `Your tracked time was approved!`,
+            "contract",
+            contract.user._id,
+            contract.employer._id,
+            `/contracts/${contract._id}`,
+        );
+        
+
+           return res.status(200).json({ message: "watch approved!", watch });
     }catch(error){
         console.log("error approving time: ", error);
         res.status(500).json({ message: "internal server error"});

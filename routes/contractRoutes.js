@@ -71,7 +71,7 @@ router.get("/contracts/:contract_id/funds/status", contractController.getPurchas
 
 
 // ROUTE TO GET BANKS LISTS...
-// router.get("/contracts/banks/list", contractController.fetchAllBankLists);
+router.get("/contracts/banks/list", contractController.getBankList);
 
 
 // ROUTE TO GET BANKS LISTS...

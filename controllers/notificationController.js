@@ -1,19 +1,43 @@
-const Notification  = require('../models/notificationModel');
+const { getIo } = require('../utils/socket');
+const Notification = require('../models/notificationModel');
 
+// controller to create a new notification
+exports.createNewNotification = async (req, res) => {
+    try {
+        const { message, type, lin } = req.body;
+        const user_id = req.params.user_id;
 
-exports.notify = (message) => {
-    io.emit('notification', { message });
-    res.status(200).json({ success: true });
-}
+        const newNotification = new Notification({
+            user: user_id,
+            message,
+        });
+
+        console.log("sent notification for user: ", user_id);
+
+        // await newNotification.save();
+
+        const io = getIo();
+        // io.emit(`notification_${user_id}`, { message });
+         // Emit the notification to a specific room corresponding to the user ID
+        io.to(`user_${user_id}`).emit(`notification_${user_id}`, { message });
+
+        res.status(201).json({ message: 'notification sent successfully' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 
 exports.getNotifications = async (req, res) => {
     try{
         if(req.user){
-            console.log("getting user notifics...")
+            // console.log("getting user notifics...")
             const notifications = await Notification.find({ user: req.userId });
             res.status(200).json({ notifications });
         } else if(req.employer){
-            console.log("getting employer notifics...")
+            // console.log("getting employer notifics...")
             const notifications = await Notification.find({ employer: req.employerId });
             res.status(200).json({ notifications })
         }

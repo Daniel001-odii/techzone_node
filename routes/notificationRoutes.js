@@ -3,6 +3,8 @@ const router = express.Router();
 const middleware = require("../middlewares/authMiddleware");
 const notificationController = require("../controllers/notificationController");
 
+router.post("/notify/:user_id", middleware, notificationController.createNewNotification);
+
 // get all notifications...
 router.get("/notifications", middleware, notificationController.getNotifications);
 

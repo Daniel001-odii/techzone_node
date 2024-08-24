@@ -26,6 +26,9 @@ const client = new OAuth2Client(
 )
 
 
+const { notify } = require('../utils/notifcation');
+
+
 function hashPassword2(password) {
     // Generate a random salt
     const salt = crypto.randomBytes(16).toString('hex');
@@ -216,9 +219,10 @@ exports.login = async (req, res) => {
                 accessToken: token,
             };
 
-            res.status(200).send(response);
+           
 
             // NOTIFY USER HERE >>>
+            /*
             const newNotification = new Notification({
                 receiver: "both",
                 user: userId,
@@ -226,6 +230,14 @@ exports.login = async (req, res) => {
                 message: `New signin alert`
             });
             newNotification.save();
+            */
+           await notify(
+            "New Login alert",
+            "account",
+            userId,
+            userId,
+            '#',
+           );
 
             const recipient = user.email;
             const context = {
@@ -233,11 +245,13 @@ exports.login = async (req, res) => {
                 lastname: user.lastname
             };
 
-            await sendEmail(recipient, "New Login Detected", null, null, "login-greet", context);
+            sendEmail(recipient, "New Login Detected", null, null, "login-greet", context);
+
+            res.status(200).send(response);
 
     } catch (error) {
         console.log("error during login: ", error);
-        res.status(500).send({ message: "Login failed" });
+        res.status(500).send({ message: "internal server error" });
     }
 };
 
@@ -363,13 +377,13 @@ exports.googleClientAuthHandler = async (req, res) => {
                 });
 
                 // NOTIFY USER HERE >>>
-                const newNotification = new Notification({
-                    receiver: "both",
-                    user: user._id,
-                    employer: user._id,
-                    message: `New google signin alert`
-                });
-                await newNotification.save();
+                await notify(
+                    "New Login alert",
+                    "account",
+                    user._id,
+                    user._id,
+                    '#',
+                   );
                 
             } else {
                 console.log("new user record!");
@@ -508,6 +522,15 @@ exports.sendPasswordResetEmail = async (req, res) => {
         foundDocument.pass_reset.expiry_date = resetTokenExpiration;
 
         await foundDocument.save();
+
+        // SEND NOTIFICATION HERE>>>
+        await notify(
+            "Password reset request",
+            "account",
+            user._id,
+            user._id,
+            '/settings',
+           );
 
         // SEND EMAIL HERE >>>>
         const recipient = email;
