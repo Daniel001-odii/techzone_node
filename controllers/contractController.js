@@ -815,8 +815,8 @@ exports.fundContract = async (req, res) => {
                 ],
               },
               brand_id: process.env.QOREPAY_BRAND_ID,
-              failure_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding-status`,
-              success_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding-status`,
+            //   failure_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding-status`,
+            //   success_redirect: `${process.env.GOOGLE_CALLBACK}/contracts/${contract_id}/funding-status`,
             }),
           };
         
@@ -883,7 +883,7 @@ step 4 (optional): get status of payout executed using payout_id
 
 
 
-exports.getBankList = async (req, res) => {
+exports.getBankListForClient = async (req, res) => {
     try{
         // create new payout with user details...
         let data = JSON.stringify({
@@ -949,7 +949,7 @@ exports.withdrawFunds = async (req, res) => {
     try {
         const user = req.user;
         const { amount } = req.body;
-        const description = "New withdrawal";
+        const description =  `${user.firstname} ${user.lastname} - New Withdrawal`;
         const account_number = user.settings.bank.account_number;
         const bank_code = user.settings.bank.sort_code;
         const recipient_name = `${user.firstname} ${user.lastname}`;

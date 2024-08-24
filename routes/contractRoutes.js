@@ -70,8 +70,8 @@ router.get("/contracts/funded/all", middleware, contractController.getAllFundedC
 router.get("/contracts/:contract_id/funds/status", contractController.getPurchaseById);
 
 
-// ROUTE TO GET BANKS LISTS...
-router.get("/contracts/banks/list", contractController.getBankList);
+// ROUTE TO GET BANKS LISTS VIA QOREPAY...
+router.get("/contracts/banks/list", contractController.getBankListForClient);
 
 
 // ROUTE TO GET BANKS LISTS...
