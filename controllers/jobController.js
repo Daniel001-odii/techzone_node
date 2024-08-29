@@ -539,6 +539,45 @@ exports.searchJobs = async (req, res) => {
 };
 
 
+
+
+const deleteFile = require('../utils/deleteFile');
+
+
+exports.uploadDocument = async (req, res) => {
+  try{
+    const files = req.uploadResults;
+  
+    if (!files) {
+      return res.status(400).json({ message: 'No files uploaded' });
+    }
+  
+    const fileUrls = files.map(file => file.Location);
+
+    console.log("uploads: ", req.uploadResults)
+    
+    res.status(200).json({ message: 'files uploaded successfully!', files: req.uploadResults });
+  }catch(error){
+    res.status(500).json({ message: 'internal server error', error: error.message });
+  }
+};
+
+exports.deleteUploadedFile = async (req, res) => {
+  const key = req.params.key; // The key of the file to delete, passed in the request body
+
+  if (!key) {
+    return res.status(400).json({ message: 'File key is required' });
+  }
+
+  try {
+    await deleteFile(key);
+    res.status(200).json({ message: 'File deleted successfully!' });
+  } catch (error) {
+    console.log("erro deleting file: ", error);
+    res.status(500).json({ message: 'Failed to delete file', error: error.message });
+  }
+};
+
 // sends clients application to databse and creates a new application record >>>
 exports.submitApplicationMain = async (req, res) => {
   const job_id = req.params.job_id;
@@ -580,6 +619,7 @@ exports.submitApplicationMain = async (req, res) => {
     }
   }
   };
+
 
 
 // Function to handle file upload
@@ -668,7 +708,7 @@ exports.submitApplication = async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
-  };
+};
 
 
 

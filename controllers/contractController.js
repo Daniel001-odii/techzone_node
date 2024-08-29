@@ -15,31 +15,14 @@ const server = http.createServer(app);
 const Wallet = require("../models/walletModel");
 
 const axios = require('axios');
+const sendEmail = require("../utils/email.js");
 
 // const axios = require("axios");
 
 const fs = require('fs');
 const handlebars = require('handlebars');
 
-const io = require("socket.io")(server, {
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"]
-    }
-  });
-
-/*
-* *
-* CONFIGURE EMAIL
-**
-*/
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: 'danielsinterest@gmail.com',
-      pass: 'qdjctvwagyujlqyg',
-    },
-  });
+const { notify } = require('../utils/notifcation');
 
 
 // controller to get all user contracts...
@@ -328,39 +311,15 @@ exports.markContractAsComplete = async(req, res) => {
         await offer.save();
        
 
-        // NOTIFY USER HERE >>>
-        const newNotification = new Notification({
-            receiver: "both",
-            user: offer.user,
-            employer: offer.employer,
-            message: `Your contract is completed`,
-            link_url: `contracts/${contract_id}`,
-        });
-        await newNotification.save();
-
-        // SEND EMAIL & NOTIFY USER >>>
+        const userId = user._id;
       
         const mailOptions = {
             from: 'danielsinterest@gmail.com',
             to: user.email,
             subject: 'Apex-tek Contract Completion',
-            html: `<p>Hello ${user.firstname} ${user.lastname} the contract; for the job ${job.title}  you were working on was marked as complete by the employer</p>
+            html: `<p>Hello ${user.firstname} ${user.lastname} the contract for the job ${job.title}  you were working on was marked as complete by the employer</p>
                   <p>Your payout should be available any moment from now.</p>`
           };
-        // SEND EMAILS HERE >>>
-        // Emails sent are dependent on user's settings...
-        if(user.settings.notifications.emails == true) {
-          
-            transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              console.error('Error sending contract email:', error);
-              return res.status(500).json({ message: 'Failed to send contract email' });
-            }
-        
-            console.log('contract email sent', info.response);
-          });
-
-        }
 
 
         // PAY TO USER WALLET...
@@ -372,6 +331,26 @@ exports.markContractAsComplete = async(req, res) => {
         await user.save();
 
 
+         // NOTIFY USER HERE >>>
+         await notify(
+            "Your contract was closed",
+            "contract",
+            userId,
+            null,
+            `/contracts/${contract_id}`,
+           );
+ 
+         //  SEND EMAIL HERE >>>>            
+         const recipient = user.email;
+         const subject = "Apex-tek Contract Activity";
+         const template = "general";
+         const lastname = user.lastname;
+         const message = `the contract for the job '${job.title}' you were working on was marked as complete by the employer, your payout should be available any moment from now.`
+         const context = { lastname, message };
+         
+         await sendEmail(recipient, subject, null, null, template, context);
+ 
+
         res.status(200).json({ offer, message: "Contract completed successfuly"});
 
     }catch(error){
@@ -379,7 +358,6 @@ exports.markContractAsComplete = async(req, res) => {
         res.status(500).json({ message: 'internal server error from complete offer' })
     }
 }
-
 
 // SEND NOTIFICATIONS TO EMPLOYER
 exports.pauseContract = async(req, res) => {
@@ -391,41 +369,35 @@ exports.pauseContract = async(req, res) => {
         }
         offer.status = "paused";
         await offer.save();
-        res.status(200).json({ offer, message: "Contract paused successfuly"});
         
-        // NOTIFY USER HERE >>>
-        const newNotification = new Notification({
-            receiver: "both",
-            user: offer.user,
-            employer: offer.employer,
-            message: `Your contract is paused`,
-            link_url: `contracts/${contract_id}`,
-        });
-        await newNotification.save();
 
         // SEND EMAIL TO USER >>>
         const user = await User.findById(offer.user);
         const job = await Job.findById(offer.job);
 
-        const mailOptions = {
-            from: 'danielsinterest@gmail.com',
-            to: user.email,
-            subject: 'Apex-tek Contract Activity',
-            html: `<p>Hello, ${user.firstname} ${user.lastname} your contract for the job ${job.title} was paused by the employer. login to review your terms with the client.</p>`
-          };
-        // SEND EMAILS HERE >>>
-        // Emails sent are dependent on user's settings...
-        if(user.settings.notifications.emails == true) {
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              console.error('Error sending contract email:', error);
-              return res.status(500).json({ message: 'Failed to send contract email' });
-            }
+        const userId = user._id;
+
+        // NOTIFY USER HERE >>>
+        await notify(
+        "Your contract was paused",
+        "contract",
+        userId,
+        null,
+        `/contracts/${contract_id}`,
+        );
+
+
+        //  SEND EMAIL HERE >>>>            
+        const recipient = user.email;
+        const subject = "Apex-tek Contract Activity";
+        const template = "general";
+        const lastname = user.lastname;
+        const message = `Your contract for the job '${job.title}' was paused by the employer.`
+        const context = { lastname, message };
         
-            console.log('contract email sent', info.response);
-            // res.status(200).json({ message: 'Password reset email sent' });
-          });
-        }
+        await sendEmail(recipient, subject, null, null, template, context);
+
+        res.status(200).json({ offer, message: "Contract paused successfuly"});
 
     }catch(error){
         console.log(error);
@@ -446,41 +418,30 @@ exports.resumeContract = async(req, res) => {
         }
         offer.status = "open";
         await offer.save();
+
+        const userId = user._id;
+
+
+         // NOTIFY USER HERE >>>
+         await notify(
+            "Your contract was resumed",
+            "contract",
+            userId,
+            null,
+            `/contracts/${contract_id}`,
+           );
+
+         //  SEND EMAIL HERE >>>>            
+         const recipient = user.email;
+         const subject = "Apex-tek Contract Activity";
+         const template = "general";
+         const lastname = user.lastname;
+         const message = `Your contract for the job '${job.title}' was resumed by the employer.`
+         const context = { lastname, message };
+         
+         await sendEmail(recipient, subject, null, null, template, context);
+
         res.status(200).json({ offer, message: "Contract resumed successfuly"});
-
-        // NOTIFY USER HERE >>>
-        const newNotification = new Notification({
-            receiver: "both",
-            user: offer.user,
-            employer: offer.employer,
-            message: `Your contract is resumed`,
-            link_url: `contracts/${contract_id}`,
-        });
-        await newNotification.save();
-
-       // SEND EMAILS HERE >>>
-        // Emails sent are dependent on user's settings...
-        if(user.settings.notifications.emails == true) {
-       
-            const mailOptions = {
-                from: 'danielsinterest@gmail.com',
-                to: user.email,
-                subject: 'Apex-tek Contract Actvity',
-                html: `<p>Hello, ${user.firstname} ${user.lastname} Your contract for the job ${job.title} was resumed by the employer </p>`
-            };
-            
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                console.error('Error sending contract email:', error);
-                return res.status(500).json({ message: 'Failed to send contract email' });
-                }
-            
-                console.log('contract email sent', info.response);
-                // res.status(200).json({ message: 'Password reset email sent' });
-            });
-
-        }
-
     }catch(error){
         console.log(error);
         res.status(500).json({ message: 'internal server error from pause offer' })
@@ -501,40 +462,31 @@ exports.closeContract = async(req, res) => {
         }
         offer.status = "closed";
         await offer.save();
-        res.status(200).json({ offer, message: "Contract closed successfuly"});
+        
+        // SEND EMAILS HERE >>>
+        const userId = user._id;
 
         // NOTIFY USER HERE >>>
-        const newNotification = new Notification({
-            receiver: "both",
-            user: offer.user,
-            employer: offer.employer,
-            message: `Your contract ${job.title} was closed by the employer`,
-            link_url: `contracts/${contract_id}`,
-        });
-        // await newNotification.save();
+        await notify(
+           "Your contract was closed",
+           "contract",
+           userId,
+           null,
+           `/contracts/${contract_id}`,
+          );
 
-        // SEND EMAILS HERE >>>
-        // Emails sent are dependent on user's settings...
-        if(user.settings.notifications.emails == true) {
+        //  SEND EMAIL HERE >>>>            
+        const recipient = user.email;
+        const subject = "Apex-tek Contract Activity";
+        const template = "general";
+        const lastname = user.lastname;
+        const message = `Your contract for the job '${job.title}' was closed by the employer.`
+        const context = { lastname, message };
+        
+        await sendEmail(recipient, subject, null, null, template, context);
 
-            const mailOptions = {
-                from: 'danielsinterest@gmail.com',
-                to: user.email,
-                subject: 'Apex-tek Contract Activity',
-                html: `<p>Hello, ${user.firstname} ${user.lastname} Your contract for the job ${job.title} was closed by the employer</p>`
-            };
-            
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                console.error('Error sending contract email:', error);
-                return res.status(500).json({ message: 'Failed to send contract email' });
-                }
-            
-                console.log('contract email sent', info.response);
-                // res.status(200).json({ message: 'Password reset email sent' });
-            });
 
-        }
+        res.status(200).json({ offer, message: "Contract closed successfuly"});
 
     }catch(error){
         console.log(error);
@@ -553,7 +505,7 @@ exports.getCompletedContracts = async(req, res) => {
     try{
         if(req.params.user_id){
             // const contracts = await Contract.find({ user:req.params.user_id, action: "accepted", $or: [{ status: "completed" }, { status: "open" }] })
-            const contracts = await Contract.find({ user:req.params.user_id, status: "completed"})
+            const contracts = await Contract.find({ user:req.params.user_id, action: "accepted"})
         .populate({
             path: "user",
             select: "firstname lastname profile" // Specify the properties you want to populate
@@ -613,9 +565,27 @@ exports.getContractById = async(req, res) => {
         if(!contract){
             return res.status(404).json({ message: "The requested contract was not found"});
         }
-        return res.status(200).json({ contract })
+
+        // check contract funding status...
+        try{
+            const response = await axios.get(`https://gate.qorepay.com/api/v1/purchases/${contract.funding_id}/`, qPayConfig);
+
+            // set contract funding status as true..
+            if(response.data.status == "paid"){
+                contract.funded = true;
+                await contract.save();
+            }
+        }catch(error){
+            throw error
+        }
+        
+
+        // await getContractFundingStatus(contract_id);
+
+        res.status(200).json({ contract })
     }catch(error){
-        console.log(error)
+        console.log(error);
+        res.status(500).json({ message: "internal server error"});
     }
 }
 
@@ -673,7 +643,7 @@ exports.sendEmployerFeedback = async(req, res) => {
 // edit contract controller ...
 exports.editContractBudget = async(req, res) => {
     try{
-        const contract = await Contract.findById(req.params.contract_id);
+        const contract = await Contract.findById(req.params.contract_id).populate("user job");
         if(!contract){
             return res.status(404).json({ message: "contract not found!"});
         }
@@ -686,6 +656,30 @@ exports.editContractBudget = async(req, res) => {
             contract.budget = budget;
             await contract.save();
         }
+
+        const contract_id = req.params.contract_id;
+        const job = contract.job;
+        const user = contract.user;
+        const userId = contract.user._id;
+
+         // NOTIFY USER HERE >>>
+         await notify(
+            "Your contract budget was changed",
+            "contract",
+            userId,
+            null,
+            `/contracts/${contract_id}`,
+           );
+ 
+         //  SEND EMAIL HERE >>>>            
+         const recipient = user.email;
+         const subject = "Apex-tek Contract Activity";
+         const template = "general";
+         const lastname = user.lastname;
+         const message = `The budget for the contract '${job.title}' was changed by the employer.`
+         const context = { lastname, message };
+         
+         await sendEmail(recipient, subject, null, null, template, context);
 
         res.status(201).json({ message: "contract budget updated!"});
 
@@ -828,6 +822,8 @@ exports.fundContract = async (req, res) => {
             contract.funding_id = jsonResponse.id;
             await contract.save();
 
+            
+
 
             res.status(response.status).json(jsonResponse);
 
@@ -860,12 +856,37 @@ exports.getPurchaseById = async (req, res) => {
         }
         // console.log("res: ", response)
         // res.status(response.status).json({ message: response.data, status: response.data.status });
-        res.status(response.status).json({ status: response.data, contract });
+        res.status(response.status).json({ status: response.data.status, contract });
     }catch(error){
         console.log("error getting purchase: ", error);
         res.status(500).json({ error: 'An error occurred' });
     }
 };
+
+async function getContractFundingStatus(contract_id){
+    try{
+        const contract = await Contract.findById(contract_id);
+
+        if(!contract){
+            return res.status(404).json({ message:"requested contract was not found"});
+        };
+
+        const response = await axios.get(`https://gate.qorepay.com/api/v1/purchases/${contract.funding_id}/`, qPayConfig);
+        // const jsonResponse = await response.json();
+
+        // set contract funding status as true..
+        if(response.data.status == "paid"){
+            contract.funded = true;
+            await contract.save();
+        }
+        
+        return response.data.status;
+        // res.status(response.status).json({ status: response.data, contract });
+    }catch(error){
+        console.log("error in checkig funding status: ", error);
+        throw error
+    }
+}
 
 
 // initiate payout into freelancer account...

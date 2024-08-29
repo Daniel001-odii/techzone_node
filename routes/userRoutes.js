@@ -51,4 +51,9 @@ router.get("/user/wallet/get", secure, userController.getUserWallet);
 router.get("/users/search", userController.searchUsers);
 
 
+// check user nin...
+router.get("/user/KYC/NIN", userController.checkNIN);
+
+router.post("/user/KYC/verify", secure, userController.verifyNIN_with_selfieImage);
+
 module.exports = router;

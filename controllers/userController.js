@@ -10,8 +10,10 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const Wallet = require("../models/walletModel");
 
+const axios = require('axios');
 
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { error } = require('console');
 // Create S3 client
 const s3Client = new S3Client({
   region: 'us-east-1', // Specify your AWS region
@@ -467,14 +469,95 @@ exports.getUserWallet = async(req, res) => {
 };
 
 
-exports.verifyUserIdentity = async(req, res) => {
-  try{
+// DOJAH >>>>>>>>>>>>>
+const dojah_config =  { 
+  headers: {
+    'AppId': process.env.DOJAH_APP_ID,
+    'Authorization': process.env.DOJAH_AUTH,
+  }
+}
 
-  }catch(error){
-    res.status(500).json({ message: "internal server error"});
-    console.log("error verifying user ID");
+exports.checkNIN = async (req, res) => {
+  try {
+    const { nin } = req.body;
+    const headers = {
+      'AppId': process.env.DOJAH_APP_ID,
+      'Authorization': process.env.DOJAH_AUTH,
+    };
+
+    const response = await axios.get(`${process.env.DOJAH_BASE_URL}/kyc/nin?nin=${nin}`, dojah_config);
+
+    // Return only the data part of the response
+    res.status(200).json(response.data);
+
+  } catch (error) {
+    res.status(500).json({ message: "internal server error" });
+    console.log("error verifying user ID: ", error.message); // Use error.message for better error logging
   }
 };
+
+
+
+// this controller below is to verify user using NIN and selfi image...
+// selfie image is to be converted to base 64 and used as payload when making request..
+// payload = last_name, first_name, selfie_image, nin..
+
+exports.verifyNIN_with_selfieImage = async (req, res) => {
+  try {
+    const { selfie_image, nin } = req.body;
+    const user = req.user;
+
+    const payload = {
+      first_name: user.firstname,
+      last_name: user.lastname,
+      selfie_image,
+      nin
+    };
+
+    const response = await axios.post(
+      `${process.env.DOJAH_BASE_URL}/kyc/nin/verify`,
+      payload,
+      dojah_config
+    );
+
+    console.log("results from NIN: ", response.data);
+
+    if (response.data.entity.selfie_verification.match) {
+      user.settings.KYC.is_verified = true;
+      user.settings.KYC.NIN_number = nin;
+      await user.save();
+      return res.status(200).json({ message: "Identity verified successfully!" });
+    } else {
+      return res.status(400).json({ message: "Identity verification failed, please try again" });
+    }
+
+  } catch (error) {
+    console.log("error verifying user: ", error);
+
+    // Handle Axios errors
+    if (error.response) {
+      // The request was made and the server responded with a status code outside the range of 2xx
+      return res.status(error.response.status).json({
+        message: "An error occurred while verifying identity",
+        error: error.response.data,
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      return res.status(500).json({
+        message: "An error occurred while verifying identity",
+        error: error.request,
+      });
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      return res.status(500).json({
+        message: "An error occurred while verifying identity",
+        error: error.message,
+      });
+    }
+  }
+};
+
+
 
 
 // search for users profile by employers...
@@ -523,7 +606,7 @@ exports.searchUsers = async (req, res) => {
     }
 
     // Define which specific fields to return
-    const fieldsToReturn = 'firstname lastname email isVerified profile createdAt'; // Add other fields as needed
+    const fieldsToReturn = 'firstname lastname email isVerified profile settings createdAt'; // Add other fields as needed
 
     // Use the filter and fieldsToReturn to search for users
     const users = await User.find(filter).select(fieldsToReturn);

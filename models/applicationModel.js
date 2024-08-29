@@ -9,10 +9,11 @@ const applicationSchema = new Schema({
     },
     cover_letter: String,
     attachments: [{
-        // name: {type: Array},
-        // url: {type: String}
-        type: String,
-    }],
+        // name: String,
+        // size: String,
+        // url: String,
+        // type: String,
+    }],    
     counter_offer: String,
     reason_for_co: String,
     created: {

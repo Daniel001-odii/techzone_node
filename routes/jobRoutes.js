@@ -43,6 +43,17 @@ router.post("/jobs/:job_id/close", middleware, jobController.closeJob);
 router.post("/jobs/:job_id/apply", middleware, jobController.submitApplicationMain);
 
 
+const uploadMultipleDocuments = require('../utils/uploadDocument');
+
+// to upload a document...
+router.post("/upload/files", uploadMultipleDocuments, jobController.uploadDocument);
+
+
+router.delete("/upload/files/:key/delete", jobController.deleteUploadedFile);
+
+
+
+
 // Configure multer for file upload
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });

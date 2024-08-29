@@ -221,16 +221,7 @@ exports.login = async (req, res) => {
 
            
 
-            // NOTIFY USER HERE >>>
-            /*
-            const newNotification = new Notification({
-                receiver: "both",
-                user: userId,
-                employer: userId,
-                message: `New signin alert`
-            });
-            newNotification.save();
-            */
+          // NOTIFY USER HERE >>>
            await notify(
             "New Login alert",
             "account",
@@ -238,7 +229,8 @@ exports.login = async (req, res) => {
             userId,
             '#',
            );
-
+        
+           // SEND EMAIL HERE
             const recipient = user.email;
             const context = {
                 firstname: user.firstname,

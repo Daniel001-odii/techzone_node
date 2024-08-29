@@ -30,6 +30,7 @@ async function notify(message, type, user, employer, link_url){
         
     }catch(error){
         throw error
+        console.log("error sending notification: ", error);
     }
 }
 
