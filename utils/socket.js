@@ -9,7 +9,7 @@ const initializeSocket = (app) => {
 
   io = new Server(server, {
     cors: {
-      origin: "http://localhost:8080",
+      origin: process.env.GOOGLE_CALLBACK,
       methods: ["GET", "POST"],
       credentials: true,  // Allow credentials (cookies, etc.)
     },
