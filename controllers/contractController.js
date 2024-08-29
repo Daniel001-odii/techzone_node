@@ -567,19 +567,22 @@ exports.getContractById = async(req, res) => {
         }
 
         // check contract funding status...
-        try{
-            const response = await axios.get(`https://gate.qorepay.com/api/v1/purchases/${contract.funding_id}/`, qPayConfig);
-
-            // set contract funding status as true..
-            if(response.data.status == "paid"){
-                contract.funded = true;
-                await contract.save();
+        // if only contract has been funded or has a funding ID...
+        if(contract.funding_id){
+            try{
+                const response = await axios.get(`https://gate.qorepay.com/api/v1/purchases/${contract.funding_id}/`, qPayConfig);
+    
+                // set contract funding status as true..
+                if(response.data.status == "paid"){
+                    contract.funded = true;
+                    await contract.save();
+                }
+            }catch(error){
+                throw error
             }
-        }catch(error){
-            throw error
+            
         }
-        
-
+      
         // await getContractFundingStatus(contract_id);
 
         res.status(200).json({ contract })
