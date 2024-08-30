@@ -613,6 +613,7 @@ exports.searchUsers = async (req, res) => {
 
     res.status(200).json({ users });
   } catch (error) {
+    console.log("error searching for wonderful user: ", error)
     res.status(500).json({ message: 'Error searching users', error: error.message });
   }
 };

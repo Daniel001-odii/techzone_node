@@ -63,7 +63,6 @@ exports.getContracts = async(req, res) => {
 }
 
 
-const APP_CONTRACT_URL = '/in/contracts'
 // SEND NOTIFICATIONS TO USER
 // controller to create and send offer to user...
 exports.sendContractOffer = async(req, res) =>{
@@ -87,46 +86,26 @@ exports.sendContractOffer = async(req, res) =>{
                 await newContract.save();
 
                 
+                 // NOTIFY USER HERE >>>
+                await notify(
+                    `You received a contract offer for the job ${job.title}`,
+                    "contract",
+                    user_id,
+                    null,
+                    `/contracts/${newContract._id}`,
+                );
                 
+                 //  SEND EMAIL HERE >>>>            
+                const recipient = user.email;
+                const subject = "Apex-tek Contract Offer";
+                const template = "general";
+                const lastname = user.lastname;
+                const message = `Good news, you received a contract offer from ${employer.profile.company_name} for the job ${job.title}, Login to accept the offer if you are convenient with the client's terms and begin working on the project as soon as possible`
+                const context = { lastname, message };
+                
+                sendEmail(recipient, subject, null, null, template, context);
 
-                // NOTIFY USER HERE >>>
-                const newNotification = new Notification({
-                    receiver: "user",
-                    user,
-                    // employer: req.employerId,
-                    message: `You received a contract offer for the job ${job.title}`,
-                    link_url: `/contracts/${newContract._id}`,
-                });
-                await newNotification.save();
-                
-                // SEND EMAIL HERE >>>
-                
-                const mailOptions = {
-                    from: 'danielsinterest@gmail.com',
-                    to: user.email,
-                    subject: 'Apex-tek Contract Offer',
-                    html: `
-                    <img src="https://tech-zone-navy.vercel.app/img/apex-tek-white.5a5f5fbb.svg">
-                    <h1>You received an offer</h1>
-                    <p style="background: #4F83D5; padding: 20px; color: white"> Good news, ${user.firstname} ${user.lastname} You received a contract offer from ${employer.profile.company_name} for the job ${job.title} </p>
-                          <p>Login to accept the offer if you are convenient with the client's terms and begin working on the project as soon as possible</p>`
-                  };
-                
-                  // SEND EMAILS HERE >>>
-                // Emails sent are dependent on user's settings...
-                if(user.settings.notifications.emails == true) {
-                    
-                  transporter.sendMail(mailOptions, (error, info) => {
-                    if (error) {
-                      console.error('Error sending contract email:', error);
-                      return res.status(500).json({ message: 'Failed to send contract email' });
-                    }
-                
-                    console.log('contract email sent', info.response);
-                  });
-
-                }
-                  res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
+                res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
             }
         }catch(error){
             console.log(error);
@@ -161,45 +140,27 @@ exports.assignJob = async(req, res) =>{
                     budget: job.budget,
                 });
                 await newContract.save();
-               
-                
+                             
+
                 // NOTIFY USER HERE >>>
-                const newNotification = new Notification({
-                    receiver: "user",
-                    user,
-                    // employer: req.employerId,
-                    message:  `You received a job assignment offer for the job ${job.title}`,
-                    link_url: `/contracts/${newContract._id}`,
-                });
-                await newNotification.save();
+                await notify(
+                    `You received a job assignment contract offer for the job ${job.title}`,
+                    "contract",
+                    user_id,
+                    null,
+                    `/contracts/${newContract._id}`,
+                );
                 
+                 //  SEND EMAIL HERE >>>>            
+                const recipient = user.email;
+                const subject = "Apex-tek Contract Offer";
+                const template = "general";
+                const lastname = user.lastname;
+                const message = `You received a job assignment offer from ${employer.profile.company_name} for the job ${job.title} , Login to accept the offer if you are convenient with the client's terms and begin working on the project as soon as possible`
+                const context = { lastname, message };
                 
-                
-               
-                // SEND EMAIL HERE >>>
-                const mailOptions = {
-                    from: 'danielsinterest@gmail.com',
-                    to: user.email,
-                    subject: 'Apex-tek Contract Offer',
-                    html: `<p>Good news, ${user.firstname} ${user.lastname} You received a job assignment offer from ${employer.profile.company_name} for the job ${job.title} </p>
-                          <p>Login to accept the offer if you are convenient with the client's terms and begin working on the project as soon as possible</p>`
-                  };
-                
-                  // SEND EMAILS HERE >>>
-            // Emails sent are dependent on user's settings...
-            if(user.settings.notifications.emails == true) {
+                sendEmail(recipient, subject, null, null, template, context);
 
-                transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('Error sending contract email:', error);
-                    return res.status(500).json({ message: 'Failed to send contract email' });
-                }
-                
-                console.log('contract email sent', info.response);
-                // res.status(200).json({ message: 'Password reset email sent' });
-                });
-
-            }
 
                 res.status(200).json({ newContract, message: `You sent the contract offer to ${user.firstname} ${user.lastname}` });
             }
@@ -213,14 +174,12 @@ exports.assignJob = async(req, res) =>{
 };
 
 
-
-// SEND NOTIFICATIONS TO EMPLOYER
+// SEND NOTIFICATIONS TO EMPLOYER & USER
 // controller to allow users to accept a contract
 exports.acceptOffer = async(req, res) => {
     try{
         const contract_id = req.params.contract_id;
-        const offer = await Contract.findOne({ user: req.userId, _id: contract_id});
-
+        const offer = await Contract.findOne({ user: req.userId, _id: contract_id}).populate("user employer job");
         const today = Date.now();
 
         if(!offer){
@@ -230,19 +189,38 @@ exports.acceptOffer = async(req, res) => {
         offer.action = "accepted";
         offer.action_date = today;
         await offer.save();
-        res.status(200).json({ offer, message: "You accepted the offer"});
+        
 
         // NOTIFY USER HERE >>>
-        const newNotification = new Notification({
-            receiver: "user",
-            receiver: "user",
-            user: offer.user,
-            // employer: offer.employer,
-            message: "Your contract started",
-            link_url: `/contracts/${contract_id}`,
-        });
-        await newNotification.save();
+        await notify(
+            `Hurray!, your contract started`,
+            "contract",
+            req.userId,
+            null,
+            `/contracts/${offer._id}`,
+        );
 
+        // NOTIFY EMPLOYER HERE >>>
+        await notify(
+            `Your contract offer was accepted`,
+            "contract",
+            null,
+            offer.employer._id,
+            `/contracts/${offer._id}`,
+        );
+
+        
+         //  SEND EMAIL HERE >>>>            
+        const recipient = req.user.email;
+        const subject = "Apex-tek Contract Offer";
+        const template = "general";
+        const lastname = req.user.email;
+        const message = `You contract for the job ${offer.job.title} started, confirm if the employer has funded the contract and you can begin working on the project right away`
+        const context = { lastname, message };
+        
+        sendEmail(recipient, subject, null, null, template, context);
+        
+        res.status(200).json({ offer, message: "You accepted the offer"});
 
     }catch(error){
         console.log(error);
@@ -266,20 +244,17 @@ exports.declineOffer = async(req, res) => {
         offer.status = "closed";
         offer.action_date = today;
         await offer.save();
+
+        // NOTIFY EMPLOYER HERE >>>
+        await notify(
+            `${user.firstname} ${user.lastname} declined your contract offer`,
+            "contract",
+            null,
+            offer.employer._id,
+            `/contracts/${offer._id}`,
+        );
+
         res.status(200).json({ offer, message: "You declined the offer"});
-
-
-        
-
-        // NOTIFY USER HERE >>>
-        const newNotification = new Notification({
-            receiver: "user",
-            user: offer.user,
-            message: `${user.firstname} ${user.lastname} declined your contract offer`,
-            link_url: `client/contracts/${contract_id}`,
-        });
-        await newNotification.save();
-
         
 
     }catch(error){
@@ -312,14 +287,6 @@ exports.markContractAsComplete = async(req, res) => {
        
 
         const userId = user._id;
-      
-        const mailOptions = {
-            from: 'danielsinterest@gmail.com',
-            to: user.email,
-            subject: 'Apex-tek Contract Completion',
-            html: `<p>Hello ${user.firstname} ${user.lastname} the contract for the job ${job.title}  you were working on was marked as complete by the employer</p>
-                  <p>Your payout should be available any moment from now.</p>`
-          };
 
 
         // PAY TO USER WALLET...
@@ -331,24 +298,24 @@ exports.markContractAsComplete = async(req, res) => {
         await user.save();
 
 
-         // NOTIFY USER HERE >>>
-         await notify(
-            "Your contract was closed",
-            "contract",
-            userId,
-            null,
-            `/contracts/${contract_id}`,
-           );
+        // NOTIFY USER HERE >>>
+        await notify(
+        "Your contract was closed",
+        "contract",
+        userId,
+        null,
+        `/contracts/${contract_id}`,
+        );
  
          //  SEND EMAIL HERE >>>>            
-         const recipient = user.email;
-         const subject = "Apex-tek Contract Activity";
-         const template = "general";
-         const lastname = user.lastname;
-         const message = `the contract for the job '${job.title}' you were working on was marked as complete by the employer, your payout should be available any moment from now.`
-         const context = { lastname, message };
+        const recipient = user.email;
+        const subject = "Apex-tek Contract Activity";
+        const template = "general";
+        const lastname = user.lastname;
+        const message = `the contract for the job '${job.title}' you were working on was marked as complete by the employer, your payout should be available any moment from now.`
+        const context = { lastname, message };
          
-         await sendEmail(recipient, subject, null, null, template, context);
+        sendEmail(recipient, subject, null, null, template, context);
  
 
         res.status(200).json({ offer, message: "Contract completed successfuly"});
@@ -395,7 +362,7 @@ exports.pauseContract = async(req, res) => {
         const message = `Your contract for the job '${job.title}' was paused by the employer.`
         const context = { lastname, message };
         
-        await sendEmail(recipient, subject, null, null, template, context);
+        sendEmail(recipient, subject, null, null, template, context);
 
         res.status(200).json({ offer, message: "Contract paused successfuly"});
 
@@ -422,24 +389,24 @@ exports.resumeContract = async(req, res) => {
         const userId = user._id;
 
 
-         // NOTIFY USER HERE >>>
-         await notify(
+        // NOTIFY USER HERE >>>
+        await notify(
             "Your contract was resumed",
             "contract",
             userId,
             null,
             `/contracts/${contract_id}`,
-           );
+        );
 
-         //  SEND EMAIL HERE >>>>            
-         const recipient = user.email;
-         const subject = "Apex-tek Contract Activity";
-         const template = "general";
-         const lastname = user.lastname;
-         const message = `Your contract for the job '${job.title}' was resumed by the employer.`
-         const context = { lastname, message };
-         
-         await sendEmail(recipient, subject, null, null, template, context);
+        //  SEND EMAIL HERE >>>>            
+        const recipient = user.email;
+        const subject = "Apex-tek Contract Activity";
+        const template = "general";
+        const lastname = user.lastname;
+        const message = `Your contract for the job '${job.title}' was resumed by the employer.`
+        const context = { lastname, message };
+        
+        sendEmail(recipient, subject, null, null, template, context);
 
         res.status(200).json({ offer, message: "Contract resumed successfuly"});
     }catch(error){
@@ -483,7 +450,7 @@ exports.closeContract = async(req, res) => {
         const message = `Your contract for the job '${job.title}' was closed by the employer.`
         const context = { lastname, message };
         
-        await sendEmail(recipient, subject, null, null, template, context);
+        sendEmail(recipient, subject, null, null, template, context);
 
 
         res.status(200).json({ offer, message: "Contract closed successfuly"});
@@ -825,6 +792,24 @@ exports.fundContract = async (req, res) => {
             contract.funding_id = jsonResponse.id;
             await contract.save();
 
+            // NOTIFY USER HERE >>>
+           /*  await notify(
+                "Your contract was funded",
+                "contract",
+                contract.user._id,
+                null,
+                `/contracts/${contract_id}`,
+            );
+ */
+            //  SEND EMAIL HERE >>>>            
+            const recipient = contract.user.email;
+            const subject = "Apex-tek Contract Activity";
+            const template = "general";
+            const lastname = contract.user.lastname;
+            const message = `Your contract for the job '${contract.job.title}' was funded by the employer, you can start working right away!`
+            const context = { lastname, message };
+            
+            // sendEmail(recipient, subject, null, null, template, context);
             
 
 
@@ -1041,9 +1026,28 @@ exports.withdrawFunds = async (req, res) => {
                 type: "withdrawal",
             });
 
-            // await wallet.save();
+            await wallet.save();
 
-            // SEND EMAIL HERE TOO..
+            // SEND EMAIL & NOTIFICATION HERE...
+             // NOTIFY USER HERE >>>
+            await notify(
+                "You initiated a withdrawal",
+                "payment",
+                req.userId,
+                null,
+                `/settings?tab=payout`,
+            );
+ 
+            //  SEND EMAIL HERE >>>>            
+            const recipient = req.user.email;
+            const subject = "Apex-tek Contract Activity";
+            const template = "general";
+            const lastname = req.user.lastname;
+            const message = `you requested a payout via your wallet, we have initiated payment of NGN${amount} from ApexTeks to your provided local bank account details. Please contact apexteks support if this payment was not authorized. `
+            const context = { lastname, message };
+            
+            sendEmail(recipient, subject, null, null, template, context);
+
 
 
             // res.status(201).json({ message: `payout amount of NGN${amount} has been successfully sent to ${recipient_name} `, result });
