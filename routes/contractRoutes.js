@@ -6,7 +6,7 @@ const jobController = require("../controllers/jobController");
 const middleware = require("../middlewares/authMiddleware");
 const contractController = require("../controllers/contractController");
 
-
+const checkStatus = require("../middlewares/accountMiddleware")
 
 
 
@@ -62,7 +62,7 @@ router.patch("/contracts/:contract_id/budget", middleware, contractController.ed
 
 
 // PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS...
-router.post("/contracts/:contract_id/fund/", contractController.fundContract);
+router.post("/contracts/:contract_id/fund/", middleware, checkStatus, contractController.fundContract);
 
 router.get("/contracts/funded/all", middleware, contractController.getAllFundedContracts);
 

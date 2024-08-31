@@ -2,62 +2,27 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-
-
 const User = require("../models/userModel");
 const Notification = require("../models/notificationModel");
 const Employer = require("../models/employerModel"); // Correct the import for Employer model
 const Wallet = require("../models/walletModel");
-
-
-
 const Admin = require('../models/adminModel');
-
 const sendEmail = require("../utils/email.js");
 
+const passport = require("passport");
+require("../utils/passport.js");
 
 const { OAuth2Client } = require('google-auth-library')
 const client = new OAuth2Client(
   {
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    clientId: process.env.GOOGLE_SSO_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_SSO_CLIENT_SECRET,
     redirectUri: process.env.GOOGLE_CALLBACK,
   }
 )
 
 
 const { notify } = require('../utils/notifcation');
-
-
-function hashPassword2(password) {
-    // Generate a random salt
-    const salt = crypto.randomBytes(16).toString('hex');
-
-    // Hash the password with SHA-256 and the salt
-    const hashedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha256').toString('hex');
-
-    // Return the hashed password along with the salt
-    return {
-        hash: hashedPassword,
-        salt: salt
-    };
-}
-
-function hashPassword(password){
-    const salt = bcrypt.genSalt(10);
-    const hash = bcrypt.hash(password, salt);
-    return hash;
-}
-
-
-// Function to compare provided password with hashed password
-function comparePasswords(providedPassword, storedHash, salt) {
-    // Hash the provided password with the stored salt
-    const hashedPassword = crypto.pbkdf2Sync(providedPassword, salt, 1000, 64, 'sha256').toString('hex');
-
-    // Compare the hashed passwords
-    return storedHash === hashedPassword;
-};
 
 
 /*
@@ -314,16 +279,16 @@ async function verifyCode(code) {
 
 
 // this function checks for exisitng users and is utitlized by the googleClientAuthHandler below...
-const findExistingUser = async ({ googleId, email }) => {
+const findExistingUser = async ({ email }) => {
     // Check "User" model
-    const existingUserInUserModel = await User.findOne({ googleId, email });
+    const existingUserInUserModel = await User.findOne({ email });
 
     if (existingUserInUserModel) {
         return { model: 'User', user: existingUserInUserModel };
     }
 
     // Check "Employer" model
-    const existingUserInEmployerModel = await Employer.findOne({ googleId, email });
+    const existingUserInEmployerModel = await Employer.findOne({ email });
 
     if (existingUserInEmployerModel) {
         return { model: 'Employer', user: existingUserInEmployerModel };
@@ -349,16 +314,34 @@ exports.googleClientAuthHandler = async (req, res) => {
             const { sub: googleId, given_name: firstname, family_name: lastname, email, picture } = userInfo;
 
             // Check if user already exists in either "User" or "Employer" model
-            const existingUserResult = await findExistingUser({ googleId, email });
+            // const existingUserResult = await findExistingUser({ googleId, email });
+            const existingUserResult = await findExistingUser({ email });
 
             if (existingUserResult) {
+                
                 const { model, user } = existingUserResult;
 
                 // Generate JWT token for authentication
                 // const token = jwt.sign({ googleId, role: user.role }, process.env.API_SECRET, { expiresIn: '1d' });
                 const token = jwt.sign({ id: user._id, role: user.role }, process.env.API_SECRET, { expiresIn: '1d' });
 
-                console.log("see user: ", user)
+                console.log("see user: ", user);
+
+                 // NOTIFY USER HERE >>>
+                 await notify(
+                    "New Login alert",
+                    "account",
+                    user._id,
+                    user._id,
+                    '#',
+                );
+
+                if(!user.googleId){
+                    user.googleId = googleId;
+                    await user.save();
+                    
+                    return res.status(201).json({ message: "we found your account and linked your email", token, role: user.role});
+                }
 
                 // Respond with the token and user information
                 res.status(200).json({
@@ -368,14 +351,7 @@ exports.googleClientAuthHandler = async (req, res) => {
                     user,
                 });
 
-                // NOTIFY USER HERE >>>
-                await notify(
-                    "New Login alert",
-                    "account",
-                    user._id,
-                    user._id,
-                    '#',
-                   );
+               
                 
             } else {
                 console.log("new user record!");
@@ -386,38 +362,20 @@ exports.googleClientAuthHandler = async (req, res) => {
                     const newUser = new User({
                         googleId,
                         email,
-                        // firstname,
-                        // lastname,
+                        firstname,
+                        lastname,
                         provider: "google",
-                        // profile: { image_url: picture },
+                        profile: { image_url: picture },
                     });
 
                     // Save the new user to the "User" model
                     await newUser.save();
 
                     // Generate JWT token for authentication
-                    const token = jwt.sign({ googleId, role: "user" }, process.env.API_SECRET, { expiresIn: '1d' });
-
+                    const token = jwt.sign({ id: newUser._id, role: "user" }, process.env.API_SECRET, { expiresIn: '1d' });
 
                     //   SEND EMAIL HERE >>>>
-                    const mailOptions = {
-                        from: 'danielsinterest@gmail.com',
-                        to: newUser.email,
-                        subject: 'Welcome to Apex-tek',
-                        html: `<p>we are so happy to have you here, we founded Apek-tek because we wanted you to have a trusted place where you as a talent gets to work with employers without much hassles. welcome to the family!</p>`
-                    };
-                    
-                    transporter.sendMail(mailOptions, (error, info) => {
-                        if (error) {
-                            console.error('Error sending email:', error);
-                            return res.status(500).json({ message: 'Failed to send welcome email' });
-                        }
-                    
-                        console.log('welcome email sent:', info.response);
-                        res.status(200).json({ message: 'welcome email sent' });
-                    });
-
-                    res.status(200).json({
+                    res.status(201).json({
                         message: "User registered successfully",
                         token,
                         role: "user",
@@ -439,28 +397,10 @@ exports.googleClientAuthHandler = async (req, res) => {
                     await newUser.save();
 
                     // Generate JWT token for authentication
-                    const token = jwt.sign({ googleId, role: "employer" }, process.env.API_SECRET, { expiresIn: '1d' });
+                    const token = jwt.sign({ id: newUser._id, role: "employer" }, process.env.API_SECRET, { expiresIn: '1d' });
 
                     //   SEND EMAIL HERE >>>>
-                    const mailOptions = {
-                        from: 'danielsinterest@gmail.com',
-                        to: newUser.email,
-                        subject: 'Welcome to Apex-tek',
-                        html: `<p>we are so happy to have you here, we founded Apek-tek because we wanted you to have a trusted place where you as an employer gets to meet talents who are willing to work on your projects and contracts without much hassles. welcome to the family!</p>`
-                    };
-                    
-                    transporter.sendMail(mailOptions, (error, info) => {
-                        if (error) {
-                            console.error('Error sending email:', error);
-                            return res.status(500).json({ message: 'Failed to send welcome email' });
-                        }
-                    
-                        console.log('welcome email sent:', info.response);
-                        res.status(200).json({ message: 'welcome email sent' });
-                    });
-
-
-                    res.status(200).json({
+                    res.status(201).json({
                         message: "User registered successfully",
                         token,
                         role: "employer",
@@ -476,11 +416,11 @@ exports.googleClientAuthHandler = async (req, res) => {
         } catch (error) {
             // Validation failed, and user info was not obtained
             console.log(error);
-            res.status(400).json({ error: 'Invalid authorization code' });
+            res.status(400).json({ message: 'Invalid authorization code' });
         }
     } catch (error) {
         console.log(error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
@@ -797,5 +737,130 @@ exports.adminOTPTest = async (req, res) => {
     }
 }
 
+
+
+
+
+/* 
+    THE GOOGLE AUTHENTICATION CODES BELOW ARE FULLY WORKING BUT IDLE
+    LIKE THEY ARE NOTE USED :)
+*/
+
+// Controller to initiate Google login
+exports.googleLogin = passport.authenticate("google", {
+    scope: ["email", "profile"],
+ });
+  
+  // Controller to handle the Google callback
+exports.googleCallback = (req, res, next) => {
+    passport.authenticate("google", { 
+      access_type: "offline",
+      scope: ["email", "profile"],
+    }, (err, user, info) => {
+      if (err) {
+        return next(err); // Handle errors
+      }
+      if (!user) {
+        return res.status(400).json({ error: "Authentication failed" });
+      }
+      // If authentication was successful, return user details
+      res.status(200).json(user);
+    })(req, res, next);
+};
+
+// Controller to handle the Google callback
+exports.googleCallbackFULL = (req, res, next) => {
+    passport.authenticate("google", { 
+      access_type: "offline",
+      scope: ["email", "profile"],
+    }, async (err, user, info) => {
+      if (err) {
+        return next(err); // Handle errors
+      }
+      if (!user) {
+        return res.status(400).json({ error: "Authentication failed" });
+      }
+
+
+      const email = user._json.email;
+      const firstname = user._json.given_name;
+      const lastname = user._json.family_name;
+      const image_url = user._json.picture;
+
+    //   check is user exists...
+    try{
+        // if user exists then login...
+        const existingUser = await User.findOne({ email }) || await Employer.findOne({ email });
+        const userId = user._id;
+            const role = user.role;
+            const token = jwt.sign({ id: userId, role }, process.env.API_SECRET, { expiresIn: '1d' });
+
+            // Send a response
+            const response = {
+                user: {
+                    id: userId,
+                    email: email,
+                    role: role,
+                },
+                message: "Login Successful",
+                accessToken: token,
+            };
+        
+        // if user doesnt exit then register user and login..
+        if(!existingUser){
+             // create new user...
+             const newUser = new User({
+                firstname,
+                lastname,
+                email,
+                profile:{
+                    image_url
+                }
+            });
+           
+            const token = jwt.sign({ id: userId, role }, process.env.API_SECRET, { expiresIn: '1d' });
+
+            // create new wallet for user...
+            const userWallet = new Wallet({
+                user: newUser._id,
+            });
+
+            // assing wallet Id to user account...
+            newUser.wallet = userWallet._id;
+            await userWallet.save();
+            await newUser.save();
+
+            // Send a response
+            const response = {
+                user: {
+                    id: newUser._id,
+                    email: email,
+                    role: role,
+                },
+                message: "Login Successful",
+                accessToken: token,
+            };
+
+            // res.status(200).send(response);
+            // Redirect the user to the Vue frontend with the token
+            res.redirect(`http://localhost:8080/login`);
+
+        }
+
+        // res.status(200).send(response);
+        // Redirect the user to the Vue frontend with the token
+        res.redirect(`http://localhost:8080/login`);
+    }catch(error){
+        return res.status(500).json({ message: "error in custom google sso: ", error});
+    }
   
 
+      // Generate a token or any necessary data
+      const token = "some_generated_token"; // You might generate a JWT here
+
+      // Redirect the user to the Vue frontend with the token
+      res.redirect(`http://localhost:8080/login`);
+    })(req, res, next);
+};
+
+// res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${token}`);

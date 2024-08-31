@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
-const Employer = require("../models/employerModel"); // Import the Employer model
-// const Administrator = require("../models/adminModel");
-
+const Employer = require("../models/employerModel");
 
 const verifyToken = async (req, res, next) => {
   try {
@@ -14,47 +12,39 @@ const verifyToken = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.API_SECRET);
 
-    // console.log("found a role: ", decoded.role);
-
     if (decoded.role === "user") {
-      const user = await User.findById(decoded.id) || await User.findOne({ googleId: decoded.googleId });
-      // console.log(" user data: ", user)
+      const user = await User.findById(decoded.id);
+
       if (!user) {
-        return res.status(401).json({ message: 'Invalid token. User not found' });
+        return res.status(401).json({ message: 'User not found' });
       }
 
       req.user = user;
       req.userId = user._id;
+
     } else if (decoded.role === "employer") {
-      const employer = await Employer.findById(decoded.id) || await Employer.findOne({ googleId: decoded.googleId });
-      // console.log(" employer data: ", employer)
+      const employer = await Employer.findById(decoded.id);
 
       if (!employer) {
-        return res.status(401).json({ message: 'Invalid token. Employer not found' });
+        return res.status(401).json({ message: 'Employer not found' });
       }
 
       req.employer = employer;
       req.employerId = decoded.id;
+    } else {
+      // If role is not recognized, return an error
+      return res.status(401).json({ message: 'Invalid role' });
     }
 
-    next();
+    next(); // Only call next() once after user or employer has been found and set
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      // Handle JWT-specific errors
-      return res.status(401).json({ message: 'Invalid token. Malformed JWT' });
+      return res.status(401).json({ error });
     } else {
-      // Handle other errors
       console.error("Unauthorized...", error);
-      res.status(401).json({ message: "Unauthorized", error });
+      return res.status(401).json({ message: "Unauthorized", error });
     }
   }
 };
 
-
-
-
-
-
-
 module.exports = verifyToken;
-

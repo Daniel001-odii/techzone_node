@@ -61,7 +61,12 @@ exports.saveUser = async (req, res) => {
 
 exports.getEmployerSavedUsers = async (req, res) => {
   try{
+    console.log('employer id: ', req.employerId);
+    
     const employer = await Employer.findById(req.employerId).populate('saved_users');
+    if(employer.saved_users.length <= 0){
+      return res.status(200).json({ saved_users: [] }); 
+    }
     return res.status(200).json({ saved_users: employer.saved_users });
   }catch(error){
     console.log(error);
@@ -72,6 +77,9 @@ exports.getEmployerSavedUsers = async (req, res) => {
 exports.getEmployerSavedUsersIdOnly = async (req, res) => {
   try{
     const employer = await Employer.findById(req.employerId);
+    if(employer.saved_users.length <= 0){
+      return res.status(200).json({ saved_users: [] }); 
+    }
     return res.status(200).json({ saved_users: employer.saved_users });
   }catch(error){
     console.log(error);

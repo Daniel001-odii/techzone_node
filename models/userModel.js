@@ -143,14 +143,15 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Pre-save hook to generate username
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('firstname') || !this.isModified('lastname')) {
-      return next();
+  // Check if firstname or lastname is modified or if username is not set
+  if (this.isModified('firstname') || this.isModified('lastname') || !this.username) {
+      // Generate username from firstname and lastname
+      const username = `${this.firstname} ${this.lastname}`;
+      this.username = username;
+      console.log(`Generated username: ${this.username}`);
   }
-  // generate username from user firstname and lastname...
-  const username = this.firstname + '' + this.lastname;
-  this.username = username;
-  console.log(`create username: ${this.username}`);
   next();
 });
 

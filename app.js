@@ -5,7 +5,13 @@ const cors = require("cors");
 const path = require('path');
 
 const app = express();
-const { initializeSocket } = require('./utils/socket')
+const { initializeSocket } = require('./utils/socket');
+
+const passport = require("passport");
+const Strategy = require("passport-google-oauth20");
+
+const session = require("express-session");
+
 
 // Middlewares
 app.use(cors({
@@ -14,6 +20,23 @@ app.use(cors({
 }));
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET, // session secret
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+// initialize passport and session
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+
+
 
 // Connect to the db
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -48,6 +71,13 @@ app.use("/api/wallets", walletRoutes);
 app.get('/', (req, res) => {
   return res.send("Apex-tek API is live...");
 });
+
+
+// passport and google auth..
+
+
+
+
 
 // Start server with Socket.io
 const server = initializeSocket(app);

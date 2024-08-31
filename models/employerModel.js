@@ -29,6 +29,9 @@ const employerSchema = new Schema({
       type: String,
       required: [true, "Please specify lastname"]
     },
+
+    username: String,
+
     settings: {
         // profile_visibility: {type: String, enum: ["public", "private"]}
     },
@@ -102,6 +105,20 @@ employerSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password, salt);
     next();
 });
+
+
+// Pre-save hook to generate username
+employerSchema.pre('save', async function (next) {
+  // Check if firstname or lastname is modified or if username is not set
+  if (this.isModified('firstname') || this.isModified('lastname') || !this.username) {
+      // Generate username from firstname and lastname
+      const username = `${this.firstname} ${this.lastname}`;
+      this.username = username;
+      console.log(`Generated username: ${this.username}`);
+  }
+  next();
+});
+
 
 employerSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);

@@ -15,6 +15,20 @@ router.post("/google-auth", authController.googleClientAuthHandler);
 
 router.post("/email/:email/verify", authController.verifyEmail);
 
+/* 
+**
+GOOGLE AUTH ROUTE
+**
+*/
+
+// Route to initiate Google login
+router.get("/auth/google", authController.googleLogin);
+
+// Callback route for Google authentication
+router.get("/auth/google/callback", authController.googleCallback);
+
+
+
 /*
 **
 PASSWORD RESET ROUTES
@@ -22,9 +36,7 @@ PASSWORD RESET ROUTES
 */
 
 router.post("/password/forgot", authController.sendPasswordResetEmail);
-
 router.post("/password/reset", authController.resetPassword);
-
 router.get("/password/:reset_token/check", authController.checkPassResetToken);
 
 
@@ -40,12 +52,8 @@ ADMIN ROUTES
 */
 
 router.post("/register/admin", authController.adminSignup);
-
 router.post("/login/admin", authController.adminLogin);
-
 router.post("/OTP/admin", authController.adminOTPTest);
-
-
 router.post("/email/test", authController.sendTestEmail);
 
 
