@@ -7,7 +7,7 @@ const verifyToken = async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1];
 
     if (!token || req.headers.authorization.split(" ")[0] !== "JWT") {
-      return res.status(401).json({ message: 'Invalid token format' });
+      return res.status(401).json({ message: 'Invalid login' });
     }
 
     const decoded = jwt.verify(token, process.env.API_SECRET);
@@ -39,10 +39,10 @@ const verifyToken = async (req, res, next) => {
     next(); // Only call next() once after user or employer has been found and set
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ error });
+      return res.status(401).json({ message: "login expired" });
     } else {
       console.error("Unauthorized...", error);
-      return res.status(401).json({ message: "Unauthorized", error });
+      return res.status(401).json({ message: "Unauthorized"});
     }
   }
 };

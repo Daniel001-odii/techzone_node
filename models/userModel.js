@@ -112,6 +112,7 @@ const userSchema = new Schema({
       KYC: {
         NIN_number: String,
         is_verified: {type: Boolean, default: false},
+        verified_on: Date,
       }
     },
 

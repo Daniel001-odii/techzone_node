@@ -514,6 +514,14 @@ exports.verifyNIN_with_selfieImage = async (req, res) => {
       nin
     };
 
+    if(!selfie_image){
+      return res.status(400).json({ message: "please attach your passport photo"});
+    }
+    if(!nin){
+      return res.status(400).json({ message: "please input your"});
+    }
+
+
     const response = await axios.post(
       `${process.env.DOJAH_BASE_URL}/kyc/nin/verify`,
       payload,
@@ -522,13 +530,24 @@ exports.verifyNIN_with_selfieImage = async (req, res) => {
 
     console.log("results from NIN: ", response.data);
 
-    if (response.data.entity.selfie_verification.match) {
+    const dojah_user = response.data.entity;
+
+    if (dojah_user.selfie_verification.match) {
+      if(dojah_user.first_name != user.firstname && dojah_user.last_name != user.lastname){
+        return res.status(400).json({ message: "Name on NIN does not match with profile name"});
+      }
+
+      const verify_date = Date.now();
+
       user.settings.KYC.is_verified = true;
       user.settings.KYC.NIN_number = nin;
+      user.settings.KYC.verified_on = verify_date;
+
       await user.save();
-      return res.status(200).json({ message: "Identity verified successfully!" });
+      
+      return res.status(200).json({ message: "Identity verified successfully!", user: response.data.entity });
     } else {
-      return res.status(400).json({ message: "Identity verification failed, please try again" });
+      return res.status(400).json({ message: "Identity verification failed, please try again", user: response.data.entity });
     }
 
   } catch (error) {
@@ -538,20 +557,20 @@ exports.verifyNIN_with_selfieImage = async (req, res) => {
     if (error.response) {
       // The request was made and the server responded with a status code outside the range of 2xx
       return res.status(error.response.status).json({
-        message: "An error occurred while verifying identity",
+        message: "An error occurred while verifying identity 1",
         error: error.response.data,
       });
     } else if (error.request) {
       // The request was made but no response was received
       return res.status(500).json({
-        message: "An error occurred while verifying identity",
+        message: "An error occurred while verifying identity 2",
         error: error.request,
       });
     } else {
       // Something happened in setting up the request that triggered an Error
       return res.status(500).json({
-        message: "An error occurred while verifying identity",
-        error: error.message,
+        message: "An error occurred while verifying identity 3",
+        error,
       });
     }
   }
