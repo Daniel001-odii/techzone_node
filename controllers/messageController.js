@@ -3,16 +3,13 @@ const http = require('http');
 const router = express.Router();
 const Room = require('../models/roomModel');
 const Message = require('../models/messageModel');
-const setupSocketIO = require('socket.io');
-const app = express();
-const server = http.createServer(app);
 const mongoose = require('mongoose');
 
 // Initialize Socket.io with your server
-const io = setupSocketIO(server);
+
+const { getIo } = require('../utils/socket');
 
 
-// const { io } = require("../app");
 
 exports.createMessageRoom = async (req, res) => {
     try {
@@ -35,7 +32,7 @@ exports.createMessageRoom = async (req, res) => {
       res.status(500).json({ error: 'Unable to create room' });
       console.log("error creating rooom: ", error);
     }
-  };
+};
 
 // GET USER MESSAGE ROOMS
 exports.getUserMessageRooms = async (req, res) => {
@@ -117,8 +114,6 @@ exports.getEmployerMessageRooms = async (req, res) => {
   }
 };
 
-
-
 // GET MESSAGES IN ROOM CONTROLLLER >>>
 exports.getMessagesInRoom = async (req, res) => {
     try {
@@ -130,7 +125,7 @@ exports.getMessagesInRoom = async (req, res) => {
       res.status(500).json({ error: 'Unable to fetch messages' });
       console.log("error getting user messages for room: ", error);
     }
-  }
+;}
 
 // SEND MESSAGE CONTROLLER >>>
 exports.sendMessageToRoom = async (req, res) => {
@@ -151,6 +146,7 @@ exports.sendMessageToRoom = async (req, res) => {
       await room.save();
       // await message.save();
 
+      const io = getIo();
       // Emit the message to the room using Socket.io
       io.to(roomId).emit('message', message);
       console.log("new socket msg sent to room: ", roomId);
@@ -160,7 +156,24 @@ exports.sendMessageToRoom = async (req, res) => {
       console.error('Error sending message:', error); // Log the error
       res.status(500).json({ error: 'Unable to send message' });
     }
+};
+
+
+exports.sendTypingStatus = async (req, res) => {
+  try{
+    const roomId = req.params.room_id;
+    const room = await Room.findById(roomId);
+    const today = Date.now();
+    room.updatedAt = today;
+    io.to(roomId).emit('typing', 'typing');
+
+    res.status(201).json({ message: 'user is typing' });
+    
+  }catch(error){
+    console.error('Error sending typing status:', error); // Log the error
+    res.status(500).json({ error: 'Unable to send type status' });
   }
+}
 
 // MARK BULK MESSAGE AS READ >>>
 exports.markBulkMessageAsRead = async (req, res) => {

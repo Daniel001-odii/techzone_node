@@ -18,7 +18,7 @@ router.get("/employer/:employer_id/rooms", messageController.getEmployerMessageR
 router.get("/room/:room_id/messages", messageController.getMessagesInRoom);
 
 // SEND MESSAGE TO A ROOM >>>
-// router.post("/room/:room_id", messageController.sendMessageToRoom)
+router.post("/room/:room_id", messageController.sendMessageToRoom)
 
 // MARK BULK MESSAGES AS READ >>
 router.put("/:room_id/read", authMiddleware, messageController.markBulkMessageAsRead);
