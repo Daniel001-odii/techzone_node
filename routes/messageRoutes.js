@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const messageController = require("../controllers/messageController")
-const authMiddleware = require("../middlewares/authMiddleware");
+const secure = require("../middlewares/authMiddleware");
 
 
 // CREATE A NEW MESSAGE ROOM >>>
@@ -20,8 +20,11 @@ router.get("/room/:room_id/messages", messageController.getMessagesInRoom);
 // SEND MESSAGE TO A ROOM >>>
 router.post("/room/:room_id", messageController.sendMessageToRoom)
 
+// send status
+router.post("/room/:room_id/status/:status", messageController.sendTypingStatus);
+
 // MARK BULK MESSAGES AS READ >>
-router.put("/:room_id/read", authMiddleware, messageController.markBulkMessageAsRead);
+router.put("/:room_id/read", secure, messageController.markBulkMessageAsRead);
 
 
 module.exports = router;

@@ -11,6 +11,7 @@ const { getIo } = require('../utils/socket');
 
 
 
+
 exports.createMessageRoom = async (req, res) => {
     try {
       const { name, userId, employerId } = req.body;
@@ -158,14 +159,23 @@ exports.sendMessageToRoom = async (req, res) => {
     }
 };
 
-
 exports.sendTypingStatus = async (req, res) => {
   try{
     const roomId = req.params.room_id;
+    const { user } = req.body;
+    console.log("user typing: ", user)
     const room = await Room.findById(roomId);
     const today = Date.now();
     room.updatedAt = today;
-    io.to(roomId).emit('typing', 'typing');
+    const status = req.params.status;
+
+    const io = getIo();
+    const payload = {
+      user,
+      status
+    };
+
+    io.to(roomId).emit('typing', payload);
 
     res.status(201).json({ message: 'user is typing' });
     
