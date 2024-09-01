@@ -43,7 +43,7 @@ router.post("/jobs/:job_id/close", middleware, jobController.closeJob);
 router.post("/jobs/:job_id/apply", middleware, jobController.submitApplicationMain);
 
 
-const uploadMultipleDocuments = require('../utils/uploadDocument');
+const { uploadMultipleDocuments } = require('../utils/uploadDocument');
 
 // to upload a document...
 router.post("/upload/files", uploadMultipleDocuments, jobController.uploadDocument);
@@ -58,9 +58,7 @@ router.delete("/upload/files/:key/delete", jobController.deleteUploadedFile);
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-router.post("/application/files", upload.array('attachments'), jobController.handleFileUpload);
-
-// router.post("/application/files", jobController.uploadFilesToS3);
+// router.post("/application/files", upload.array('attachments'), jobController.handleFileUpload);
 
 
 // FLAG A JOB HERE...

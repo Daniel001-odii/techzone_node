@@ -132,14 +132,14 @@ exports.getMessagesInRoom = async (req, res) => {
 exports.sendMessageToRoom = async (req, res) => {
     try {
       const roomId = req.params.room_id;
-      const { text, userId } = req.body;
+      const { text, userId, files, reply } = req.body;
 
       const room = await Room.findById(roomId);
       const today = Date.now();
 
       // Create a new message
       // const message = new Message({ text, user: userId, room: roomId });
-      const message = await Message.create({ text, user: userId, room: roomId });
+      const message = await Message.create({ text, user: userId, room: roomId, files, reply });
 
       room.updatedAt = today;
       console.log("room date updated!!!")
@@ -208,5 +208,24 @@ exports.markBulkMessageAsRead = async (req, res) => {
   } catch (error) {
     res.status(500).send({ message: 'Error marking messages as read', error });
     console.log('Error marking messages as read:', error);
+  }
+};
+
+
+exports.uploadDocument = async (req, res) => {
+  try{
+    const files = req.uploadResults;
+  
+    if (!files) {
+      return res.status(400).json({ message: 'No files uploaded' });
+    }
+  
+    const fileUrls = files.map(file => file.Location);
+
+    console.log("uploads: ", req.uploadResults)
+    
+    res.status(200).json({ message: 'files uploaded successfully!', files: req.uploadResults });
+  }catch(error){
+    res.status(500).json({ message: 'internal server error', error: error.message });
   }
 };

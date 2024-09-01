@@ -3,21 +3,37 @@ const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
   text: String,
-  reply_text: String,
   files: [{
-    type: String
+   /*  name: String,
+    preview: String,
+    url: String,
+    type: String,
+    size: String, */
   }],
+  reply:{
+    text: String,
+    files: [{
+      name: String,
+      preview: String,
+      type: String,
+      size: String,
+    }],
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
-  // employer: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'Employer',
-  // },
   room: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',
+  },
+  is_deleted: {
+    type: Boolean,
+    default: false,
   },
   isRead: {
     type: Boolean,

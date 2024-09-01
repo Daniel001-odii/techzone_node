@@ -5,6 +5,8 @@ const messageController = require("../controllers/messageController")
 const secure = require("../middlewares/authMiddleware");
 
 
+const { uploadMultipleMessageDocuments } = require('../utils/uploadDocument');
+
 // CREATE A NEW MESSAGE ROOM >>>
 router.post("/create-room", messageController.createMessageRoom);
 
@@ -26,5 +28,8 @@ router.post("/room/:room_id/status/:status", messageController.sendTypingStatus)
 // MARK BULK MESSAGES AS READ >>
 router.put("/:room_id/read", secure, messageController.markBulkMessageAsRead);
 
+
+// 
+router.post("/room/:room_id/rooms/file", uploadMultipleMessageDocuments, messageController.uploadDocument)
 
 module.exports = router;
