@@ -103,7 +103,7 @@ exports.userSignup = async (req, res) => {
             const context = { firstname, lastname };
             
             // disable registration email sending...
-            await sendEmail(recipient, subject, null, null, template, context);
+            sendEmail(recipient, subject, null, null, template, context);
 
             res.status(200).send({ message: "User registered successfully!" });
         }
@@ -145,9 +145,9 @@ exports.employerSignup = async (req, res) => {
             const recipient = email;
             const subject = "Welcome to ApexTeks!";
             const template = "welcome";
-            const context = { firstname, lastname };
+            const context = { firstname, lastname, email };
             
-            // await sendEmail(recipient, subject, null, null, template, context);
+            sendEmail(recipient, subject, null, null, template, context);
 
             res.status(200).send({ message: "Employer registered successfully!" });
         }
@@ -244,6 +244,97 @@ exports.verifyEmail = async (req, res) => {
         console.log("error verifying email: ", error);
     }
 };
+
+
+exports.verifyEmailNative = async (req, res) => {
+    try{
+        const email = req.params.email;
+        const token = req.params.token;
+        const user = await User.findOne({ 
+            'email_verification.token': token,
+            'email_verification.expiry_date': { $gt: new Date() } 
+        });
+        const employer = await Employer.findOne({  
+            'email_verification.token': token,
+            'pass_reset.expiry_date': { $gt: new Date() } 
+        });
+
+        // Check if either user or employer exists
+        if (!user && !employer) {
+            return res.status(400).json({ message: 'This link has expired' });
+        }
+
+        if(user){
+            if(user.email_verified){
+                return res.status(201).json({ success: true, message: "Email already verified"})
+            }
+            user.email_verified = true;
+            await user.save();
+            return res.status(201).json({ success: true, message: "Email verified successfully"})
+        }
+        else if(employer){
+            if(employer.email_verified){
+                return res.status(201).json({ success: true, message: "Email already verified"})
+            }
+            employer.email_verified = true;
+            await employer.save();
+            return res.status(201).json({ success: true, message: "Email verified successfully"})
+        }
+        // user.email
+    }catch(error){
+        res.status(500).json({ success: false, message: "internal server error"});
+        console.log("error verifying email: ", error);
+    }
+};
+
+exports.sendEmailVerificationMail = async (req, res) => {
+    const email = req.params.email;
+
+    try {
+        // Find the user by their email address
+        const user = await User.findOne({ email });
+        const employer = await Employer.findOne({ email });
+
+        // // Check if either user or employer exists
+        if (!user && !employer) {
+            return res.status(404).json({ message: 'no user record found with email' });
+        }
+
+        // Choose the document to update based on which one was found
+        const foundDocument = user || employer;
+ 
+
+        // Generate a unique reset token
+        const resetToken = crypto.randomBytes(8).toString('hex');
+        // const resetToken = Math.floor(100000 + Math.random() * 900000);
+
+        // Set an expiration time for the reset token (e.g., 1 hour)
+        const resetTokenExpiration = Date.now() + 3600000; // 1 hour
+
+        // console.log("foun user: ", foundDocument)
+        const username = foundDocument.username;
+
+        // Update the found document's fields with the reset token and expiration time
+        foundDocument.email_verification.token = resetToken;
+        foundDocument.email_verification.expiry_date = resetTokenExpiration;
+
+        await foundDocument.save();
+
+        // SEND EMAIL HERE >>>>
+        const recipient = email;
+        const subject = "Apex-tek: Verify your email";
+        const template = "verifyEmail";
+        const context = { resetToken: resetToken, root_url: process.env.GOOGLE_CALLBACK, username, email};
+
+        await sendEmail(recipient, subject, null, null, template, context);
+        res.status(200).json({ message: 'verification email sent successfully' });
+
+    } catch (error) {
+        console.error('Error sending password reset verification email :', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 
 
 exports.passwordCheck = async (req, res) => {

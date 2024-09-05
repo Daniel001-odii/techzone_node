@@ -15,6 +15,9 @@ router.post("/google-auth", authController.googleClientAuthHandler);
 
 router.post("/email/:email/verify", authController.verifyEmail);
 
+router.get("/email/:email/:token/verify/native", authController.verifyEmailNative);
+
+router.post("/email/:email/send", authController.sendEmailVerificationMail)
 /* 
 **
 GOOGLE AUTH ROUTE

@@ -38,6 +38,16 @@ const adminSchema = new Schema({
       default: "active"
     },
 
+    email_verified: {
+      type: Boolean,
+      default: false,
+    },
+
+    email_verification:{
+      token: String,
+      expiry_date: Date,
+    },
+
     login_code_expiration: Date,
     login_code: String,
  

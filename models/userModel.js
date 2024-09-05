@@ -86,7 +86,7 @@ const userSchema = new Schema({
     },
 
     email_verification:{
-      type: String,
+      token: String,
       expiry_date: Date,
     },
     

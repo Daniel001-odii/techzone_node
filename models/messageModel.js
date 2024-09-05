@@ -31,6 +31,10 @@ const messageSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',
   },
+  contract:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Contract',
+  },
   is_deleted: {
     type: Boolean,
     default: false,
