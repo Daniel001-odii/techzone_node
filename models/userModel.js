@@ -62,7 +62,7 @@ const userSchema = new Schema({
         default: false,
       },
       // image_url: {type: String, default: 'https://icon-library.com/images/no-profile-pic-icon/no-profile-pic-icon-11.jpg'},
-      image_url: {type: String, default: '../uploads/profiles/no_profile_image.png'},
+      image_url: {type: String, default: 'https://icon-library.com/images/no-profile-pic-icon/no-profile-pic-icon-11.jpg'},
       },
     portfolio_url: String, // Store content type (e.g., 'application/pdf')
     saved_jobs: [{

@@ -256,7 +256,7 @@ exports.verifyEmailNative = async (req, res) => {
         });
         const employer = await Employer.findOne({  
             'email_verification.token': token,
-            'pass_reset.expiry_date': { $gt: new Date() } 
+            'email_verification.expiry_date': { $gt: new Date() } 
         });
 
         // Check if either user or employer exists
@@ -326,7 +326,7 @@ exports.sendEmailVerificationMail = async (req, res) => {
         const template = "verifyEmail";
         const context = { resetToken: resetToken, root_url: process.env.GOOGLE_CALLBACK, username, email};
 
-        await sendEmail(recipient, subject, null, null, template, context);
+        sendEmail(recipient, subject, null, null, template, context);
         res.status(200).json({ message: 'verification email sent successfully' });
 
     } catch (error) {

@@ -71,10 +71,18 @@ const employerSchema = new Schema({
     is_verified: {type: Boolean, default: false},
     is_deleted: {type: Boolean, default: false},
     is_on_hold: {type: Boolean, default: false},
+
     email_verified: {
       type: Boolean,
       default: false,
     },
+
+    email_verification:{
+      token: String,
+      expiry_date: Date,
+    },
+    
+
     verification_token: String,
 
     jobs_posted: Number,
@@ -86,6 +94,19 @@ const employerSchema = new Schema({
     pass_reset: {
         token: String,
         expiry_date: Date,
+    },
+
+    settings: {
+      notifications: {
+        contracts: {type: Boolean, default: true},
+        messages: {type: Boolean, default: true},
+        emails: {type: Boolean, default: true},
+      },
+      KYC: {
+        NIN_number: String,
+        is_verified: {type: Boolean, default: false},
+        verified_on: Date,
+      }
     },
 
     // account status...

@@ -20,8 +20,15 @@ const walletSchema = new mongoose.Schema({
         type: Date,
         default: Date.now()
     },
+    amount: Number,
+    status: {
+      type: String,
+      enum: ["successful", "pending", "failed"],
+      default: "successful",
+    },
     type: {
         type: String,
+        enum: ["withdrawal", "refund"],
         default: "withdrawal"
     }
   }],

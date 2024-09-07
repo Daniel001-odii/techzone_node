@@ -965,15 +965,16 @@ exports.withdrawFunds = async (req, res) => {
 
         // get user wallet...
         const wallet = await Wallet.findOne({ user: req.userId });
-        if(!wallet){
+       /*  if(!wallet){
             // return res.status(404).json({ message: "user wallet not found"});
             new Wallet({
                 user: user._id,
             }).save();
             return res.status(201).json({ message: "user wallet created!"});
-        } else if(wallet.status == "onhold"){
+        } else  */
+        if(wallet.status == "onhold"){
             return res.status(400).json({ message: "sorry you cant withdraw funds, your wallet is currently onhold, please contact your administrator"});
-        }  else if(wallet.status == "block"){
+        }  else if(wallet.status == "blocked"){
             return res.status(400).json({ message: "your wallet has been blocked, please contact your administrator"});
         }
 
@@ -1023,6 +1024,7 @@ exports.withdrawFunds = async (req, res) => {
             // track last funds withdrawal too...
             wallet.transactions.push({
                 date: Date.now(),
+                amount,
                 type: "withdrawal",
             });
 

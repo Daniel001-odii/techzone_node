@@ -4,6 +4,10 @@ const Employer = require("../models/employerModel");
 
 const verifyToken = async (req, res, next) => {
   try {
+    if(!req.headers.authorization){
+      return res.status(401).json({ message: 'Invalid login' });
+    };
+
     const token = req.headers.authorization.split(' ')[1];
 
     if (!token || req.headers.authorization.split(" ")[0] !== "JWT") {
