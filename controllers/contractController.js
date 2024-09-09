@@ -799,8 +799,8 @@ exports.fundContract = async (req, res) => {
                 contract.user._id,
                 null,
                 `/contracts/${contract_id}`,
-            );
- */
+            ); */
+
             //  SEND EMAIL HERE >>>>            
             const recipient = contract.user.email;
             const subject = "Apex-tek Contract Activity";
@@ -925,6 +925,7 @@ exports.getBankListForClient = async (req, res) => {
 
         // get and store exec_url...
         const execution_url = response.data.execution_url;
+        console.log("execution url returned: ", execution_url)
 
         // get bank list...
         const result = await getBankList(execution_url);
@@ -940,14 +941,6 @@ exports.getBankListForClient = async (req, res) => {
     }
 };
 
-
-const ngBanks = require('ng-banks');
-
-exports.getBankLists = async (req, res) => {
-        const banks = ngBanks.getBanks();
-        res.status(200).json({ banks });
-        // console.log("nigeria banks: ", banks);
-}
 
 
 
@@ -1061,6 +1054,24 @@ exports.withdrawFunds = async (req, res) => {
     }
 }
 
+exports.createNewPayoutAPI = async (req, res) => {
+    try{
+        const { email, phone, amount, description, sender_name } = req.body;
+        const result = await createNewPayout(email, phone, amount, description, sender_name);
+        res.status(200).json(result);
+    }catch(error){
+        res.status(500).json({ error });
+    }
+}
+
+exports.releaseFundsAPI = async (req, res) => {
+    try{
+      console.log("helo world")
+    }catch(error){
+        res.status(500).json({ message: "error releasing funds", error });
+    }
+}
+
 // Function to create a new payout
 async function createNewPayout(email, phone, amount, description, sender_name) {
     let data = JSON.stringify({
@@ -1104,8 +1115,8 @@ async function getBankList(execution_url) {
     try {
         const response = await axios.post(execution_url);
         // const payout_url = response.data.payout_url;
-        const payout_url = response.data;
-        return payout_url;
+        const bank_lists = response.data;
+        return bank_lists;
 
     } catch (error) {
         console.error("Error getting bank list:", error);

@@ -103,12 +103,11 @@ const userSchema = new Schema({
         messages: {type: Boolean, default: true},
         emails: {type: Boolean, default: true},
       },
-      bank: {
-        name: String,
+      bank: [{
         account_number: Number,
         account_name: String,
         code: Number,
-      },
+      }],
       KYC: {
         NIN_number: String,
         is_verified: {type: Boolean, default: false},

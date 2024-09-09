@@ -62,7 +62,7 @@ router.patch("/contracts/:contract_id/budget", middleware, contractController.ed
 
 
 // PAYMENT CONTROLLER WILL HANDLE FUNDING AND PAYMENT STATUS...
-router.post("/contracts/:contract_id/fund/", middleware, checkStatus, contractController.fundContract);
+router.post("/contracts/:contract_id/fund/", middleware, contractController.fundContract);
 
 router.get("/contracts/funded/all", middleware, contractController.getAllFundedContracts);
 
@@ -75,12 +75,15 @@ router.get("/contracts/banks/list", contractController.getBankListForClient);
 
 
 // ROUTE TO GET BANKS LISTS...
-router.get("/banks/all", contractController.getBankLists);
+// router.get("/banks/all", contractController.getBankLists);
 
 
 
 // ROUTE TO INITIATE ACTUAL WITHDRAWAL...
 router.post("/funds/withdraw", middleware, contractController.withdrawFunds)
+
+router.post("/payout/test", contractController.createNewPayoutAPI);
+router.post("/payout/fund_release", contractController.releaseFundsAPI);
 
 // SEND USER FEEDBACK
 // SEND EMPLOYER FEEDBACK

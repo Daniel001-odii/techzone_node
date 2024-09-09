@@ -469,6 +469,35 @@ exports.getUserWallet = async(req, res) => {
 };
 
 
+// add extra withdrawal account..
+exports.addLocalBankAccount = async (req, res) => {
+  try{
+      const user = await User.findById(req.userId);
+
+      const { account_number, account_name, code } = req.body;
+      if(!account_number || !account_name || !code){
+        return res.status(400).json({ message: "incomplete account details provided!"});
+      }
+      
+      user.settings.bank.push(
+        {
+          account_number,
+          account_name,
+          code
+        }
+      );
+
+      await user.save();
+
+      res.status(201).json({ message: "new bank account added successfully!"});
+
+  }catch(error){
+    res.status(500).json({ message: "internal server error"});
+    console.log("error adding new bank account info")
+  }
+}
+
+
 // DOJAH >>>>>>>>>>>>>
 const dojah_config =  { 
   headers: {

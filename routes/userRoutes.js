@@ -56,4 +56,7 @@ router.get("/user/KYC/NIN", userController.checkNIN);
 
 router.post("/user/KYC/verify", secure, userController.verifyNIN_with_selfieImage);
 
+
+// add new bank account info...
+router.post("/user/bank/new_account", secure, userController.addLocalBankAccount);
 module.exports = router;
