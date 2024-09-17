@@ -61,6 +61,7 @@ const sendMail = expressAsyncHandler(async (to, subject, text, html, template, c
     // return res.status(200).send("Email sent successfully");
   } catch (err) {
     console.log("Error sending email:", err);
+    throw err
     // return res.status(500).send("Failed to send email");
   }
 });
