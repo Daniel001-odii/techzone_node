@@ -1,8 +1,12 @@
 const waitListUser = require('../models/waitListUser');
-const sendEmail = require("../utils/email");
+const sendEmail = require("../utils/waitlist_email");
 
 exports.sendWaitListEmail = async (req, res) => {
     const { email } = req.body;
+
+    if(!email){
+        return res.status(400).json({ message: "please provide a valid email address"});
+    }
 
     const existingUser = await waitListUser.findOne({ email });
 
@@ -16,12 +20,12 @@ exports.sendWaitListEmail = async (req, res) => {
     await newUser.save();
 
     const recipient = email;
-    const subject = "You joined the waitlist!";
+    const subject = "You joined our waitlist!";
     const template = "waitlist";
     const context = { email: email };
 
     try {
-        await sendEmail(recipient, subject, null, null, template, context);
+        sendEmail(recipient, subject, null, null, template, context);
         res.status(200).json(`You joined our waitlist! A confirmation email has been sent to ${email}. Thank you!`);
     } catch (error) {
         console.error("Error sending email:", error);

@@ -280,9 +280,15 @@ exports.declineTimestamp = async (req, res) => {
         const employer = await Employer.findById(req.employerId);
         const watch = await Watch.findById(req.params.watch_id);
         const contract = await Contract.findById(watch.contract);
+
+        const { reason_for_decline } = req.body;
+        if(!reason_for_decline){
+            return res.status(400).json({ message: "please provide a reason for declining the time stamp!"})
+        }
         
         if(employer && contract.employer.toString() === employer._id.toString()){
             watch.time_stamp.action = "declined";
+            watch.time_stamp.reason_for_decline = reason_for_decline;
             await watch.save();
             return res.status(200).json({ message: "watch declined!", watch });
         } else {

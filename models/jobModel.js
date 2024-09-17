@@ -21,6 +21,12 @@ const jobSchema = new Schema({
         enum: ["fixed-price", "hourly"],
         default: "fixed-price"
     },
+    hourly_budget_helper: {
+        type: Number,
+        hours_per_day: Number,
+        days_per_week: Number,
+        required: function(){ return this.budget_type == 'hourly' },
+    },
     flags: [{
         user: {
             type: mongoose.Schema.Types.ObjectId, ref: 'User'

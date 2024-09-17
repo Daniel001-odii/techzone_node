@@ -3,6 +3,7 @@ const User = require('../models/userModel');
 const Employer = require('../models/employerModel');
 const Contract = require('../models/contractModel');
 const Application = require('../models/applicationModel');
+const taskWatch = require('../models/taskWatchModel');
 const Notification = require('../models/notificationModel')
 const notificationController = require('../controllers/notificationController');
 const mongoose = require('mongoose');
@@ -326,14 +327,25 @@ exports.markContractAsComplete = async(req, res) => {
     }
 }
 
+
 // SEND NOTIFICATIONS TO EMPLOYER
 exports.pauseContract = async(req, res) => {
     try{
         const contract_id = req.params.contract_id;
         const offer = await Contract.findOne({ employer: req.employerId , _id: contract_id });
+
+        const task_watch = await taskWatch.findOne({ contract: contract_id });
+
         if(!offer){
             return res.status(404).json({ message: "Contract not found"});
         }
+
+        // eomployers should approved track time before pausing contracts...
+        if(task_watch && task_watch.time_stamp && task_watch.time_stamp.action != 'approved'){
+            return res.status(400).json({ message: "please approved already tracked time before pausing contract"})
+        }
+
+
         offer.status = "paused";
         await offer.save();
         
@@ -610,6 +622,7 @@ exports.sendEmployerFeedback = async(req, res) => {
     }
 };
 
+
 // edit contract controller ...
 exports.editContractBudget = async(req, res) => {
     try{
@@ -620,8 +633,14 @@ exports.editContractBudget = async(req, res) => {
 
         const { budget } = req.body;
 
+        // contract budget cannot be changed once accepted by freelancer...
+        if(contract.action == 'accepted'){
+            return res.status(400).json({ message: "sorry contract budget cannot be changed after accepted by freelancer!"})
+        }
+
+        // contract budget cannot be changed once funded...
         if(contract.funded){
-            return res.status(400).json({ message: "sorry contract budget cannot be altered after being funded!"})
+            return res.status(400).json({ message: "sorry contract budget cannot be changed after being funded!"})
         } else{
             contract.budget = budget;
             await contract.save();

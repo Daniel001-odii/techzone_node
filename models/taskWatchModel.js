@@ -29,7 +29,8 @@ const watchSchema = new mongoose.Schema({
       enum: ["approved", "declined", "pending"],
       default: "pending",
       type: String,
-    }
+    },
+    reason_for_decline: String,
   },
 
 }, {timestamps: true});

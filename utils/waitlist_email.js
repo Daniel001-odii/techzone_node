@@ -5,10 +5,6 @@ const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
 const expressAsyncHandler = require("express-async-handler");
 
-const userModel = require("../models/userModel");
-const employerModel = require("../models/employerModel");
-
-
 const createTransporter = async () => {
   try {
 
@@ -44,7 +40,7 @@ const createTransporter = async () => {
   }
 };
 
-const sendMail = expressAsyncHandler(async (to, subject, text, html, template, context, res) => {
+const sendMail = expressAsyncHandler(async (to, subject, text, html, template, context) => {
   try {
 
     const mailOptions = {
@@ -58,36 +54,14 @@ const sendMail = expressAsyncHandler(async (to, subject, text, html, template, c
     };
 
     let emailTransporter = await createTransporter();
-
-
-    // check if user is found
-    // if user is found check if user has enabled in-email notifications...
-    // before ending email alerts to users...
-    const user = await userModel.findOne({ email: to });
-    const employer = await employerModel.findOne({ email: to });
-
-    // Check if either user or employer exists
-    if (!user && !employer) {
-        return res.status(400).json({ message: 'Invalid or expired reset token' });
-    }
-
-    // Choose the document to update based on which one was found
-    const emailUser = user || employer;
-    if(emailUser.settings.notifications.emails){
-
-    await emailTransporter.sendMail(mailOptions);
-    console.log(" ====== an email was sent ======");
-
-    } else {
-
-    // await emailTransporter.sendMail(mailOptions);
-    console.log(" ====== email was not sent since user turned off notifications ======");
-
-  }
-    // res.status(200).send("Email sent successfully");
+  
+    const result = await emailTransporter.sendMail(mailOptions);
+    console.log("waitlist confirmation email sent to: ", to, "result: ", result);
+  
+    // return res.status(200).send("Email sent successfully");
   } catch (err) {
     console.log("Error sending email:", err);
-    // res.status(500).send("Failed to send email");
+    // return res.status(500).send("Failed to send email");
   }
 });
 
