@@ -5,6 +5,7 @@ const earlyUser = new Schema({
         required: true,
         type: String,
     },
+    provider: String,
 
 }, {timestamps: true});
 

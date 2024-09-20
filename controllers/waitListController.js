@@ -2,7 +2,7 @@ const waitListUser = require('../models/waitListUser');
 const sendEmail = require("../utils/waitlist_email");
 
 exports.sendWaitListEmail = async (req, res) => {
-    const { email } = req.body;
+    const { email, provider } = req.body;
 
     if(!email){
         return res.status(400).json({ message: "please provide a valid email address"});
@@ -16,6 +16,7 @@ exports.sendWaitListEmail = async (req, res) => {
 
     const newUser = new waitListUser({
         email,
+        provider
     });
     await newUser.save();
 
