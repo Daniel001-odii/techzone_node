@@ -9,6 +9,9 @@ const Wallet = require("../models/walletModel");
 const Admin = require('../models/adminModel');
 const sendEmail = require("../utils/email.js");
 
+const sendSecondaryEmail = require("../utils/emailSecondary.js");
+
+
 const passport = require("passport");
 require("../utils/passport.js");
 
@@ -711,16 +714,16 @@ exports.adminLogin = async (req, res) => {
         const { email, password } = req.body;
         const user = await Admin.findOne({ email });
 
-        if (!user) {
-            return res.status(401).json({ message: "Invalid username or password" });
+        if (!user || !(await user.matchPassword(password))) {
+            return res.status(401).json({ message: "Invalid credentials provided!" });
         }
 
-        // Compare password only if the user has a password
+     /*    // Compare password only if the user has a password
         const isValidPassword = bcrypt.compareSync(password, user.password);
 
         if (!isValidPassword) {
             return res.status(401).json({ message: "Invalid username or password" });
-        }
+        } */
 
         // assign user ID
         const userId = user._id;
@@ -750,17 +753,17 @@ exports.adminLogin = async (req, res) => {
                 ...roleSpecificData // Merge role specific data
             },
             token,
-            message: "One time password sent"
+            message: "One time Pin sent"
         };
         res.status(200).json(response);
 
         // Notify user
-        const newNotification = new Notification({
-            receiver: "user",
-            user: userId,
-            message: `New Admin signin alert`
-        });
-        await newNotification.save();
+        // const newNotification = new Notification({
+        //     receiver: "user",
+        //     user: userId,
+        //     message: `New Admin signin alert`
+        // });
+        // await newNotification.save();
 
 
         if (user.role === 'admin') {
@@ -776,25 +779,21 @@ exports.adminLogin = async (req, res) => {
             user.login_code_expiration = login_code_expiration;
 
             await user.save();
-                //   SEND EMAIL HERE >>>>
-                const mailOptions = {
-                    from: 'danielsinterest@gmail.com',
-                    to: email,
-                    subject: 'Apex-tek Administrator Login',
-                    html: `<p>You are receiving this email because you (or someone else) is trying to login into your account.</p>
-                        <p>Please use this code as your OTP <strong> ${login_code}</strong> </p>
-                        <p>If you did not request this, please ignore this email.</p>`
-                };
+            console.log("login code saved @ users db..")
+            // SEND EMAIL HERE >>>>
             
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('Error sending email:', error);
-                    return res.status(500).json({ message: 'Failed to send login email' });
-                }
-            
-                console.log('login email sent:', info.response);
-                res.status(200).json({ message: 'login email sent' });
-                });
+            const recipient = user.email;
+            const context = {
+                firstname: user.firstname,
+                lastname: user.lastname,
+                login_code,
+            };
+
+            sendSecondaryEmail(recipient, "Apex-tek Administrator Login", null, null, "admin-login-greet", context);
+
+            // sendEmail(recipient, "Apex-tek Administrator Login", null, null, "admin-login-greet", context);
+
+               
         }
     }
     catch(error){

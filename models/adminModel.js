@@ -1,4 +1,6 @@
-var mongoose = require('mongoose'), Schema = mongoose.Schema;
+const mongoose = require('mongoose'), Schema = mongoose.Schema;
+const bcrypt = require('bcryptjs');
+
 
 const adminSchema = new Schema({
     email: {
@@ -95,5 +97,32 @@ const adminSchema = new Schema({
         default: Date.now
     },
   });
+
+
+adminSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+        return next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+});
+
+adminSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Pre-save hook to generate username
+adminSchema.pre('save', async function (next) {
+  // Check if firstname or lastname is modified or if username is not set
+  if (this.isModified('firstname') || this.isModified('lastname') || !this.username) {
+      // Generate username from firstname and lastname
+      const username = `${this.firstname} ${this.lastname}`;
+      this.username = username;
+      console.log(`Generated username: ${this.username}`);
+  }
+  next();
+});
+
   
 module.exports = mongoose.model('administrators', adminSchema);

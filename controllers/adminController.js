@@ -4,6 +4,9 @@ const Employer = require('../models/employerModel');
 const Contract = require('../models/contractModel');
 const Application = require('../models/applicationModel');
 const Admin = require("../models/adminModel");
+const EarlyBirds = require("../models/waitListUser");
+
+
 const Notification = require('../models/notificationModel')
 const notificationController = require('../controllers/notificationController');
 const mongoose = require('mongoose');
@@ -106,4 +109,15 @@ exports.getAllUsers = async (req, res) => {
       console.error(error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
-  };
+};
+
+// GET ALL EARLY USERS...
+exports.getAllEarlyUsers = async (req, res) => {
+  try {
+    const users = await EarlyBirds.find();
+    res.status(200).json({ users });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};

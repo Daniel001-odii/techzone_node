@@ -19,4 +19,7 @@ router.get("/employers/all", adminMiddleware, adminController.getAllEmployers);
 // ADMIN...
 router.get("/users/all", adminMiddleware, adminController.getAllUsers);
 
+// EARLY USERS
+router.get("/early_users/all", adminMiddleware, adminController.getAllEarlyUsers);
+
 module.exports = router;
