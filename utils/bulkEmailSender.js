@@ -68,8 +68,27 @@ const sendMail = expressAsyncHandler(async (to, subject, text, html, template, c
     // const admin = await adminModel.findOne({ email: to });
 
     await emailTransporter.sendMail(mailOptions);
-    console.log(`email sent to: ${to}`);
+    console.log(" ====== a secondary email was sent ======");
 
+    // Check if either user or employer exists
+   /*  if (!user && !employer && !admin) {
+        // return res.status(400).json({ message: 'Invalid or expired reset token' });
+        throw error
+    }
+
+    // Choose the document to update based on which one was found
+    const emailUser = user || employer;
+    if(emailUser.settings.notifications.emails){
+
+    await emailTransporter.sendMail(mailOptions);
+    console.log(" ====== a secondary email was sent ======");
+
+    } else {
+
+    // await emailTransporter.sendMail(mailOptions);
+    console.log(" ====== email was not sent since user turned off notifications ======");
+
+  } */
     // res.status(200).send("Email sent successfully");
   } catch (err) {
     console.log("Error sending email:", err);

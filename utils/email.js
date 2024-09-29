@@ -96,3 +96,4 @@ const sendMail = expressAsyncHandler(async (to, subject, text, html, template, c
 });
 
 module.exports = sendMail;
+

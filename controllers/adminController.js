@@ -16,6 +16,9 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 
+
+const sendSecondaryEmail = require("../utils/emailSecondary.js");
+
 /*
 CREATE
 READ
@@ -114,10 +117,45 @@ exports.getAllUsers = async (req, res) => {
 // GET ALL EARLY USERS...
 exports.getAllEarlyUsers = async (req, res) => {
   try {
-    const users = await EarlyBirds.find();
-    res.status(200).json({ users });
+
+    // implementing pagination for the sake of good ol times...
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const startIndex = (page - 1) * limit;
+    const total = await EarlyBirds.countDocuments();
+
+    const users = await EarlyBirds.find().skip(startIndex).limit(limit);
+
+    // const users = await EarlyBirds.find();
+    res.status(200).json({ page, limit, total, pages: Math.ceil(total / limit), users });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+/* 
+ to,
+  subject,
+  text,
+  html,
+  template,
+  context,
+  */
+exports.sendBulkEmail = async (req, res) => {
+  try{
+    const  { emails, mail } = req.body;
+
+    console.log("from send-b email client: ", emails, `\n ${mail}`)
+    // await sendEmail(recipient, subject, null, null, template, context);
+    sendSecondaryEmail(emails, mail.subject, null, mail.body, "apex-alert", );
+
+    res.status(200).json({ message: "Bulk email message sent successfuly!"});
+
+  }catch(error){
+    console.log("error with sendin bulk email: ", error);
+    return res.status(500).json({ error: "couldnt send bulk email"});
+  }
+}

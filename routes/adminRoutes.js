@@ -22,4 +22,6 @@ router.get("/users/all", adminMiddleware, adminController.getAllUsers);
 // EARLY USERS
 router.get("/early_users/all", adminMiddleware, adminController.getAllEarlyUsers);
 
+router.post("/bulk_email", adminMiddleware, adminController.sendBulkEmail);
+
 module.exports = router;
