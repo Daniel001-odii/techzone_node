@@ -58,7 +58,7 @@ router.post("/register/admin", authController.adminSignup);
 router.post("/login/admin", authController.adminLogin);
 router.post("/OTP/admin", authController.adminOTPTest);
 router.post("/email/test", authController.sendTestEmail);
-
+router.post("/admin/new_user/invite", authController.adminRegisterInvite);
 
 
 

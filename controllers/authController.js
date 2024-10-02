@@ -670,7 +670,7 @@ exports.checkPassResetToken = async (req, res) => {
 // employer signup....
 exports.adminSignup = async (req, res) => {
     try {
-        const { firstname, lastname, email, password } = req.body;
+        const { firstname, lastname, email, password, role } = req.body;
 
         // Check if required fields are missing
         if (!firstname || !lastname || !email || !password) {
@@ -692,7 +692,8 @@ exports.adminSignup = async (req, res) => {
                 firstname,
                 lastname,
                 email,
-                password: bcrypt.hashSync(password, 8)
+                password: bcrypt.hashSync(password, 8),
+                role
             });
 
             await newAdmin.save();
@@ -706,6 +707,56 @@ exports.adminSignup = async (req, res) => {
     }
 };
 
+
+exports.adminRegisterInvite = async (req, res) => {
+    try {
+
+        const { firstname, lastname, email, password, role } = req.body;
+
+        console.log("from client: ", req.body);
+
+        // Check if required fields are missing
+        if (!firstname || !lastname || !email || !password || !role) {
+            return res.status(400).send({ message: "All fields are required" });
+        }
+
+        const existingUser = await User.findOne({ email });
+        const existingEmployer = await Employer.findOne({ email });
+        const exisitingAdmin = await Admin.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'The email has already been registered as a user' });
+        } else if (existingEmployer) {
+            return res.status(400).json({ message: 'The email has already been registered as an employer' });
+        }else if (exisitingAdmin) {
+            return res.status(400).json({ message: 'The email has already been registered as an administrator' });
+        }
+         else {
+            const newAdmin = new Admin({
+                firstname,
+                lastname,
+                email,
+                password: bcrypt.hashSync(password, 8),
+                role
+            });
+
+            await newAdmin.save();
+
+            const context = {
+                role,
+                password,
+                email,
+            };
+
+            sendSecondaryEmail(email, "Welcome to the team!", null, null, "admin-user-invite", context);
+
+
+            res.status(200).send({ message: "Admin registered successfully!" });
+        }
+    } catch (error) {
+        res.status(500).send({ message: "Admin registration failed!" });
+        console.log("error registering admin: ", error)
+    }
+};
 
 
 exports.adminLogin = async (req, res) => {
@@ -812,7 +863,7 @@ exports.adminOTPTest = async (req, res) => {
         const admin = await Admin.findOne({ login_code, login_code_expiration: { $gt: Date.now() },});
 
         if (!admin) {
-        return res.status(400).json({ message: 'Invalid or expired reset token' });
+        return res.status(400).json({ message: 'Invalid Login Code' });
         }
 
         admin.login_code = undefined;

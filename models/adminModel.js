@@ -21,7 +21,7 @@ const adminSchema = new Schema({
       type: String,
     },
     role: {type: String, 
-        default: "admin",
+        default: "team-member",
         enum: ["admin", "manager", "moderator", "team-lead", "team-member"]
     },
     firstname: {
@@ -32,6 +32,7 @@ const adminSchema = new Schema({
       type: String,
       required: [true, "Please specify lastname"]
     },
+    username: String,
 
     // user account status...
     account_status: {

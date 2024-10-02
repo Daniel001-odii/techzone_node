@@ -85,7 +85,9 @@ exports.getAllContracts = async(req, res) => {
             path: "job"
         });
 
-        return res.status(200).json({ contracts });
+        const total = await Contract.countDocuments();
+
+        return res.status(200).json({ contracts, total_contracts });
                
     }catch(error){
         console.log(error)
@@ -95,8 +97,15 @@ exports.getAllContracts = async(req, res) => {
 // GET ALL EMPLOYER RECORDS...
 exports.getAllEmployers = async (req, res) => {
     try{
-      const employers = await Employer.find();
-      res.status(200).json({ employers });
+      const all_employers = await Employer.find();
+      
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const startIndex = (page - 1) * limit;
+      const total = await Employer.countDocuments();
+      const employers = await Employer.find().skip(startIndex).limit(limit);
+
+      res.status(200).json({ page, limit, total, pages: Math.ceil(total / limit), employers, all_employers });
     }catch(error){
       console.log(error);
       res.status(500).json({ message: 'internal server error' })
@@ -106,8 +115,15 @@ exports.getAllEmployers = async (req, res) => {
 // GET ALL USER RECORDS...
 exports.getAllUsers = async (req, res) => {
     try {
-      const users = await User.find();
-      res.status(200).json({ users });
+      const all_users = await User.find();
+      
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const startIndex = (page - 1) * limit;
+      const total = await User.countDocuments();
+      const users = await User.find().skip(startIndex).limit(limit);
+
+      res.status(200).json({ page, limit, total, pages: Math.ceil(total / limit), users, all_users });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Internal Server Error" });
@@ -126,9 +142,10 @@ exports.getAllEarlyUsers = async (req, res) => {
     const total = await EarlyBirds.countDocuments();
 
     const users = await EarlyBirds.find().skip(startIndex).limit(limit);
+    const all_users = await EarlyBirds.find();
 
     // const users = await EarlyBirds.find();
-    res.status(200).json({ page, limit, total, pages: Math.ceil(total / limit), users });
+    res.status(200).json({ page, limit, total, pages: Math.ceil(total / limit), users, all_users });
 
   } catch (error) {
     console.error(error);
