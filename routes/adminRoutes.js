@@ -15,6 +15,7 @@ router.get("/contracts/all", adminMiddleware, adminController.getAllContracts);
 
 // ADMIN >>>
 router.get("/employers/all", adminMiddleware, adminController.getAllEmployers);
+router.get("/admins/all", adminMiddleware, adminController.getAdminUsers);
 
 // ADMIN...
 router.get("/users/all", adminMiddleware, adminController.getAllUsers);

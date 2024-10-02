@@ -39,6 +39,17 @@ exports.getAdmin = async (req, res) => {
     }
 };
 
+
+exports.getAdminUsers = async (req, res) => {
+  try {
+    const administrative_users = await Admin.find();
+    res.status(200).json({ administrative_users });
+  }catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 // get all documents.count...
 exports.getAllRecordsCount = async (req, res) => {
     try{

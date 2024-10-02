@@ -692,7 +692,7 @@ exports.adminSignup = async (req, res) => {
                 firstname,
                 lastname,
                 email,
-                password: bcrypt.hashSync(password, 8),
+                password,
                 role
             });
 
@@ -735,7 +735,7 @@ exports.adminRegisterInvite = async (req, res) => {
                 firstname,
                 lastname,
                 email,
-                password: bcrypt.hashSync(password, 8),
+                password,
                 role
             });
 
