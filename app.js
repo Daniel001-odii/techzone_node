@@ -15,7 +15,7 @@ const session = require("express-session");
 
 // Middlewares
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:8081', 'https://www.apexteks.com', 'https://apexteks.com', 'https://tech-zone-navy.vercel.app'],
+  origin: ['http://localhost:8080', 'http://localhost:8081', 'https://www.apexteks.com', 'https://apexteks.com', 'https://tech-zone-navy.vercel.app', 'https://www.tech-zone.com.ng', 'https://tech-zone.com.ng'],
   credentials: true
 }));
 app.use(express.json({limit: '50mb'}));
